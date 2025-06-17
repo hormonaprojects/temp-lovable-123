@@ -51,17 +51,17 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       let foundRecipes = [];
 
       if (category && ingredient) {
-        // Specifikus kategória és hozzávaló alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
+        // STRICT: Both category and ingredient must match exactly
         foundRecipes = getRecipesByCategory(category, ingredient, selectedMealType);
-        console.log(`🎯 Specifikus keresés eredménye: ${foundRecipes.length} recept`);
+        console.log(`🎯 SZIGORÚ specifikus keresés eredménye: ${foundRecipes.length} recept`);
       } else if (category) {
-        // Csak kategória alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
+        // STRICT: Category must match exactly
         foundRecipes = getRecipesByCategory(category, undefined, selectedMealType);
-        console.log(`🎯 Kategória keresés eredménye: ${foundRecipes.length} recept`);
+        console.log(`🎯 SZIGORÚ kategória keresés eredménye: ${foundRecipes.length} recept`);
       } else {
-        // Random recept az étkezés típus alapján
+        // Random recipe for the meal type (no category/ingredient specified)
         foundRecipes = getRecipesByMealType(selectedMealType);
-        console.log(`🎯 Étkezési típus keresés eredménye: ${foundRecipes.length} recept`);
+        console.log(`🎯 Random étkezési típus keresés eredménye: ${foundRecipes.length} recept`);
       }
 
       await minLoadingTime;
@@ -78,18 +78,18 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
           description: `${standardRecipe.név} sikeresen betöltve az adatbázisból.`,
         });
       } else {
-        // Specific error messages based on search criteria
+        // STRICT error messages based on search criteria
         let errorMessage = "";
         if (category && ingredient) {
-          errorMessage = `Nem található "${ingredient}" alapanyaggal recept "${selectedMealType}" étkezéshez a "${category}" kategóriában.`;
+          errorMessage = `Nincs "${ingredient}" alapanyaggal recept "${selectedMealType}" étkezéshez a "${category}" kategóriában.`;
         } else if (category) {
-          errorMessage = `Nem található recept "${selectedMealType}" étkezéshez a "${category}" kategóriában.`;
+          errorMessage = `Nincs recept "${selectedMealType}" étkezéshez a "${category}" kategóriában.`;
         } else {
-          errorMessage = `Nem található recept "${selectedMealType}" étkezéshez.`;
+          errorMessage = `Nincs recept "${selectedMealType}" étkezéshez.`;
         }
         
         toast({
-          title: "Nincs találat",
+          title: "Nincs megfelelő recept",
           description: errorMessage,
           variant: "destructive"
         });
@@ -115,15 +115,18 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       try {
         const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
         
-        console.log('🔄 Újragenerálás ugyanazokkal a paraméterekkel:', lastSearchParams);
+        console.log('🔄 SZIGORÚ újragenerálás ugyanazokkal a paraméterekkel:', lastSearchParams);
         
         let foundRecipes = [];
         
         if (lastSearchParams.category && lastSearchParams.ingredient) {
+          // STRICT: Both category and ingredient must match exactly
           foundRecipes = getRecipesByCategory(lastSearchParams.category, lastSearchParams.ingredient, selectedMealType);
         } else if (lastSearchParams.category) {
+          // STRICT: Category must match exactly
           foundRecipes = getRecipesByCategory(lastSearchParams.category, undefined, selectedMealType);
         } else {
+          // Random recipe for the meal type
           foundRecipes = getRecipesByMealType(selectedMealType);
         }
 
@@ -141,18 +144,18 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
             description: `${standardRecipe.név} sikeresen betöltve az adatbázisból.`,
           });
         } else {
-          // Specific error messages for regeneration
+          // STRICT error messages for regeneration
           let errorMessage = "";
           if (lastSearchParams.category && lastSearchParams.ingredient) {
-            errorMessage = `Nem található több "${lastSearchParams.ingredient}" alapanyaggal recept "${selectedMealType}" étkezéshez.`;
+            errorMessage = `Nincs több "${lastSearchParams.ingredient}" alapanyaggal recept "${selectedMealType}" étkezéshez a "${lastSearchParams.category}" kategóriában.`;
           } else if (lastSearchParams.category) {
-            errorMessage = `Nem található több recept "${selectedMealType}" étkezéshez a "${lastSearchParams.category}" kategóriában.`;
+            errorMessage = `Nincs több recept "${selectedMealType}" étkezéshez a "${lastSearchParams.category}" kategóriában.`;
           } else {
-            errorMessage = `Nem található több recept "${selectedMealType}" étkezéshez.`;
+            errorMessage = `Nincs több recept "${selectedMealType}" étkezéshez.`;
           }
           
           toast({
-            title: "Nincs találat",
+            title: "Nincs megfelelő recept",
             description: errorMessage,
             variant: "destructive"
           });

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +34,7 @@ interface MealPlan {
       zsír: string;
       képUrl?: string;
     } | null;
-    isSpecific: boolean; // New field to track if the recipe was generated specifically or randomly
+    isSpecific: boolean;
   };
 }
 
@@ -117,44 +118,50 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     }
   };
 
-  const generateRecipeForMeal = (mealType: string, category?: string, ingredient?: string) => {
-    console.log(`🔍 Recept keresése: ${mealType}`, { category, ingredient });
+  // STRICT recipe filtering - only returns recipes that EXACTLY match the criteria
+  const generateRecipeForMeal = (mealType: string, category?: string, ingredient?: string, isRandomGeneration: boolean = false) => {
+    console.log(`🔍 SZIGORÚ recept keresése: ${mealType}`, { category, ingredient, isRandomGeneration });
     
+    // If it's random generation or no specific criteria, just get random recipe for meal type
+    if (isRandomGeneration || (!category && !ingredient)) {
+      const foundRecipes = getRecipesByMealType(mealType);
+      console.log(`🎲 Random recept az étkezési típushoz: ${foundRecipes.length} db`);
+      
+      if (foundRecipes.length > 0) {
+        const randomIndex = Math.floor(Math.random() * foundRecipes.length);
+        const selectedRecipe = foundRecipes[randomIndex];
+        return convertToStandardRecipe(selectedRecipe);
+      }
+      return null;
+    }
+
+    // STRICT filtering: If category or ingredient is specified, it MUST match exactly
     let foundRecipes = [];
     
     if (category && ingredient) {
-      // Specifikus kategória és hozzávaló alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
+      // Both category and ingredient specified - MUST have both
       foundRecipes = getRecipesByCategory(category, ingredient, mealType);
-      console.log(`🎯 Specifikus keresés eredménye: ${foundRecipes.length} recept`);
+      console.log(`🎯 SZIGORÚ keresés (kategória + alapanyag): ${foundRecipes.length} recept`);
     } else if (category) {
-      // Csak kategória alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
+      // Only category specified - MUST have this category
       foundRecipes = getRecipesByCategory(category, undefined, mealType);
-      console.log(`🎯 Kategória keresés eredménye: ${foundRecipes.length} recept`);
-    } else {
-      // Random recept az étkezés típus alapján
-      foundRecipes = getRecipesByMealType(mealType);
-      console.log(`🎯 Étkezési típus keresés eredménye: ${foundRecipes.length} recept`);
+      console.log(`🎯 SZIGORÚ keresés (csak kategória): ${foundRecipes.length} recept`);
     }
     
-    if (foundRecipes.length > 0) {
-      // Random kiválasztás a megfelelő receptek közül
-      const randomIndex = Math.floor(Math.random() * foundRecipes.length);
-      const selectedRecipe = foundRecipes[randomIndex];
-      return convertToStandardRecipe(selectedRecipe);
+    // STRICT: If criteria were specified but no matching recipes found, return null
+    if (foundRecipes.length === 0) {
+      console.log(`❌ SZIGORÚ szűrés: Nincs megfelelő recept a megadott kritériumoknak`);
+      return null;
     }
     
-    // Ha nincs specifikus recept, próbáljunk random receptet az étkezési típushoz
-    const randomRecipes = getRecipesByMealType(mealType);
-    if (randomRecipes.length > 0) {
-      const randomIndex = Math.floor(Math.random() * randomRecipes.length);
-      const selectedRecipe = randomRecipes[randomIndex];
-      return convertToStandardRecipe(selectedRecipe);
-    }
-    
-    return null;
+    // Return random recipe from the STRICTLY filtered results
+    const randomIndex = Math.floor(Math.random() * foundRecipes.length);
+    const selectedRecipe = foundRecipes[randomIndex];
+    console.log(`✅ SZIGORÚ szűrés eredménye: ${selectedRecipe['Recept_Neve']}`);
+    return convertToStandardRecipe(selectedRecipe);
   };
 
-  // Generate random meal plan (original functionality)
+  // Generate random meal plan (completely random for all meals)
   const generateRandomMealPlan = async () => {
     if (selectedMeals.length === 0) {
       toast({
@@ -168,18 +175,19 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     setIsGenerating(true);
     
     try {
-      console.log('🍽️ Random napi étrend generálása az adatbázisból...', selectedMeals);
+      console.log('🎲 RANDOM napi étrend generálása az adatbázisból...', selectedMeals);
       
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 4000));
 
       const newPlan: MealPlan = {};
       
       selectedMeals.forEach(mealType => {
-        const recipe = generateRecipeForMeal(mealType);
+        // Always generate random recipes, ignore any selections
+        const recipe = generateRecipeForMeal(mealType, undefined, undefined, true);
         newPlan[mealType] = {
           mealType,
           recipe,
-          isSpecific: false // Random generation
+          isSpecific: false // Always random for random generation
         };
       });
 
@@ -218,7 +226,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     }
   };
 
-  // New specific meal plan generation
+  // STRICT specific meal plan generation
   const generateSpecificMealPlan = async () => {
     if (selectedMeals.length === 0) {
       toast({
@@ -232,7 +240,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     setIsGenerating(true);
     
     try {
-      console.log('🎯 Specifikus napi étrend generálása...', selectedMeals, mealSelections);
+      console.log('🎯 SZIGORÚ specifikus napi étrend generálása...', selectedMeals, mealSelections);
       
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 4000));
 
@@ -244,23 +252,24 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
         let recipe = null;
         let isSpecific = false;
 
-        if (selection && selection.category && selection.ingredient) {
-          // Generate specific recipe based on category and ingredient
-          recipe = generateRecipeForMeal(mealType, selection.category, selection.ingredient);
+        if (selection && (selection.category || selection.ingredient)) {
+          // STRICT: If any criteria is selected, it must be matched exactly
+          recipe = generateRecipeForMeal(mealType, selection.category, selection.ingredient, false);
           isSpecific = true;
+          
           if (!recipe) {
-            failedSpecificMeals.push(`${mealType} (${selection.ingredient})`);
-          }
-        } else if (selection && selection.category) {
-          // Generate recipe based on category only
-          recipe = generateRecipeForMeal(mealType, selection.category);
-          isSpecific = true;
-          if (!recipe) {
-            failedSpecificMeals.push(`${mealType} (${selection.category})`);
+            // Build detailed error message for failed specific search
+            let failureReason = mealType;
+            if (selection.category && selection.ingredient) {
+              failureReason += ` (${selection.category} - ${selection.ingredient})`;
+            } else if (selection.category) {
+              failureReason += ` (${selection.category})`;
+            }
+            failedSpecificMeals.push(failureReason);
           }
         } else {
-          // Generate random recipe if no specific criteria
-          recipe = generateRecipeForMeal(mealType);
+          // No specific criteria - generate random recipe for this meal type
+          recipe = generateRecipeForMeal(mealType, undefined, undefined, true);
           isSpecific = false;
         }
 
@@ -283,7 +292,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
       if (failedSpecificMeals.length > 0) {
         toast({
           title: "Specifikus generálás részben sikeres",
-          description: `${specificCount} specifikus és ${randomCount} random recept betöltve. Nincs találat: ${failedSpecificMeals.join(", ")}.`,
+          description: `${specificCount} specifikus és ${randomCount} random recept betöltve. Nincs megfelelő recept: ${failedSpecificMeals.join(", ")}.`,
           variant: "destructive"
         });
       } else {
@@ -309,12 +318,13 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     setRegeneratingMeal(mealType);
     
     try {
-      console.log(`🔄 ${mealType} újragenerálása...`, { category, ingredient });
+      console.log(`🔄 ${mealType} SZIGORÚ újragenerálása...`, { category, ingredient });
       
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
       
-      const recipe = generateRecipeForMeal(mealType, category, ingredient);
-      const isSpecific = !!(category && ingredient);
+      // STRICT regeneration: only use provided criteria
+      const recipe = generateRecipeForMeal(mealType, category, ingredient, false);
+      const isSpecific = !!(category || ingredient);
 
       await minLoadingTime;
 
@@ -328,7 +338,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           }
         }));
 
-        // Update meal selections
         setMealSelections(prev => ({
           ...prev,
           [mealType]: { category: category || '', ingredient: ingredient || '' }
@@ -339,18 +348,18 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           description: `${mealType} új recepttel frissítve.`,
         });
       } else {
-        // Specific error message for failed regeneration
+        // STRICT error message for failed regeneration
         let errorMessage = "";
         if (category && ingredient) {
-          errorMessage = `Nem található "${ingredient}" alapanyaggal recept "${mealType}" étkezéshez.`;
+          errorMessage = `Nincs "${ingredient}" alapanyaggal recept "${mealType}" étkezéshez a "${category}" kategóriában.`;
         } else if (category) {
-          errorMessage = `Nem található recept "${mealType}" étkezéshez a "${category}" kategóriában.`;
+          errorMessage = `Nincs recept "${mealType}" étkezéshez a "${category}" kategóriában.`;
         } else {
-          errorMessage = `Nem található recept "${mealType}" étkezéshez.`;
+          errorMessage = `Nincs recept "${mealType}" étkezéshez.`;
         }
         
         toast({
-          title: "Nincs találat",
+          title: "Nincs megfelelő recept",
           description: errorMessage,
           variant: "destructive"
         });
@@ -379,7 +388,8 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
       const newPlan: MealPlan = {};
       
       Object.keys(dailyPlan).forEach(mealType => {
-        const recipe = generateRecipeForMeal(mealType);
+        // Always generate random when regenerating all
+        const recipe = generateRecipeForMeal(mealType, undefined, undefined, true);
         newPlan[mealType] = {
           mealType,
           recipe,
@@ -540,7 +550,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
             </div>
           )}
 
-          {/* Daily Meal Results */}
           {showResults && !isGenerating && (
             <div className="space-y-4 sm:space-y-6">
               <div className="text-center mb-6 sm:mb-8">
@@ -553,7 +562,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                   const mealOption = mealOptions.find(m => m.key === mealType);
                   const isOpen = openMeals[mealType] || false;
                   
-                  // Different gradient colors based on whether recipe is specific or random
                   const cardGradient = mealData.isSpecific 
                     ? "bg-gradient-to-r from-green-500/90 to-emerald-600/90" 
                     : "bg-gradient-to-r from-indigo-500/90 to-purple-600/90";
@@ -572,7 +580,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                   <CardTitle className="text-white text-lg sm:text-2xl font-bold truncate">
                                     {mealOption?.label?.replace(/^[^\s]+\s/, '') || mealType}
                                   </CardTitle>
-                                  {/* Badge to indicate specific or random */}
                                   <span className={`px-2 py-1 text-xs font-bold rounded-full ${mealData.isSpecific ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-400 text-gray-900'}`}>
                                     {mealData.isSpecific ? 'SPECIFIKUS' : 'RANDOM'}
                                   </span>
@@ -586,7 +593,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                           
                           {mealData.recipe && (
                             <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
-                              {/* Recipe image in circle */}
                               {mealData.recipe.képUrl && (
                                 <div className="relative">
                                   <img 
@@ -604,7 +610,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                 </div>
                               )}
                               
-                              {/* Enhanced meal info layout */}
                               <div className="hidden sm:flex flex-col gap-2">
                                 <div className="flex items-center gap-2 text-white/90 text-sm bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
                                   <Clock className="w-4 h-4 text-blue-300" />
@@ -633,7 +638,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                           </CollapsibleTrigger>
                           
                           <CollapsibleContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-                            {/* ... keep existing code (recipe details display) the same ... */}
                             <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
                               {mealData.recipe.képUrl && (
                                 <div className="text-center">
@@ -708,7 +712,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                         <CardContent className="text-center py-6 sm:py-8 px-4 sm:px-6">
                           <div className="bg-red-500/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-red-300/30">
                             <p className="text-white/80 text-base sm:text-lg">
-                              Nem sikerült receptet találni ehhez az étkezéshez az adatbázisban.
+                              Nem található megfelelő recept a megadott kritériumoknak.
                             </p>
                           </div>
                         </CardContent>
@@ -722,7 +726,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
         </div>
       </div>
 
-      {/* Full Screen Recipe Modal */}
       {fullScreenRecipe && (
         <div 
           className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
