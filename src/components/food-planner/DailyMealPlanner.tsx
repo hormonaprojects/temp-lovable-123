@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ChevronDown, Clock, Users, Calendar, Target, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, Clock, Users, Calendar, Target, X, RefreshCw } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { StarRating } from "./StarRating";
 import { LoadingChef } from "@/components/ui/LoadingChef";
+import { MealSelectionCard } from "./MealSelectionCard";
 
 interface User {
   id: string;
@@ -40,6 +40,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
   const [selectedMeals, setSelectedMeals] = useState<string[]>(["reggeli", "ebéd", "vacsora"]);
   const [dailyPlan, setDailyPlan] = useState<MealPlan>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [regeneratingMeal, setRegeneratingMeal] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [openMeals, setOpenMeals] = useState<Record<string, boolean>>({});
   const [fullScreenRecipe, setFullScreenRecipe] = useState<{recipe: any, mealType: string} | null>(null);
@@ -47,7 +48,9 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
   const { 
     mealTypes,
+    categories,
     getRecipesByMealType,
+    getRecipesByCategory,
     getRandomRecipe,
     convertToStandardRecipe,
     saveRating,
@@ -61,6 +64,10 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     { key: "uzsonna", label: "🥨 Uzsonna", emoji: "🥨" },
     { key: "vacsora", label: "🌙 Vacsora", emoji: "🌙" }
   ];
+
+  const getIngredientsByCategory = (category: string): string[] => {
+    return categories?.[category] || [];
+  };
 
   const handleMealToggle = (mealKey: string) => {
     setSelectedMeals(prev => 
@@ -94,16 +101,29 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     }
   };
 
-  const generateRecipeForMeal = (mealType: string) => {
-    console.log(`🔍 Recept keresése: ${mealType}`);
+  const generateRecipeForMeal = (mealType: string, category?: string, ingredient?: string) => {
+    console.log(`🔍 Recept keresése: ${mealType}`, { category, ingredient });
     
-    // Próbáljunk receptet találni az étkezés típus alapján
-    const mealRecipes = getRecipesByMealType(mealType);
+    let foundRecipes = [];
     
-    if (mealRecipes.length > 0) {
+    if (category && ingredient) {
+      // Specifikus kategória és hozzávaló alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
+      foundRecipes = getRecipesByCategory(category, ingredient, mealType);
+      console.log(`🎯 Specifikus keresés eredménye: ${foundRecipes.length} recept`);
+    } else if (category) {
+      // Csak kategória alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
+      foundRecipes = getRecipesByCategory(category, undefined, mealType);
+      console.log(`🎯 Kategória keresés eredménye: ${foundRecipes.length} recept`);
+    } else {
+      // Random recept az étkezés típus alapján
+      foundRecipes = getRecipesByMealType(mealType);
+      console.log(`🎯 Étkezési típus keresés eredménye: ${foundRecipes.length} recept`);
+    }
+    
+    if (foundRecipes.length > 0) {
       // Random kiválasztás a megfelelő receptek közül
-      const randomIndex = Math.floor(Math.random() * mealRecipes.length);
-      const selectedRecipe = mealRecipes[randomIndex];
+      const randomIndex = Math.floor(Math.random() * foundRecipes.length);
+      const selectedRecipe = foundRecipes[randomIndex];
       return convertToStandardRecipe(selectedRecipe);
     }
     
@@ -168,6 +188,52 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     }
   };
 
+  const regenerateSpecificMeal = async (mealType: string, category: string, ingredient: string) => {
+    setRegeneratingMeal(mealType);
+    
+    try {
+      console.log(`🔄 ${mealType} újragenerálása...`, { category, ingredient });
+      
+      // Minimum 3 másodperces betöltési idő
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
+      
+      const recipe = generateRecipeForMeal(mealType, category, ingredient);
+
+      await minLoadingTime;
+
+      if (recipe) {
+        setDailyPlan(prev => ({
+          ...prev,
+          [mealType]: {
+            mealType,
+            recipe
+          }
+        }));
+
+        toast({
+          title: "Újragenerálás kész!",
+          description: `${mealType} új recepttel frissítve.`,
+        });
+      } else {
+        toast({
+          title: "Nincs találat",
+          description: "Nem található recept a megadott feltételekkel.",
+          variant: "destructive"
+        });
+      }
+      
+    } catch (error) {
+      console.error(`❌ Hiba a ${mealType} újragenerálásában:`, error);
+      toast({
+        title: "Hiba",
+        description: "Hiba történt az újragenerálás közben.",
+        variant: "destructive"
+      });
+    } finally {
+      setRegeneratingMeal(null);
+    }
+  };
+
   const regenerateAllMeals = async () => {
     setIsGenerating(true);
     
@@ -220,10 +286,12 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     return <LoadingChef />;
   }
 
+  const availableCategories = categories ? Object.keys(categories) : [];
+
   return (
     <>
       <div className="max-w-5xl mx-auto px-3 sm:px-6">
-        {/* Header Section with modern gradient */}
+        {/* Header Section */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
             <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
@@ -232,7 +300,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           <p className="text-white/80 text-base sm:text-lg px-4">Tervezd meg a teljes napodat személyre szabott receptekkel</p>
         </div>
 
-        {/* Back Button - Modern design */}
+        {/* Back Button */}
         <div className="mb-6 sm:mb-8">
           <Button
             onClick={onBackToSingle}
@@ -244,32 +312,31 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
         </div>
 
         <div className="space-y-6 sm:space-y-8">
-          {/* Meal Selection Card - Modern glassmorphism design */}
+          {/* Meal Selection Cards */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-2xl">
             <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
               <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
                 <Target className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                <CardTitle className="text-xl sm:text-2xl font-bold text-white">Válaszd ki a főétkezéseket</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-bold text-white">Válaszd ki és szabd személyre az étkezéseket</CardTitle>
               </div>
-              <p className="text-white/70 text-sm sm:text-base">Jelöld be azokat az étkezéseket, amelyekre recepteket szeretnél</p>
+              <p className="text-white/70 text-sm sm:text-base">Jelöld be az étkezéseket és válassz kategóriát vagy alapanyagot személyre szabáshoz</p>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {mealOptions.map((meal) => (
-                  <div key={meal.key} className="group">
-                    <label className="flex items-center p-3 sm:p-4 rounded-xl bg-white/10 border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-pointer group-hover:scale-105">
-                      <Checkbox
-                        id={`daily-${meal.key}`}
-                        checked={selectedMeals.includes(meal.key)}
-                        onCheckedChange={() => handleMealToggle(meal.key)}
-                        className="mr-3 sm:mr-4 border-white/50 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-                      />
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <span className="text-xl sm:text-2xl">{meal.emoji}</span>
-                        <span className="text-white font-medium text-base sm:text-lg">{meal.label.replace(/^[^\s]+\s/, '')}</span>
-                      </div>
-                    </label>
-                  </div>
+                  <MealSelectionCard
+                    key={meal.key}
+                    mealType={meal.key}
+                    mealLabel={meal.label.replace(/^[^\s]+\s/, '')}
+                    emoji={meal.emoji}
+                    isSelected={selectedMeals.includes(meal.key)}
+                    onToggle={handleMealToggle}
+                    categories={availableCategories}
+                    getIngredientsByCategory={getIngredientsByCategory}
+                    onGetRecipe={regenerateSpecificMeal}
+                    isGenerating={regeneratingMeal === meal.key}
+                    showRecipeButton={dailyPlan[meal.key]?.recipe !== undefined}
+                  />
                 ))}
               </div>
 
@@ -287,7 +354,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                   ) : (
                     <>
                       <Target className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                      Napi Étrend Adatbázisból
+                      Napi Étrend Generálása
                     </>
                   )}
                 </Button>
@@ -306,13 +373,13 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           </Card>
 
           {/* Loading Chef animáció */}
-          {isGenerating && (
+          {(isGenerating || regeneratingMeal) && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
               <LoadingChef />
             </div>
           )}
 
-          {/* Daily Meal Results - Enhanced modern design */}
+          {/* Daily Meal Results */}
           {showResults && !isGenerating && (
             <div className="space-y-4 sm:space-y-6">
               <div className="text-center mb-6 sm:mb-8">
@@ -394,6 +461,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                           </CollapsibleTrigger>
                           
                           <CollapsibleContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+                            {/* ... keep existing code (recipe details display) the same ... */}
                             <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
                               {mealData.recipe.képUrl && (
                                 <div className="text-center">
