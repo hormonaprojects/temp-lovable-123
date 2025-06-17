@@ -4,8 +4,9 @@ import { MealTypeSelector } from "./MealTypeSelector";
 import { CategoryIngredientSelector } from "./CategoryIngredientSelector";
 import { RecipeDisplay } from "./RecipeDisplay";
 import { Button } from "@/components/ui/button";
-import { Recipe, FoodData } from "@/types/recipe";
+import { Recipe } from "@/types/recipe";
 import { useToast } from "@/hooks/use-toast";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 
 interface SingleRecipeAppProps {
   user: any;
@@ -16,69 +17,17 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [selectedMealType, setSelectedMealType] = useState("");
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [foodData, setFoodData] = useState<FoodData | null>(null);
-  const [dataLoaded, setDataLoaded] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    loadFoodData();
-  }, []);
-
-  const loadFoodData = async () => {
-    try {
-      console.log('📊 Adatok betöltése...');
-      
-      // Mock data for demonstration - replace with actual API call
-      const mockFoodData: FoodData = {
-        mealTypes: {
-          'reggeli': {
-            categories: {
-              'Péksütemények': ['kenyér', 'kifli', 'croissant'],
-              'Tejtermékek': ['tej', 'joghurt', 'túró'],
-              'Tojás': ['rántotta', 'főtt tojás', 'omlett']
-            }
-          },
-          'tizórai': {
-            categories: {
-              'Gyümölcsök': ['alma', 'banán', 'narancs'],
-              'Snackek': ['müzli', 'diófélék', 'smoothie']
-            }
-          },
-          'ebéd': {
-            categories: {
-              'Húsételek': ['csirkemell', 'sertésszelet', 'marhahús'],
-              'Tésztafélék': ['spagetti', 'penne', 'lasagne'],
-              'Rizses ételek': ['risotto', 'paella', 'sushi']
-            }
-          },
-          'uzsonna': {
-            categories: {
-              'Sütemények': ['muffin', 'süti', 'torta'],
-              'Egészséges': ['gyümölcs', 'zöldség', 'magvak']
-            }
-          },
-          'vacsora': {
-            categories: {
-              'Könnyű ételek': ['saláta', 'leves', 'zöldség'],
-              'Húsételek': ['grillezett hús', 'hal', 'szárnyasok']
-            }
-          }
-        }
-      };
-
-      setFoodData(mockFoodData);
-      setDataLoaded(true);
-      console.log('✅ Adatok sikeresen betöltve');
-      
-    } catch (error) {
-      console.error('❌ Hiba az adatok betöltésekor:', error);
-      toast({
-        title: "Hiba",
-        description: "Nem sikerült betölteni az adatokat.",
-        variant: "destructive"
-      });
-    }
-  };
+  
+  const { 
+    categories, 
+    mealTypes, 
+    loading: dataLoading, 
+    getRecipesByMealType,
+    getRecipesByCategory,
+    getRandomRecipe,
+    convertToStandardRecipe
+  } = useSupabaseData();
 
   const getRecipe = async (category: string, ingredient: string) => {
     if (!selectedMealType) return;
@@ -87,40 +36,54 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setCurrentRecipe(null);
 
     try {
-      console.log('🔍 Recept keresése:', { selectedMealType, category, ingredient });
+      console.log('🔍 Recept keresése az adatbázisban:', { selectedMealType, category, ingredient });
       
-      // Simulate API call with mock recipe
-      const mockRecipe: Recipe = {
-        név: ingredient ? `${ingredient} alapú ${selectedMealType}` : `Random ${selectedMealType}`,
-        hozzávalók: [
-          ingredient || 'Alapanyag 1',
-          'Só, bors',
-          'Olaj',
-          'Víz'
-        ],
-        elkészítés: '1. Készítsd elő az alapanyagokat. 2. Keverd össze a hozzávalókat. 3. Főzd meg megfelelő hőmérsékleten. 4. Tálald és kóstold meg!',
-        elkészítésiIdő: '30 perc',
-        fehérje: '25',
-        szénhidrát: '45',
-        zsír: '12',
-        képUrl: 'https://via.placeholder.com/400x300?text=Recept+Kép'
-      };
+      let foundRecipes = [];
 
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setCurrentRecipe(mockRecipe);
-      
-      toast({
-        title: "Recept kész!",
-        description: `${mockRecipe.név} sikeresen betöltve.`,
-      });
+      if (category && ingredient) {
+        // Specifikus kategória és hozzávaló alapján
+        foundRecipes = getRecipesByCategory(category, ingredient);
+      } else if (category) {
+        // Csak kategória alapján
+        foundRecipes = getRecipesByCategory(category);
+      } else {
+        // Random recept az étkezés típus alapján
+        foundRecipes = getRecipesByMealType(selectedMealType);
+      }
+
+      // Ha nincs találat az étkezés típus alapján, próbáljunk random receptet
+      if (foundRecipes.length === 0) {
+        const randomRecipe = getRandomRecipe();
+        if (randomRecipe) {
+          foundRecipes = [randomRecipe];
+        }
+      }
+
+      if (foundRecipes.length > 0) {
+        // Random kiválasztás a találatok közül
+        const randomIndex = Math.floor(Math.random() * foundRecipes.length);
+        const selectedSupabaseRecipe = foundRecipes[randomIndex];
+        const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
+        
+        setCurrentRecipe(standardRecipe);
+        
+        toast({
+          title: "Recept betöltve!",
+          description: `${standardRecipe.név} sikeresen betöltve az adatbázisból.`,
+        });
+      } else {
+        toast({
+          title: "Nincs találat",
+          description: "Nem található recept a megadott feltételekkel.",
+          variant: "destructive"
+        });
+      }
 
     } catch (error) {
       console.error('❌ Hiba a recept kérésekor:', error);
       toast({
         title: "Hiba",
-        description: "Nem sikerült betölteni a receptet.",
+        description: "Nem sikerült betölteni a receptet az adatbázisból.",
         variant: "destructive"
       });
     } finally {
@@ -130,7 +93,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
 
   const regenerateRecipe = () => {
     if (selectedMealType) {
-      getRecipe('', ''); // Get random recipe
+      getRecipe('', ''); // Random recept
     }
   };
 
@@ -139,11 +102,21 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setCurrentRecipe(null);
   };
 
-  if (!dataLoaded) {
+  // Formázott adatstruktúra a meglévő komponensekhez
+  const foodData = {
+    mealTypes: Object.keys(mealTypes).reduce((acc, mealType) => {
+      acc[mealType] = {
+        categories: categories
+      };
+      return acc;
+    }, {} as any)
+  };
+
+  if (dataLoading) {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
-        <div className="text-white text-xl font-semibold">Adatok betöltése...</div>
+        <div className="text-white text-xl font-semibold">Adatok betöltése az adatbázisból...</div>
       </div>
     );
   }

@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 
 interface User {
   id: string;
@@ -39,6 +41,14 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
   const [showResults, setShowResults] = useState(false);
   const { toast } = useToast();
 
+  const { 
+    mealTypes,
+    getRecipesByMealType,
+    getRandomRecipe,
+    convertToStandardRecipe,
+    loading: dataLoading
+  } = useSupabaseData();
+
   const mealOptions = [
     { key: "reggeli", label: "🌅 Reggeli" },
     { key: "tizórai", label: "☕ Tízórai" },
@@ -55,34 +65,26 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     );
   };
 
-  const generateMockRecipe = (mealType: string) => {
-    const recipes = {
-      reggeli: [
-        { név: "Almás Muffin Répával", hozzávalók: ["alma", "répa", "liszt", "cukor", "tojás"], elkészítés: "Keverjük össze a hozzávalókat és süssük meg.", elkészítésiIdő: "30 perc", szénhidrát: "25g", fehérje: "8g", zsír: "12g" },
-        { név: "Avokádó Saláta kovászos kenyérrel", hozzávalók: ["avokádó", "kovászos kenyér", "paradicsom", "só", "bors"], elkészítés: "Vágjuk fel az avokádót és tálaljuk a kenyérrel.", elkészítésiIdő: "10 perc", szénhidrát: "30g", fehérje: "10g", zsír: "15g" }
-      ],
-      tizórai: [
-        { név: "Gyümölcs saláta", hozzávalók: ["alma", "banán", "narancs", "szőlő"], elkészítés: "Vágjuk fel a gyümölcsöket és keverjük össze.", elkészítésiIdő: "5 perc", szénhidrát: "20g", fehérje: "2g", zsír: "1g" },
-        { név: "Joghurt müzlivel", hozzávalók: ["joghurt", "müzli", "méz"], elkészítés: "Keverjük össze a joghurtot a müzlivel.", elkészítésiIdő: "2 perc", szénhidrát: "25g", fehérje: "12g", zsír: "8g" }
-      ],
-      ebéd: [
-        { név: "Ananászos Csirke", hozzávalók: ["csirkemell", "ananász", "rizs", "szójaszósz"], elkészítés: "Süssük meg a csirkét az ananásszal.", elkészítésiIdő: "45 perc", szénhidrát: "40g", fehérje: "35g", zsír: "18g" },
-        { név: "Ázsiai lazacos quinoa", hozzávalók: ["lazac", "quinoa", "zöldségek", "szezám"], elkészítés: "Főzzük meg a quinoát és süssük meg a lazacot.", elkészítésiIdő: "35 perc", szénhidrát: "30g", fehérje: "40g", zsír: "22g" }
-      ],
-      uzsonna: [
-        { név: "Almás pite", hozzávalók: ["alma", "liszt", "vaj", "cukor"], elkészítés: "Készítsünk tésztát és töltsük meg almával.", elkészítésiIdő: "60 perc", szénhidrát: "45g", fehérje: "6g", zsír: "20g" },
-        { név: "Túrós pogácsa", hozzávalók: ["túró", "liszt", "vaj", "só"], elkészítés: "Gyúrjuk össze a tésztát és süssük meg.", elkészítésiIdő: "40 perc", szénhidrát: "30g", fehérje: "15g", zsír: "18g" }
-      ],
-      vacsora: [
-        { név: "Avokádós Csirkés Tortilla", hozzávalók: ["tortilla", "csirkemell", "avokádó", "saláta"], elkészítés: "Töltsük meg a tortillát és tekerjük fel.", elkészítésiIdő: "20 perc", szénhidrát: "35g", fehérje: "28g", zsír: "16g" },
-        { név: "Buddha tál", hozzávalók: ["quinoa", "sült zöldségek", "tahini", "csicseriborsó"], elkészítés: "Tálaljuk a quinoát a sült zöldségekkel.", elkészítésiIdő: "30 perc", szénhidrát: "40g", fehérje: "18g", zsír: "14g" }
-      ]
-    };
-
-    const mealRecipes = recipes[mealType as keyof typeof recipes] || [];
-    if (mealRecipes.length === 0) return null;
+  const generateRecipeForMeal = (mealType: string) => {
+    console.log(`🔍 Recept keresése: ${mealType}`);
     
-    return mealRecipes[Math.floor(Math.random() * mealRecipes.length)];
+    // Próbáljunk receptet találni az étkezés típus alapján
+    const mealRecipes = getRecipesByMealType(mealType);
+    
+    if (mealRecipes.length > 0) {
+      // Random kiválasztás a megfelelő receptek közül
+      const randomIndex = Math.floor(Math.random() * mealRecipes.length);
+      const selectedRecipe = mealRecipes[randomIndex];
+      return convertToStandardRecipe(selectedRecipe);
+    }
+    
+    // Ha nincs specifikus recept, próbáljunk random receptet
+    const randomRecipe = getRandomRecipe();
+    if (randomRecipe) {
+      return convertToStandardRecipe(randomRecipe);
+    }
+    
+    return null;
   };
 
   const generateDailyMealPlan = async () => {
@@ -97,50 +99,89 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
     setIsGenerating(true);
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      console.log('🍽️ Napi étrend generálása az adatbázisból...', selectedMeals);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const newPlan: MealPlan = {};
-    
-    selectedMeals.forEach(mealType => {
-      newPlan[mealType] = {
-        mealType,
-        recipe: generateMockRecipe(mealType)
-      };
-    });
+      const newPlan: MealPlan = {};
+      
+      selectedMeals.forEach(mealType => {
+        const recipe = generateRecipeForMeal(mealType);
+        newPlan[mealType] = {
+          mealType,
+          recipe
+        };
+      });
 
-    setDailyPlan(newPlan);
-    setShowResults(true);
-    setIsGenerating(false);
+      setDailyPlan(newPlan);
+      setShowResults(true);
 
-    toast({
-      title: "Sikeres generálás!",
-      description: "A napi étrendet sikeresen létrehoztuk.",
-    });
+      const successfulRecipes = Object.values(newPlan).filter(meal => meal.recipe !== null).length;
+      
+      toast({
+        title: "Sikeres generálás!",
+        description: `${successfulRecipes} recept betöltve az adatbázisból.`,
+      });
+      
+    } catch (error) {
+      console.error('❌ Hiba a napi étrend generálásában:', error);
+      toast({
+        title: "Hiba",
+        description: "Hiba történt az étrend generálása közben.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const regenerateAllMeals = async () => {
     setIsGenerating(true);
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const newPlan: MealPlan = {};
-    
-    Object.keys(dailyPlan).forEach(mealType => {
-      newPlan[mealType] = {
-        mealType,
-        recipe: generateMockRecipe(mealType)
-      };
-    });
+    try {
+      console.log('🔄 Összes étel újragenerálása...');
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const newPlan: MealPlan = {};
+      
+      Object.keys(dailyPlan).forEach(mealType => {
+        const recipe = generateRecipeForMeal(mealType);
+        newPlan[mealType] = {
+          mealType,
+          recipe
+        };
+      });
 
-    setDailyPlan(newPlan);
-    setIsGenerating(false);
+      setDailyPlan(newPlan);
 
-    toast({
-      title: "Újragenerálás kész!",
-      description: "Az összes ételt újrageneráltuk.",
-    });
+      toast({
+        title: "Újragenerálás kész!",
+        description: "Az összes ételt újrageneráltuk az adatbázisból.",
+      });
+      
+    } catch (error) {
+      console.error('❌ Hiba az újragenerálásban:', error);
+      toast({
+        title: "Hiba",
+        description: "Hiba történt az újragenerálás közben.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  if (dataLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+        <div className="text-white text-xl font-semibold">Adatok betöltése az adatbázisból...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-6">
@@ -193,7 +234,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                     Generálás...
                   </>
                 ) : (
-                  "🎯 Random Napi Étrend"
+                  "🎯 Napi Étrend Adatbázisból"
                 )}
               </Button>
               
@@ -250,13 +291,13 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                               <span className="font-semibold">⏱️ Elkészítési idő:</span> {mealData.recipe.elkészítésiIdő}
                             </div>
                             <div className="text-sm">
-                              <span className="font-semibold">🍞 Szénhidrát:</span> {mealData.recipe.szénhidrát}
+                              <span className="font-semibold">🍞 Szénhidrát:</span> {mealData.recipe.szénhidrát}g
                             </div>
                             <div className="text-sm">
-                              <span className="font-semibold">🥩 Fehérje:</span> {mealData.recipe.fehérje}
+                              <span className="font-semibold">🥩 Fehérje:</span> {mealData.recipe.fehérje}g
                             </div>
                             <div className="text-sm">
-                              <span className="font-semibold">🥑 Zsír:</span> {mealData.recipe.zsír}
+                              <span className="font-semibold">🥑 Zsír:</span> {mealData.recipe.zsír}g
                             </div>
                           </div>
                         </div>
@@ -267,7 +308,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                         </div>
                       </div>
                     ) : (
-                      <p className="text-gray-500">Nem sikerült receptet találni ehhez az étkezéshez.</p>
+                      <p className="text-gray-500">Nem sikerült receptet találni ehhez az étkezéshez az adatbázisban.</p>
                     )}
                   </CardContent>
                 </Card>
