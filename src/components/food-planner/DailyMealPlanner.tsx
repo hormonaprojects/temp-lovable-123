@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ChevronDown, Clock, Users, Calendar, Target } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { StarRating } from "./StarRating";
+import { LoadingChef } from "@/components/ui/LoadingChef";
 
 interface User {
   id: string;

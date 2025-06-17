@@ -46,9 +46,8 @@ export function LoadingChef({ messages = defaultMessages, className = "" }: Load
           </div>
           
           {/* Kanál */}
-          <div className="absolute -top-2 right-2 transform rotate-45 animate-spin-slow">
+          <div className="absolute -top-2 right-2 transform rotate-45 animate-gentle-stir">
             <Utensils className="w-8 h-8 text-gray-300" style={{ 
-              animation: 'gentle-stir 3s ease-in-out infinite',
               transformOrigin: 'bottom center'
             }} />
           </div>
@@ -87,23 +86,6 @@ export function LoadingChef({ messages = defaultMessages, className = "" }: Load
       </div>
       
       <div className="text-white/70 text-sm">Kérjük várjon...</div>
-
-      {/* Hozzáadott CSS animációk a style tag-ben */}
-      <style jsx>{`
-        @keyframes gentle-stir {
-          0%, 100% { transform: rotate(45deg); }
-          50% { transform: rotate(75deg); }
-        }
-        
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        .animate-spin-slow {
-          animation: spin-slow 4s linear infinite;
-        }
-      `}</style>
     </div>
   );
 }
