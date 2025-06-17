@@ -139,7 +139,7 @@ export function useSupabaseData() {
                 .replace(/ó/g, 'o')
                 .replace(/á/g, 'a')
                 .replace(/é/g, 'e')
-                .replace /ű/g, 'u')
+                .replace(/ű/g, 'u')
                 .replace(/ő/g, 'o');
               return normalizedKey === normalizedMealType;
             });
@@ -214,53 +214,61 @@ export function useSupabaseData() {
       return [];
     }
 
-    // Először az étkezési típus alapján szűrjük a recepteket
+    // 1. LÉPÉS: Először az étkezési típus alapján szűrjük a recepteket (Étkezések tábla)
     const allowedRecipeNames = mealTypeRecipes[mealType.toLowerCase()] || [];
-    console.log(`📋 Engedélyezett receptek ${mealType}-hoz:`, allowedRecipeNames.length);
+    console.log(`📋 Engedélyezett receptek ${mealType}-hoz az Étkezések tábla alapján:`, allowedRecipeNames.length);
 
     if (allowedRecipeNames.length === 0) {
-      console.log('❌ Nincs recept ehhez az étkezési típushoz');
+      console.log('❌ Nincs recept ehhez az étkezési típushoz az Étkezések táblában');
       return [];
     }
 
-    // Csak azokat a recepteket vizsgáljuk, amelyek az étkezési típushoz tartoznak
+    // 2. LÉPÉS: Csak azokat a recepteket vizsgáljuk, amelyek az étkezési típushoz tartoznak
     const mealTypeFilteredRecipes = recipes.filter(recipe => 
       allowedRecipeNames.includes(recipe['Recept_Neve'])
     );
 
     console.log(`📋 Étkezési típus alapján szűrt receptek:`, mealTypeFilteredRecipes.length);
 
-    // Ha nincs konkrét alapanyag megadva, akkor a kategória alapanyagai közül bármelyiket elfogadjuk
-    if (!ingredient) {
-      const categoryIngredients = categories[category] || [];
-      console.log(`🥕 Kategória alapanyagok (${category}):`, categoryIngredients);
-      
-      const foundRecipes = mealTypeFilteredRecipes.filter(recipe => {
-        // Összes hozzávaló összegyűjtése a receptből
-        const allIngredients = [
-          recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
-          recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
-          recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
-          recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
-          recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
-          recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
-        ].filter(Boolean);
+    // 3. LÉPÉS: Kategória alapú szűrés
+    const categoryIngredients = categories[category] || [];
+    console.log(`🥕 Kategória alapanyagok (${category}):`, categoryIngredients);
 
-        // A kategória bármely alapanyagával tartalmaznia kell
-        return categoryIngredients.some(categoryIngredient =>
-          allIngredients.some(ing => 
-            ing && ing.toLowerCase().includes(categoryIngredient.toLowerCase())
-          )
-        );
-      });
-
-      console.log(`✅ Végeredmény (kategória ${category}, ${mealType}):`, foundRecipes.length, 'db');
-      return foundRecipes;
+    if (categoryIngredients.length === 0) {
+      console.log('❌ Nincs alapanyag ehhez a kategóriához');
+      return [];
     }
 
-    // Ha konkrét alapanyag van megadva, akkor SZIGORÚAN azt keressük
-    const foundRecipes = mealTypeFilteredRecipes.filter(recipe => {
-      // Összes hozzávaló összegyűjtése a receptből
+    // Receptek szűrése kategória alapján
+    const categoryFilteredRecipes = mealTypeFilteredRecipes.filter(recipe => {
+      const allIngredients = [
+        recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
+        recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
+        recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
+        recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
+        recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
+        recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
+      ].filter(Boolean);
+
+      // A kategória bármely alapanyagával tartalmaznia kell
+      const hasCategory = categoryIngredients.some(categoryIngredient =>
+        allIngredients.some(ing => 
+          ing && ing.toLowerCase().includes(categoryIngredient.toLowerCase())
+        )
+      );
+
+      return hasCategory;
+    });
+
+    console.log(`📋 Kategória alapján szűrt receptek:`, categoryFilteredRecipes.length);
+
+    // 4. LÉPÉS: Ha konkrét alapanyag van megadva, akkor SZIGORÚAN azt keressük
+    if (!ingredient) {
+      console.log(`✅ Végeredmény (kategória ${category}, ${mealType}):`, categoryFilteredRecipes.length, 'db');
+      return categoryFilteredRecipes;
+    }
+
+    const finalFilteredRecipes = categoryFilteredRecipes.filter(recipe => {
       const allIngredients = [
         recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
         recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
@@ -280,12 +288,12 @@ export function useSupabaseData() {
       return hasSpecificIngredient;
     });
 
-    console.log(`✅ Végeredmény (kategória ${category}, alapanyag: ${ingredient}, ${mealType}):`, foundRecipes.length, 'db');
-    foundRecipes.forEach(recipe => {
+    console.log(`✅ Végeredmény (kategória ${category}, alapanyag: ${ingredient}, ${mealType}):`, finalFilteredRecipes.length, 'db');
+    finalFilteredRecipes.forEach(recipe => {
       console.log(`✅ Talált recept: ${recipe['Recept_Neve']}`);
     });
 
-    return foundRecipes;
+    return finalFilteredRecipes;
   };
 
   const getRandomRecipe = (): SupabaseRecipe | null => {
