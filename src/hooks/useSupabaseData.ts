@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -205,11 +204,11 @@ export function useSupabaseData() {
     return foundRecipes;
   };
 
-  const getRecipesByCategory = (category: string, ingredient?: string): SupabaseRecipe[] => {
+  const getRecipesByCategory = (category: string, ingredient?: string, mealType?: string): SupabaseRecipe[] => {
     const categoryIngredients = categories[category] || [];
     console.log(`🔍 Kategória alapanyagok (${category}):`, categoryIngredients);
     
-    const foundRecipes = recipes.filter(recipe => {
+    let foundRecipes = recipes.filter(recipe => {
       // Összes hozzávaló összegyűjtése a receptből
       const allIngredients = [
         recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
@@ -235,7 +234,15 @@ export function useSupabaseData() {
       );
     });
 
-    console.log(`🔍 Kategória receptek (${category}, ${ingredient || 'összes'}):`, foundRecipes.length, 'db');
+    // Ha meg van adva az étkezési típus, akkor szűrjük az eredményt
+    if (mealType) {
+      const allowedRecipeNames = mealTypeRecipes[mealType.toLowerCase()] || [];
+      foundRecipes = foundRecipes.filter(recipe => 
+        allowedRecipeNames.includes(recipe['Recept_Neve'])
+      );
+    }
+
+    console.log(`🔍 Kategória receptek (${category}, ${ingredient || 'összes'}, ${mealType || 'minden típus'}):`, foundRecipes.length, 'db');
     return foundRecipes;
   };
 

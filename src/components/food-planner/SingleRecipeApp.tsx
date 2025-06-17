@@ -48,11 +48,11 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       let foundRecipes = [];
 
       if (category && ingredient) {
-        // Specifikus kategória és hozzávaló alapján
-        foundRecipes = getRecipesByCategory(category, ingredient);
+        // Specifikus kategória és hozzávaló alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
+        foundRecipes = getRecipesByCategory(category, ingredient, selectedMealType);
       } else if (category) {
-        // Csak kategória alapján
-        foundRecipes = getRecipesByCategory(category);
+        // Csak kategória alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
+        foundRecipes = getRecipesByCategory(category, undefined, selectedMealType);
       } else {
         // Random recept az étkezés típus alapján
         foundRecipes = getRecipesByMealType(selectedMealType);
@@ -81,7 +81,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       } else {
         toast({
           title: "Nincs találat",
-          description: "Nem található recept a megadott feltételekkel.",
+          description: "Nem található recept a megadott feltételekkel ehhez az étkezési típushoz.",
           variant: "destructive"
         });
       }
