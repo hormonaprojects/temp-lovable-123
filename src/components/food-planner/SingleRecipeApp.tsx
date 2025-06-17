@@ -36,7 +36,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setCurrentRecipe(null);
 
     try {
-      console.log('🔍 Recept keresése az adatbázisban:', { selectedMealType, category, ingredient });
+      console.log('🔍 Recept keresése:', { selectedMealType, category, ingredient });
       
       let foundRecipes = [];
 
@@ -102,21 +102,20 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setCurrentRecipe(null);
   };
 
-  // Formázott adatstruktúra a meglévő komponensekhez
+  // Adatstruktúra előkészítése a komponensek számára
   const foodData = {
-    mealTypes: Object.keys(mealTypes).reduce((acc, mealType) => {
-      acc[mealType] = {
-        categories: categories
-      };
-      return acc;
-    }, {} as any)
+    mealTypes: mealTypes,
+    categories: categories
   };
+
+  console.log('🗂️ FoodData átadva komponenseknek:', foodData);
 
   if (dataLoading) {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
         <div className="text-white text-xl font-semibold">Adatok betöltése az adatbázisból...</div>
+        <div className="text-white/70 mt-2">Kérjük várjon...</div>
       </div>
     );
   }
@@ -149,7 +148,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         foodData={foodData}
       />
 
-      {selectedMealType && foodData && (
+      {selectedMealType && (
         <CategoryIngredientSelector
           selectedMealType={selectedMealType}
           foodData={foodData}
