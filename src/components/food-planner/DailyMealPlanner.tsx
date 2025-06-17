@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,8 +131,8 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     try {
       console.log('🍽️ Napi étrend generálása az adatbázisból...', selectedMeals);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Minimum 4 másodperces betöltési idő
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 4000));
 
       const newPlan: MealPlan = {};
       
@@ -142,6 +143,8 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           recipe
         };
       });
+
+      await minLoadingTime;
 
       setDailyPlan(newPlan);
       setShowResults(true);
@@ -171,7 +174,8 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     try {
       console.log('🔄 Összes étel újragenerálása...');
       
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Minimum 3 másodperces betöltési idő
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
       
       const newPlan: MealPlan = {};
       
@@ -182,6 +186,8 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           recipe
         };
       });
+
+      await minLoadingTime;
 
       setDailyPlan(newPlan);
 
@@ -290,8 +296,15 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           </CardContent>
         </Card>
 
+        {/* Loading Chef animáció */}
+        {isGenerating && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <LoadingChef />
+          </div>
+        )}
+
         {/* Daily Meal Results - Enhanced modern design */}
-        {showResults && (
+        {showResults && !isGenerating && (
           <div className="space-y-6">
             <div className="text-center mb-8">
               <h3 className="text-3xl font-bold text-white mb-2">🍽️ Mai Étrendem</h3>
@@ -320,16 +333,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                 <p className="text-white/90 text-xl font-semibold mt-2">{mealData.recipe.név}</p>
                               )}
                             </div>
-                            {mealData.recipe?.képUrl && (
-                              <img 
-                                src={mealData.recipe.képUrl} 
-                                alt={mealData.recipe.név}
-                                className="w-20 h-20 object-cover rounded-xl shadow-lg border-2 border-white/30"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            )}
                           </div>
                         </div>
                         

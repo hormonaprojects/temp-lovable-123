@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { StarRating } from "./StarRating";
 import { Recipe } from "@/types/recipe";
@@ -47,7 +48,11 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe }: 
   };
 
   if (isLoading) {
-    return <LoadingChef />;
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <LoadingChef />
+      </div>
+    );
   }
 
   if (!recipe) {

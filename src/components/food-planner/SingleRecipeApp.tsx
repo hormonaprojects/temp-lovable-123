@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
 import { CategoryIngredientSelector } from "./CategoryIngredientSelector";
@@ -46,6 +47,9 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     try {
       console.log('🔍 SZIGORÚ recept keresése:', { selectedMealType, category, ingredient });
       
+      // Minimum 3 másodperces betöltési idő
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
+      
       let foundRecipes = [];
 
       if (category && ingredient) {
@@ -61,6 +65,9 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         foundRecipes = getRecipesByMealType(selectedMealType);
         console.log(`🎯 Étkezési típus keresés eredménye: ${foundRecipes.length} recept`);
       }
+
+      // Várjuk meg a minimum betöltési időt
+      await minLoadingTime;
 
       // Ha nincs találat, NE próbáljunk random receptet - maradjunk szigorúak
       if (foundRecipes.length > 0) {
@@ -95,11 +102,58 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     }
   };
 
-  const regenerateRecipe = () => {
+  const regenerateRecipe = async () => {
     if (selectedMealType) {
-      // Ugyanazokkal a paraméterekkel keresünk újra - BELEÉRTVE az étkezési típust is!
-      console.log('🔄 Újragenerálás ugyanazokkal a paraméterekkel:', lastSearchParams);
-      getRecipe(lastSearchParams.category, lastSearchParams.ingredient);
+      setIsLoading(true);
+      setCurrentRecipe(null);
+      
+      try {
+        // Minimum 3 másodperces betöltési idő
+        const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Ugyanazokkal a paraméterekkel keresünk újra
+        console.log('🔄 Újragenerálás ugyanazokkal a paraméterekkel:', lastSearchParams);
+        
+        let foundRecipes = [];
+        
+        if (lastSearchParams.category && lastSearchParams.ingredient) {
+          foundRecipes = getRecipesByCategory(lastSearchParams.category, lastSearchParams.ingredient, selectedMealType);
+        } else if (lastSearchParams.category) {
+          foundRecipes = getRecipesByCategory(lastSearchParams.category, undefined, selectedMealType);
+        } else {
+          foundRecipes = getRecipesByMealType(selectedMealType);
+        }
+
+        await minLoadingTime;
+
+        if (foundRecipes.length > 0) {
+          const randomIndex = Math.floor(Math.random() * foundRecipes.length);
+          const selectedSupabaseRecipe = foundRecipes[randomIndex];
+          const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
+          
+          setCurrentRecipe(standardRecipe);
+          
+          toast({
+            title: "Új recept betöltve!",
+            description: `${standardRecipe.név} sikeresen betöltve az adatbázisból.`,
+          });
+        } else {
+          toast({
+            title: "Nincs találat",
+            description: "Nem található másik recept ezekkel a feltételekkel.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error('❌ Hiba az újrageneráláskor:', error);
+        toast({
+          title: "Hiba",
+          description: "Nem sikerült újragenerálni a receptet.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
