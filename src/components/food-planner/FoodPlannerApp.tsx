@@ -30,7 +30,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
           <Button
             onClick={onLogout}
             variant="outline"
-            className="text-white border-white/30 hover:bg-white/10"
+            className="text-white border-white/30 hover:bg-white/10 bg-white/10"
           >
             Kijelentkezés
           </Button>

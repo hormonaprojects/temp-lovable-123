@@ -1,11 +1,12 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown, Clock, Users } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { StarRating } from "./StarRating";
 
 interface User {
   id: string;
@@ -39,6 +40,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
   const [dailyPlan, setDailyPlan] = useState<MealPlan>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [openMeals, setOpenMeals] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const { 
@@ -46,15 +48,16 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     getRecipesByMealType,
     getRandomRecipe,
     convertToStandardRecipe,
+    saveRating,
     loading: dataLoading
   } = useSupabaseData();
 
   const mealOptions = [
-    { key: "reggeli", label: "🌅 Reggeli" },
-    { key: "tizórai", label: "☕ Tízórai" },
-    { key: "ebéd", label: "🍛 Ebéd" },
-    { key: "uzsonna", label: "🥨 Uzsonna" },
-    { key: "vacsora", label: "🌙 Vacsora" }
+    { key: "reggeli", label: "🌅 Reggeli", emoji: "🌅" },
+    { key: "tizórai", label: "☕ Tízórai", emoji: "☕" },
+    { key: "ebéd", label: "🍛 Ebéd", emoji: "🍛" },
+    { key: "uzsonna", label: "🥨 Uzsonna", emoji: "🥨" },
+    { key: "vacsora", label: "🌙 Vacsora", emoji: "🌙" }
   ];
 
   const handleMealToggle = (mealKey: string) => {
@@ -63,6 +66,30 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
         ? prev.filter(m => m !== mealKey)
         : [...prev, mealKey]
     );
+  };
+
+  const toggleMealDetails = (mealType: string) => {
+    setOpenMeals(prev => ({
+      ...prev,
+      [mealType]: !prev[mealType]
+    }));
+  };
+
+  const handleRating = async (recipeName: string, rating: number) => {
+    const success = await saveRating(recipeName, rating);
+    
+    if (success) {
+      toast({
+        title: "Köszönjük az értékelést!",
+        description: `${rating}/5 csillag mentve az adatbázisba.`,
+      });
+    } else {
+      toast({
+        title: "Hiba",
+        description: "Nem sikerült menteni az értékelést.",
+        variant: "destructive"
+      });
+    }
   };
 
   const generateRecipeForMeal = (mealType: string) => {
@@ -190,7 +217,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
         <Button
           onClick={onBackToSingle}
           variant="outline"
-          className="text-white border-white/30 hover:bg-white/10"
+          className="text-white border-white/30 hover:bg-white/10 bg-white/10"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Vissza az egyedi receptekhez
@@ -199,9 +226,9 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
       <div className="space-y-6">
         {/* Meal Selection */}
-        <Card>
+        <Card className="bg-white/95 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-center">Válaszd ki a főétkezéseket:</CardTitle>
+            <CardTitle className="text-center text-gray-800">Válaszd ki a főétkezéseket:</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
@@ -214,7 +241,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                   />
                   <label 
                     htmlFor={`daily-${meal.key}`} 
-                    className="text-sm font-medium cursor-pointer"
+                    className="text-sm font-medium cursor-pointer text-gray-700"
                   >
                     {meal.label}
                   </label>
@@ -243,7 +270,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                   onClick={regenerateAllMeals}
                   disabled={isGenerating}
                   variant="outline"
-                  className="hover:bg-gray-100"
+                  className="hover:bg-gray-100 border-gray-300"
                 >
                   🔄 Összes Újragenerálás
                 </Button>
@@ -259,60 +286,123 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
               🍽️ Mai Étrendem
             </h3>
             
-            <div className="grid gap-6">
-              {Object.entries(dailyPlan).map(([mealType, mealData]) => (
-                <Card key={mealType} className="shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      {mealOptions.find(m => m.key === mealType)?.label || mealType}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {mealData.recipe ? (
-                      <div className="space-y-4">
-                        <h4 className="text-xl font-semibold text-green-700">
-                          {mealData.recipe.név}
-                        </h4>
-                        
-                        <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid gap-4">
+              {Object.entries(dailyPlan).map(([mealType, mealData]) => {
+                const mealOption = mealOptions.find(m => m.key === mealType);
+                const isOpen = openMeals[mealType] || false;
+                
+                return (
+                  <Card key={mealType} className="bg-gradient-to-br from-purple-500 to-blue-600 text-white shadow-lg overflow-hidden">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{mealOption?.emoji}</span>
                           <div>
-                            <h5 className="font-semibold mb-2">🥘 Hozzávalók:</h5>
-                            <ul className="list-disc list-inside space-y-1">
-                              {mealData.recipe.hozzávalók.map((ingredient, idx) => (
-                                <li key={idx} className="text-sm text-gray-600">
-                                  {ingredient}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="text-sm">
-                              <span className="font-semibold">⏱️ Elkészítési idő:</span> {mealData.recipe.elkészítésiIdő}
-                            </div>
-                            <div className="text-sm">
-                              <span className="font-semibold">🍞 Szénhidrát:</span> {mealData.recipe.szénhidrát}g
-                            </div>
-                            <div className="text-sm">
-                              <span className="font-semibold">🥩 Fehérje:</span> {mealData.recipe.fehérje}g
-                            </div>
-                            <div className="text-sm">
-                              <span className="font-semibold">🥑 Zsír:</span> {mealData.recipe.zsír}g
-                            </div>
+                            <CardTitle className="text-white text-xl">
+                              {mealOption?.label?.replace(/^[^\s]+\s/, '') || mealType}
+                            </CardTitle>
+                            {mealData.recipe && (
+                              <p className="text-white/80 text-sm mt-1">{mealData.recipe.név}</p>
+                            )}
                           </div>
                         </div>
                         
-                        <div>
-                          <h5 className="font-semibold mb-2">👨‍🍳 Elkészítés:</h5>
-                          <p className="text-sm text-gray-600">{mealData.recipe.elkészítés}</p>
-                        </div>
+                        {mealData.recipe && (
+                          <div className="flex items-center gap-2 text-white/80 text-sm">
+                            <Clock className="w-4 h-4" />
+                            {mealData.recipe.elkészítésiIdő}
+                            <Users className="w-4 h-4 ml-2" />
+                            {mealData.recipe.hozzávalók?.length || 0} hozzávaló
+                          </div>
+                        )}
                       </div>
+                    </CardHeader>
+
+                    {mealData.recipe ? (
+                      <Collapsible open={isOpen} onOpenChange={() => toggleMealDetails(mealType)}>
+                        <CollapsibleTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-between text-white hover:bg-white/10 px-6 py-2"
+                          >
+                            <span className="text-sm">Kattints a részletekért</span>
+                            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                          </Button>
+                        </CollapsibleTrigger>
+                        
+                        <CollapsibleContent className="px-6 pb-6">
+                          <div className="space-y-4 mt-4">
+                            {mealData.recipe.képUrl && (
+                              <div className="text-center">
+                                <img 
+                                  src={mealData.recipe.képUrl} 
+                                  alt={mealData.recipe.név}
+                                  className="w-32 h-32 object-cover rounded-lg mx-auto shadow-md"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            )}
+                            
+                            <div className="bg-white/10 rounded-lg p-4">
+                              <h5 className="font-semibold mb-2 text-white">🥘 Hozzávalók ({mealData.recipe.hozzávalók?.length || 0} db):</h5>
+                              <ul className="space-y-1">
+                                {mealData.recipe.hozzávalók?.map((ingredient, idx) => (
+                                  <li key={idx} className="text-sm text-white/90 flex items-start">
+                                    <span className="text-green-300 mr-2">•</span>
+                                    {ingredient}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            <div className="bg-white/10 rounded-lg p-4">
+                              <h5 className="font-semibold mb-2 text-white">👨‍🍳 Elkészítés:</h5>
+                              <div 
+                                className="text-sm text-white/90 leading-relaxed"
+                                dangerouslySetInnerHTML={{ 
+                                  __html: mealData.recipe.elkészítés?.replace(/(\d+\.\s)/g, '<br><strong>$1</strong>') || '' 
+                                }}
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                              <div className="bg-white/10 rounded-lg p-2">
+                                <div className="text-xs text-white/70">Szénhidrát</div>
+                                <div className="font-semibold text-white">{mealData.recipe.szénhidrát}g</div>
+                              </div>
+                              <div className="bg-white/10 rounded-lg p-2">
+                                <div className="text-xs text-white/70">Fehérje</div>
+                                <div className="font-semibold text-white">{mealData.recipe.fehérje}g</div>
+                              </div>
+                              <div className="bg-white/10 rounded-lg p-2">
+                                <div className="text-xs text-white/70">Zsír</div>
+                                <div className="font-semibold text-white">{mealData.recipe.zsír}g</div>
+                              </div>
+                            </div>
+
+                            <div className="text-center pt-4 border-t border-white/20">
+                              <p className="text-sm text-white/80 mb-2">Értékeld a receptet:</p>
+                              <StarRating 
+                                recipeName={mealData.recipe.név} 
+                                onRate={(rating) => handleRating(mealData.recipe!.név, rating)}
+                                className="justify-center"
+                              />
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
                     ) : (
-                      <p className="text-gray-500">Nem sikerült receptet találni ehhez az étkezéshez az adatbázisban.</p>
+                      <CardContent>
+                        <p className="text-white/70 text-center py-4">
+                          Nem sikerült receptet találni ehhez az étkezéshez az adatbázisban.
+                        </p>
+                      </CardContent>
                     )}
-                  </CardContent>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}
