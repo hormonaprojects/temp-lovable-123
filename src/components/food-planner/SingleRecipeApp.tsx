@@ -20,7 +20,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [lastSearchParams, setLastSearchParams] = useState<{
     category: string;
     ingredient: string;
-  }>({ category: "", ingredient: "" });
+    mealType: string;
+  }>({ category: "", ingredient: "", mealType: "" });
   const { toast } = useToast();
   
   const { 
@@ -39,33 +40,29 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setIsLoading(true);
     setCurrentRecipe(null);
     
-    // Eltároljuk a keresési paramétereket
-    setLastSearchParams({ category, ingredient });
+    // Eltároljuk a keresési paramétereket - BELEÉRTVE az étkezési típust is!
+    setLastSearchParams({ category, ingredient, mealType: selectedMealType });
 
     try {
-      console.log('🔍 Recept keresése:', { selectedMealType, category, ingredient });
+      console.log('🔍 SZIGORÚ recept keresése:', { selectedMealType, category, ingredient });
       
       let foundRecipes = [];
 
       if (category && ingredient) {
         // Specifikus kategória és hozzávaló alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
         foundRecipes = getRecipesByCategory(category, ingredient, selectedMealType);
+        console.log(`🎯 Specifikus keresés eredménye: ${foundRecipes.length} recept`);
       } else if (category) {
         // Csak kategória alapján - ÉTKEZÉSI TÍPUSSAL SZŰRVE
         foundRecipes = getRecipesByCategory(category, undefined, selectedMealType);
+        console.log(`🎯 Kategória keresés eredménye: ${foundRecipes.length} recept`);
       } else {
         // Random recept az étkezés típus alapján
         foundRecipes = getRecipesByMealType(selectedMealType);
+        console.log(`🎯 Étkezési típus keresés eredménye: ${foundRecipes.length} recept`);
       }
 
-      // Ha nincs találat az étkezés típus alapján, próbáljunk random receptet
-      if (foundRecipes.length === 0) {
-        const randomRecipe = getRandomRecipe();
-        if (randomRecipe) {
-          foundRecipes = [randomRecipe];
-        }
-      }
-
+      // Ha nincs találat, NE próbáljunk random receptet - maradjunk szigorúak
       if (foundRecipes.length > 0) {
         // Random kiválasztás a találatok közül
         const randomIndex = Math.floor(Math.random() * foundRecipes.length);
@@ -100,7 +97,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
 
   const regenerateRecipe = () => {
     if (selectedMealType) {
-      // Ugyanazokkal a paraméterekkel keresünk újra
+      // Ugyanazokkal a paraméterekkel keresünk újra - BELEÉRTVE az étkezési típust is!
+      console.log('🔄 Újragenerálás ugyanazokkal a paraméterekkel:', lastSearchParams);
       getRecipe(lastSearchParams.category, lastSearchParams.ingredient);
     }
   };
@@ -108,7 +106,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const resetForm = () => {
     setSelectedMealType("");
     setCurrentRecipe(null);
-    setLastSearchParams({ category: "", ingredient: "" });
+    setLastSearchParams({ category: "", ingredient: "", mealType: "" });
   };
 
   // Adatstruktúra előkészítése a komponensek számára
