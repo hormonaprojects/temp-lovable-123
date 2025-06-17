@@ -17,6 +17,10 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [selectedMealType, setSelectedMealType] = useState("");
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastSearchParams, setLastSearchParams] = useState<{
+    category: string;
+    ingredient: string;
+  }>({ category: "", ingredient: "" });
   const { toast } = useToast();
   
   const { 
@@ -34,6 +38,9 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
 
     setIsLoading(true);
     setCurrentRecipe(null);
+    
+    // Eltároljuk a keresési paramétereket
+    setLastSearchParams({ category, ingredient });
 
     try {
       console.log('🔍 Recept keresése:', { selectedMealType, category, ingredient });
@@ -93,13 +100,15 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
 
   const regenerateRecipe = () => {
     if (selectedMealType) {
-      getRecipe('', ''); // Random recept
+      // Ugyanazokkal a paraméterekkel keresünk újra
+      getRecipe(lastSearchParams.category, lastSearchParams.ingredient);
     }
   };
 
   const resetForm = () => {
     setSelectedMealType("");
     setCurrentRecipe(null);
+    setLastSearchParams({ category: "", ingredient: "" });
   };
 
   // Adatstruktúra előkészítése a komponensek számára

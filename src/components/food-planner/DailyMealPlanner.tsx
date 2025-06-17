@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -295,14 +296,26 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                   <Card key={mealType} className="bg-gradient-to-br from-purple-500 to-blue-600 text-white shadow-lg overflow-hidden">
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{mealOption?.emoji}</span>
-                          <div>
-                            <CardTitle className="text-white text-xl">
-                              {mealOption?.label?.replace(/^[^\s]+\s/, '') || mealType}
-                            </CardTitle>
-                            {mealData.recipe && (
-                              <p className="text-white/80 text-sm mt-1">{mealData.recipe.név}</p>
+                        <div className="flex items-center gap-4">
+                          <span className="text-3xl">{mealOption?.emoji}</span>
+                          <div className="flex items-center gap-4">
+                            <div>
+                              <CardTitle className="text-white text-xl">
+                                {mealOption?.label?.replace(/^[^\s]+\s/, '') || mealType}
+                              </CardTitle>
+                              {mealData.recipe && (
+                                <p className="text-white/80 text-lg font-semibold mt-1">{mealData.recipe.név}</p>
+                              )}
+                            </div>
+                            {mealData.recipe?.képUrl && (
+                              <img 
+                                src={mealData.recipe.képUrl} 
+                                alt={mealData.recipe.név}
+                                className="w-16 h-16 object-cover rounded-lg shadow-md"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
                             )}
                           </div>
                         </div>
@@ -337,7 +350,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                 <img 
                                   src={mealData.recipe.képUrl} 
                                   alt={mealData.recipe.név}
-                                  className="w-32 h-32 object-cover rounded-lg mx-auto shadow-md"
+                                  className="w-48 h-48 object-cover rounded-lg mx-auto shadow-md"
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                   }}
