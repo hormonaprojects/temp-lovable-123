@@ -408,14 +408,17 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
                             <div className="grid grid-cols-3 gap-4">
                               <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-4 text-center border border-blue-300/30">
+                                <div className="text-2xl mb-2">🍞</div>
                                 <div className="text-sm text-blue-200 mb-1">Szénhidrát</div>
                                 <div className="font-bold text-white text-xl">{mealData.recipe.szénhidrát}g</div>
                               </div>
                               <div className="bg-gradient-to-br from-red-500/20 to-red-600/20 backdrop-blur-sm rounded-xl p-4 text-center border border-red-300/30">
+                                <div className="text-2xl mb-2">🥩</div>
                                 <div className="text-sm text-red-200 mb-1">Fehérje</div>
                                 <div className="font-bold text-white text-xl">{mealData.recipe.fehérje}g</div>
                               </div>
                               <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 backdrop-blur-sm rounded-xl p-4 text-center border border-yellow-300/30">
+                                <div className="text-2xl mb-2">🥑</div>
                                 <div className="text-sm text-yellow-200 mb-1">Zsír</div>
                                 <div className="font-bold text-white text-xl">{mealData.recipe.zsír}g</div>
                               </div>
