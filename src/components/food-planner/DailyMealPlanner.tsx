@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -144,10 +143,12 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
       return convertToStandardRecipe(selectedRecipe);
     }
     
-    // Ha nincs specifikus recept, próbáljunk random receptet
-    const randomRecipe = getRandomRecipe();
-    if (randomRecipe) {
-      return convertToStandardRecipe(randomRecipe);
+    // Ha nincs specifikus recept, próbáljunk random receptet az étkezési típushoz
+    const randomRecipes = getRecipesByMealType(mealType);
+    if (randomRecipes.length > 0) {
+      const randomIndex = Math.floor(Math.random() * randomRecipes.length);
+      const selectedRecipe = randomRecipes[randomIndex];
+      return convertToStandardRecipe(selectedRecipe);
     }
     
     return null;
@@ -188,11 +189,22 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
       setShowResults(true);
 
       const successfulRecipes = Object.values(newPlan).filter(meal => meal.recipe !== null).length;
-      
-      toast({
-        title: "Random generálás kész!",
-        description: `${successfulRecipes} random recept betöltve az adatbázisból.`,
-      });
+      const failedMeals = Object.entries(newPlan)
+        .filter(([_, meal]) => meal.recipe === null)
+        .map(([mealType, _]) => mealType);
+
+      if (failedMeals.length > 0) {
+        toast({
+          title: `Random generálás részben sikeres`,
+          description: `${successfulRecipes} recept betöltve. Nem található recept: ${failedMeals.join(", ")}.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Random generálás kész!",
+          description: `${successfulRecipes} random recept betöltve az adatbázisból.`,
+        });
+      }
       
     } catch (error) {
       console.error('❌ Hiba a random étrend generálásában:', error);
@@ -225,6 +237,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 4000));
 
       const newPlan: MealPlan = {};
+      const failedSpecificMeals: string[] = [];
       
       selectedMeals.forEach(mealType => {
         const selection = mealSelections[mealType];
@@ -235,10 +248,16 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           // Generate specific recipe based on category and ingredient
           recipe = generateRecipeForMeal(mealType, selection.category, selection.ingredient);
           isSpecific = true;
+          if (!recipe) {
+            failedSpecificMeals.push(`${mealType} (${selection.ingredient})`);
+          }
         } else if (selection && selection.category) {
           // Generate recipe based on category only
           recipe = generateRecipeForMeal(mealType, selection.category);
           isSpecific = true;
+          if (!recipe) {
+            failedSpecificMeals.push(`${mealType} (${selection.category})`);
+          }
         } else {
           // Generate random recipe if no specific criteria
           recipe = generateRecipeForMeal(mealType);
@@ -261,10 +280,18 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
       const specificCount = Object.values(newPlan).filter(meal => meal.recipe !== null && meal.isSpecific).length;
       const randomCount = successfulRecipes - specificCount;
       
-      toast({
-        title: "Specifikus generálás kész!",
-        description: `${specificCount} specifikus és ${randomCount} random recept betöltve.`,
-      });
+      if (failedSpecificMeals.length > 0) {
+        toast({
+          title: "Specifikus generálás részben sikeres",
+          description: `${specificCount} specifikus és ${randomCount} random recept betöltve. Nincs találat: ${failedSpecificMeals.join(", ")}.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Specifikus generálás kész!",
+          description: `${specificCount} specifikus és ${randomCount} random recept betöltve.`,
+        });
+      }
       
     } catch (error) {
       console.error('❌ Hiba a specifikus étrend generálásában:', error);
@@ -312,9 +339,19 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           description: `${mealType} új recepttel frissítve.`,
         });
       } else {
+        // Specific error message for failed regeneration
+        let errorMessage = "";
+        if (category && ingredient) {
+          errorMessage = `Nem található "${ingredient}" alapanyaggal recept "${mealType}" étkezéshez.`;
+        } else if (category) {
+          errorMessage = `Nem található recept "${mealType}" étkezéshez a "${category}" kategóriában.`;
+        } else {
+          errorMessage = `Nem található recept "${mealType}" étkezéshez.`;
+        }
+        
         toast({
           title: "Nincs találat",
-          description: "Nem található recept a megadott feltételekkel.",
+          description: errorMessage,
           variant: "destructive"
         });
       }
