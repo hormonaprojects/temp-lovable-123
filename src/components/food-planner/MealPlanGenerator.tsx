@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,10 +33,14 @@ interface MealPlan {
 
 interface MealPlanGeneratorProps {
   user: User;
+  selectedMealType?: string;
+  onReset?: () => void;
 }
 
-export function MealPlanGenerator({ user }: MealPlanGeneratorProps) {
-  const [selectedMealTypes, setSelectedMealTypes] = useState<string[]>([]);
+export function MealPlanGenerator({ user, selectedMealType, onReset }: MealPlanGeneratorProps) {
+  const [selectedMealTypes, setSelectedMealTypes] = useState<string[]>(
+    selectedMealType ? [selectedMealType] : []
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedIngredient, setSelectedIngredient] = useState<string>('');
   const [mealPlan, setMealPlan] = useState<Record<string, MealPlan>>({});
@@ -132,13 +135,11 @@ export function MealPlanGenerator({ user }: MealPlanGeneratorProps) {
       const newMealPlan: Record<string, MealPlan> = {};
       
       for (const mealType of selectedMealTypes) {
-        // Get random category and ingredient
         const categories = Object.keys(foodCategories);
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
         const ingredients = foodCategories[randomCategory as keyof typeof foodCategories];
         const randomIngredient = ingredients[Math.floor(Math.random() * ingredients.length)];
         
-        // Generate recipe
         const recipe = getMockRecipe(mealType, randomIngredient);
         
         newMealPlan[mealType] = {
@@ -181,8 +182,7 @@ export function MealPlanGenerator({ user }: MealPlanGeneratorProps) {
     setLoading(true);
     
     try {
-      // Generate a random meal type recipe
-      const randomMealType = mealTypes[Math.floor(Math.random() * mealTypes.length)];
+      const randomMealType = selectedMealType || mealTypes[Math.floor(Math.random() * mealTypes.length)];
       const recipe = getMockRecipe(randomMealType, selectedIngredient);
       
       const specificPlan: Record<string, MealPlan> = {
@@ -222,40 +222,53 @@ export function MealPlanGenerator({ user }: MealPlanGeneratorProps) {
 
   return (
     <div className="space-y-8">
-      {/* Meal Type Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Étkezési típusok kiválasztása</CardTitle>
-          <CardDescription>Válassza ki, mely étkezésekhez szeretne receptet generálni</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {mealTypes.map((mealType) => (
-              <div key={mealType} className="flex items-center space-x-2">
-                <Checkbox
-                  id={mealType}
-                  checked={selectedMealTypes.includes(mealType)}
-                  onCheckedChange={(checked) => handleMealTypeChange(mealType, checked as boolean)}
-                />
-                <label htmlFor={mealType} className="text-sm font-medium capitalize">
-                  {mealType}
-                </label>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6">
-            <Button onClick={generateMealPlan} disabled={loading} className="mr-4">
-              {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-              Napi étrend generálása
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Reset button if we have a selected meal type */}
+      {selectedMealType && onReset && (
+        <div className="text-center">
+          <Button onClick={onReset} variant="outline">
+            🔄 Vissza a főmenübe
+          </Button>
+        </div>
+      )}
+
+      {/* Meal Type Selection - only show if no specific meal type selected */}
+      {!selectedMealType && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Étkezési típusok kiválasztása</CardTitle>
+            <CardDescription>Válassza ki, mely étkezésekhez szeretne receptet generálni</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {mealTypes.map((mealType) => (
+                <div key={mealType} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={mealType}
+                    checked={selectedMealTypes.includes(mealType)}
+                    onCheckedChange={(checked) => handleMealTypeChange(mealType, checked as boolean)}
+                  />
+                  <label htmlFor={mealType} className="text-sm font-medium capitalize">
+                    {mealType}
+                  </label>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6">
+              <Button onClick={generateMealPlan} disabled={loading} className="mr-4">
+                {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                Napi étrend generálása
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Specific Recipe Generation */}
       <Card>
         <CardHeader>
-          <CardTitle>Specifikus recept generálása</CardTitle>
+          <CardTitle>
+            {selectedMealType ? `${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)} recept generálása` : 'Specifikus recept generálása'}
+          </CardTitle>
           <CardDescription>Válasszon kategóriát és alapanyagot egy konkrét recepthez</CardDescription>
         </CardHeader>
         <CardContent>
