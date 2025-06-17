@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -401,9 +402,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                     src={mealData.recipe.képUrl} 
                                     alt={mealData.recipe.név}
                                     className="w-56 h-56 object-cover rounded-2xl mx-auto shadow-2xl border-4 border-white/30 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-3xl"
-                                    onClick={() => {
-                                      // Image modal functionality would go here
-                                    }}
+                                    onClick={() => openFullScreenRecipe(mealData.recipe, mealType)}
                                     onError={(e) => {
                                       (e.target as HTMLImageElement).style.display = 'none';
                                     }}
@@ -519,6 +518,64 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                 )}
               </div>
 
+              <div className="grid md:grid-cols-2 gap-8 mb-8">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                  <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                    📝 Hozzávalók ({fullScreenRecipe.recipe.hozzávalók?.length || 0} db)
+                  </h3>
+                  <ul className="text-white/90 space-y-3">
+                    {fullScreenRecipe.recipe.hozzávalók?.map((ingredient, index) => (
+                      <li key={index} className="flex items-start bg-white/5 p-3 rounded-lg">
+                        <span className="text-green-400 mr-3 font-bold text-lg">•</span>
+                        <span className="text-lg">{ingredient}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                  <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                    👨‍🍳 Elkészítés
+                  </h3>
+                  <div 
+                    className="text-white/90 leading-relaxed text-lg"
+                    dangerouslySetInnerHTML={{ 
+                      __html: fullScreenRecipe.recipe.elkészítés?.replace(/(\d+\.\s)/g, '<br><strong class="text-yellow-300">$1</strong>') || '' 
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold text-white mb-6 text-center">📊 Tápértékek</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-6 text-center border border-blue-300/30">
+                    <div className="text-3xl mb-3">⏱️</div>
+                    <div className="text-white font-semibold text-lg">{fullScreenRecipe.recipe.elkészítésiIdő}</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-500/20 to-red-600/20 backdrop-blur-sm rounded-xl p-6 text-center border border-red-300/30">
+                    <div className="text-3xl mb-3">🥩</div>
+                    <div className="text-white font-semibold text-lg">{fullScreenRecipe.recipe.fehérje}g fehérje</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 backdrop-blur-sm rounded-xl p-6 text-center border border-yellow-300/30">
+                    <div className="text-3xl mb-3">🍞</div>
+                    <div className="text-white font-semibold text-lg">{fullScreenRecipe.recipe.szénhidrát}g szénhidrát</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm rounded-xl p-6 text-center border border-green-300/30">
+                    <div className="text-3xl mb-3">🥑</div>
+                    <div className="text-white font-semibold text-lg">{fullScreenRecipe.recipe.zsír}g zsír</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center pt-6 border-t border-white/20">
+                <h3 className="text-2xl font-bold text-white mb-6">⭐ Értékeld a receptet:</h3>
+                <StarRating 
+                  recipeName={fullScreenRecipe.recipe.név} 
+                  onRate={(rating) => handleRating(fullScreenRecipe.recipe.név, rating)}
+                />
+              </div>
+              
               <div className="text-center mt-8">
                 <p className="text-white/70 text-lg">Kattints bárhova a bezáráshoz</p>
               </div>
