@@ -90,16 +90,28 @@ export function useSupabaseData() {
       // Kategóriák feldolgozása - minden oszlop értékeit vesszővel elválasztva
       const processedCategories: Record<string, string[]> = {};
       if (categoriesData && categoriesData.length > 0) {
-        const categoryRow = categoriesData[0];
-        Object.entries(categoryRow).forEach(([key, value]) => {
-          if (value && typeof value === 'string' && value.trim()) {
-            const items = value.split(',')
-              .map(item => item.trim())
-              .filter(item => item && item !== '' && item !== 'EMPTY');
-            if (items.length > 0) {
-              processedCategories[key] = items;
+        // Minden sor feldolgozása
+        categoriesData.forEach(categoryRow => {
+          Object.entries(categoryRow).forEach(([key, value]) => {
+            if (value && typeof value === 'string' && value.trim()) {
+              // Vesszővel elválasztott értékek szétbontása
+              const items = value.split(',')
+                .map(item => item.trim())
+                .filter(item => item && item !== '' && item !== 'EMPTY' && item !== 'NULL');
+              
+              if (items.length > 0) {
+                if (!processedCategories[key]) {
+                  processedCategories[key] = [];
+                }
+                // Minden egyedi elemet hozzáadunk
+                items.forEach(item => {
+                  if (!processedCategories[key].includes(item)) {
+                    processedCategories[key].push(item);
+                  }
+                });
+              }
             }
-          }
+          });
         });
       }
 
@@ -113,15 +125,29 @@ export function useSupabaseData() {
         // Minden sor feldolgozása az Étkezések táblából
         mealTypesData.forEach(row => {
           allowedMealTypes.forEach(mealType => {
-            // Oszlop név normalizálása (pl. "Tízórai" -> "tízórai")
-            const columnName = Object.keys(row).find(key => 
-              key.toLowerCase() === mealType.toLowerCase() ||
-              key.toLowerCase().replace('í', 'i') === mealType.toLowerCase().replace('í', 'i')
-            );
+            // Oszlop név keresése (case-insensitive)
+            const columnName = Object.keys(row).find(key => {
+              const normalizedKey = key.toLowerCase()
+                .replace(/í/g, 'i')
+                .replace(/ó/g, 'o')
+                .replace(/á/g, 'a')
+                .replace(/é/g, 'e')
+                .replace(/ű/g, 'u')
+                .replace(/ő/g, 'o');
+              const normalizedMealType = mealType.toLowerCase()
+                .replace(/í/g, 'i')
+                .replace(/ó/g, 'o')
+                .replace(/á/g, 'a')
+                .replace(/é/g, 'e')
+                .replace(/ű/g, 'u')
+                .replace(/ő/g, 'o');
+              return normalizedKey === normalizedMealType;
+            });
             
             if (columnName && row[columnName]) {
               const recipeName = row[columnName];
-              if (typeof recipeName === 'string' && recipeName.trim() && recipeName !== 'EMPTY') {
+              if (typeof recipeName === 'string' && recipeName.trim() && 
+                  recipeName !== 'EMPTY' && recipeName !== 'NULL') {
                 if (!processedMealTypeRecipes[mealType]) {
                   processedMealTypeRecipes[mealType] = [];
                 }
