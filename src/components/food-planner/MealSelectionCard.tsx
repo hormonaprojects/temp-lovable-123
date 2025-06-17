@@ -43,17 +43,18 @@ export function MealSelectionCard({
   isGenerating = false,
   showRecipeButton = false
 }: MealSelectionCardProps) {
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedIngredient, setSelectedIngredient] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("none");
+  const [selectedIngredient, setSelectedIngredient] = useState("none");
 
-  const ingredients = selectedCategory ? getIngredientsByCategory(selectedCategory) : [];
+  const ingredients = selectedCategory && selectedCategory !== "none" ? getIngredientsByCategory(selectedCategory) : [];
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    setSelectedIngredient("");
+    setSelectedIngredient("none");
     // Notify parent about the selection change
     if (onSelectionChange) {
-      onSelectionChange(mealType, category, "");
+      const actualCategory = category === "none" ? "" : category;
+      onSelectionChange(mealType, actualCategory, "");
     }
   };
 
@@ -61,12 +62,16 @@ export function MealSelectionCard({
     setSelectedIngredient(ingredient);
     // Notify parent about the selection change
     if (onSelectionChange) {
-      onSelectionChange(mealType, selectedCategory, ingredient);
+      const actualCategory = selectedCategory === "none" ? "" : selectedCategory;
+      const actualIngredient = ingredient === "none" ? "" : ingredient;
+      onSelectionChange(mealType, actualCategory, actualIngredient);
     }
   };
 
   const handleGetSpecificRecipe = () => {
-    onGetRecipe(mealType, selectedCategory, selectedIngredient);
+    const actualCategory = selectedCategory === "none" ? "" : selectedCategory;
+    const actualIngredient = selectedIngredient === "none" ? "" : selectedIngredient;
+    onGetRecipe(mealType, actualCategory, actualIngredient);
   };
 
   const handleGetRandomRecipe = () => {
@@ -76,7 +81,9 @@ export function MealSelectionCard({
   // Notify parent whenever selections change
   useEffect(() => {
     if (onSelectionChange) {
-      onSelectionChange(mealType, selectedCategory, selectedIngredient);
+      const actualCategory = selectedCategory === "none" ? "" : selectedCategory;
+      const actualIngredient = selectedIngredient === "none" ? "" : selectedIngredient;
+      onSelectionChange(mealType, actualCategory, actualIngredient);
     }
   }, [selectedCategory, selectedIngredient, mealType, onSelectionChange]);
 
@@ -107,7 +114,7 @@ export function MealSelectionCard({
                   <SelectValue placeholder="Nincs megadva" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="" className="hover:bg-gray-100 text-sm">
+                  <SelectItem value="none" className="hover:bg-gray-100 text-sm">
                     🚫 Nincs megadva
                   </SelectItem>
                   {categories.map((category) => {
@@ -133,10 +140,10 @@ export function MealSelectionCard({
                   <SelectValue placeholder="Nincs megadva" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="" className="hover:bg-gray-100 text-sm">
+                  <SelectItem value="none" className="hover:bg-gray-100 text-sm">
                     🚫 Nincs megadva
                   </SelectItem>
-                  {selectedCategory && ingredients.map((ingredient: string) => (
+                  {selectedCategory && selectedCategory !== "none" && ingredients.map((ingredient: string) => (
                     <SelectItem key={ingredient} value={ingredient} className="hover:bg-gray-100 text-sm">
                       {ingredient}
                     </SelectItem>
@@ -161,7 +168,7 @@ export function MealSelectionCard({
                 ) : (
                   <>
                     <Target className="w-3 h-3 mr-2" />
-                    {selectedCategory || selectedIngredient ? 'Specifikus Recept' : 'Random Recept'}
+                    {(selectedCategory !== "none" || selectedIngredient !== "none") ? 'Specifikus Recept' : 'Random Recept'}
                   </>
                 )}
               </Button>
