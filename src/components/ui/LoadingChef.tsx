@@ -8,8 +8,8 @@ interface LoadingChefProps {
 }
 
 const defaultMessages = [
-  "🍳 Főzünk valamit finomat...",
-  "👨‍🍳 A szakács éppen kevergeti a levest...",
+  "🍳 A szakács épp készíti az ételt...",
+  "👨‍🍳 Finomságok készülnek a konyhában...",
   "🥄 Hozzávalók összekeverése folyamatban...",
   "🔥 A tűzhely már melegszik...",
   "📖 Receptkönyv lapozása...",
@@ -40,16 +40,14 @@ export function LoadingChef({ messages = defaultMessages, className = "" }: Load
             <div className="absolute top-4 left-4 right-4 bottom-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-full animate-pulse">
               {/* Buborékok */}
               <div className="absolute top-2 left-3 w-2 h-2 bg-orange-200 rounded-full animate-bounce"></div>
-              <div className="absolute top-3 right-4 w-1.5 h-1.5 bg-orange-100 rounded-full animate-bounce" style={{ animationDelay: '0.5s' }}></div>
-              <div className="absolute bottom-3 left-1/2 w-1 h-1 bg-orange-200 rounded-full animate-bounce" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute top-3 right-4 w-1.5 h-1.5 bg-orange-100 rounded-full animate-bounce animation-delay-500"></div>
+              <div className="absolute bottom-3 left-1/2 w-1 h-1 bg-orange-200 rounded-full animate-bounce animation-delay-1000"></div>
             </div>
           </div>
           
           {/* Kanál */}
           <div className="absolute -top-2 right-2 transform rotate-45 animate-gentle-stir">
-            <Utensils className="w-8 h-8 text-gray-300" style={{ 
-              transformOrigin: 'bottom center'
-            }} />
+            <Utensils className="w-8 h-8 text-gray-300" />
           </div>
         </div>
         
@@ -61,9 +59,9 @@ export function LoadingChef({ messages = defaultMessages, className = "" }: Load
         {/* Gőz effekt */}
         <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
           <div className="flex gap-1">
-            <div className="w-1 h-8 bg-white/40 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-            <div className="w-1 h-6 bg-white/30 rounded-full animate-pulse" style={{ animationDelay: '0.3s' }}></div>
-            <div className="w-1 h-7 bg-white/35 rounded-full animate-pulse" style={{ animationDelay: '0.6s' }}></div>
+            <div className="w-1 h-8 bg-white/40 rounded-full animate-pulse"></div>
+            <div className="w-1 h-6 bg-white/30 rounded-full animate-pulse animation-delay-300"></div>
+            <div className="w-1 h-7 bg-white/35 rounded-full animate-pulse animation-delay-600"></div>
           </div>
         </div>
       </div>
@@ -81,8 +79,8 @@ export function LoadingChef({ messages = defaultMessages, className = "" }: Load
       {/* Pontok animáció */}
       <div className="flex justify-center gap-1 mb-4">
         <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
-        <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-        <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+        <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce animation-delay-200"></div>
+        <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce animation-delay-400"></div>
       </div>
       
       <div className="text-white/70 text-sm">Kérjük várjon...</div>
