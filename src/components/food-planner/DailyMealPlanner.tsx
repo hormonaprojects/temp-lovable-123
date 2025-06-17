@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft } from "lucide-react";
 
 interface User {
   id: string;
@@ -13,6 +13,7 @@ interface User {
 
 interface DailyMealPlannerProps {
   user: User;
+  onBackToSingle: () => void;
 }
 
 interface MealPlan {
@@ -31,7 +32,7 @@ interface MealPlan {
   };
 }
 
-export function DailyMealPlanner({ user }: DailyMealPlannerProps) {
+export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps) {
   const [selectedMeals, setSelectedMeals] = useState<string[]>(["reggeli", "ebéd", "vacsora"]);
   const [dailyPlan, setDailyPlan] = useState<MealPlan>({});
   const [isGenerating, setIsGenerating] = useState(false);
@@ -142,125 +143,139 @@ export function DailyMealPlanner({ user }: DailyMealPlannerProps) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Meal Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center">Válaszd ki a főétkezéseket:</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            {mealOptions.map((meal) => (
-              <div key={meal.key} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`daily-${meal.key}`}
-                  checked={selectedMeals.includes(meal.key)}
-                  onCheckedChange={() => handleMealToggle(meal.key)}
-                />
-                <label 
-                  htmlFor={`daily-${meal.key}`} 
-                  className="text-sm font-medium cursor-pointer"
-                >
-                  {meal.label}
-                </label>
-              </div>
-            ))}
-          </div>
+    <div className="max-w-4xl mx-auto px-6">
+      {/* Back Button */}
+      <div className="mb-6">
+        <Button
+          onClick={onBackToSingle}
+          variant="outline"
+          className="text-white border-white/30 hover:bg-white/10"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Vissza az egyedi receptekhez
+        </Button>
+      </div>
 
-          <div className="flex justify-center gap-4">
-            <Button
-              onClick={generateDailyMealPlan}
-              disabled={isGenerating || selectedMeals.length === 0}
-              className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Generálás...
-                </>
-              ) : (
-                "🎯 Random Napi Étrend"
-              )}
-            </Button>
-            
-            {showResults && (
+      <div className="space-y-6">
+        {/* Meal Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center">Válaszd ki a főétkezéseket:</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+              {mealOptions.map((meal) => (
+                <div key={meal.key} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`daily-${meal.key}`}
+                    checked={selectedMeals.includes(meal.key)}
+                    onCheckedChange={() => handleMealToggle(meal.key)}
+                  />
+                  <label 
+                    htmlFor={`daily-${meal.key}`} 
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    {meal.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-center gap-4">
               <Button
-                onClick={regenerateAllMeals}
-                disabled={isGenerating}
-                variant="outline"
-                className="hover:bg-gray-100"
+                onClick={generateDailyMealPlan}
+                disabled={isGenerating || selectedMeals.length === 0}
+                className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white"
               >
-                🔄 Összes Újragenerálás
+                {isGenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Generálás...
+                  </>
+                ) : (
+                  "🎯 Random Napi Étrend"
+                )}
               </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              
+              {showResults && (
+                <Button
+                  onClick={regenerateAllMeals}
+                  disabled={isGenerating}
+                  variant="outline"
+                  className="hover:bg-gray-100"
+                >
+                  🔄 Összes Újragenerálás
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Daily Meal Results */}
-      {showResults && (
-        <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">
-            🍽️ Mai Étrendem
-          </h3>
-          
-          <div className="grid gap-6">
-            {Object.entries(dailyPlan).map(([mealType, mealData]) => (
-              <Card key={mealType} className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    {mealOptions.find(m => m.key === mealType)?.label || mealType}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {mealData.recipe ? (
-                    <div className="space-y-4">
-                      <h4 className="text-xl font-semibold text-green-700">
-                        {mealData.recipe.név}
-                      </h4>
-                      
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <h5 className="font-semibold mb-2">🥘 Hozzávalók:</h5>
-                          <ul className="list-disc list-inside space-y-1">
-                            {mealData.recipe.hozzávalók.map((ingredient, idx) => (
-                              <li key={idx} className="text-sm text-gray-600">
-                                {ingredient}
-                              </li>
-                            ))}
-                          </ul>
+        {/* Daily Meal Results */}
+        {showResults && (
+          <div className="space-y-4">
+            <h3 className="text-2xl font-bold text-center text-white mb-6">
+              🍽️ Mai Étrendem
+            </h3>
+            
+            <div className="grid gap-6">
+              {Object.entries(dailyPlan).map(([mealType, mealData]) => (
+                <Card key={mealType} className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      {mealOptions.find(m => m.key === mealType)?.label || mealType}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {mealData.recipe ? (
+                      <div className="space-y-4">
+                        <h4 className="text-xl font-semibold text-green-700">
+                          {mealData.recipe.név}
+                        </h4>
+                        
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <h5 className="font-semibold mb-2">🥘 Hozzávalók:</h5>
+                            <ul className="list-disc list-inside space-y-1">
+                              {mealData.recipe.hozzávalók.map((ingredient, idx) => (
+                                <li key={idx} className="text-sm text-gray-600">
+                                  {ingredient}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="text-sm">
+                              <span className="font-semibold">⏱️ Elkészítési idő:</span> {mealData.recipe.elkészítésiIdő}
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-semibold">🍞 Szénhidrát:</span> {mealData.recipe.szénhidrát}
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-semibold">🥩 Fehérje:</span> {mealData.recipe.fehérje}
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-semibold">🥑 Zsír:</span> {mealData.recipe.zsír}
+                            </div>
+                          </div>
                         </div>
                         
-                        <div className="space-y-2">
-                          <div className="text-sm">
-                            <span className="font-semibold">⏱️ Elkészítési idő:</span> {mealData.recipe.elkészítésiIdő}
-                          </div>
-                          <div className="text-sm">
-                            <span className="font-semibold">🍞 Szénhidrát:</span> {mealData.recipe.szénhidrát}
-                          </div>
-                          <div className="text-sm">
-                            <span className="font-semibold">🥩 Fehérje:</span> {mealData.recipe.fehérje}
-                          </div>
-                          <div className="text-sm">
-                            <span className="font-semibold">🥑 Zsír:</span> {mealData.recipe.zsír}
-                          </div>
+                        <div>
+                          <h5 className="font-semibold mb-2">👨‍🍳 Elkészítés:</h5>
+                          <p className="text-sm text-gray-600">{mealData.recipe.elkészítés}</p>
                         </div>
                       </div>
-                      
-                      <div>
-                        <h5 className="font-semibold mb-2">👨‍🍳 Elkészítés:</h5>
-                        <p className="text-sm text-gray-600">{mealData.recipe.elkészítés}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">Nem sikerült receptet találni ehhez az étkezéshez.</p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    ) : (
+                      <p className="text-gray-500">Nem sikerült receptet találni ehhez az étkezéshez.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
