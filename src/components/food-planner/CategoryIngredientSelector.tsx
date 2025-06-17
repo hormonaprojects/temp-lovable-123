@@ -35,6 +35,7 @@ export function CategoryIngredientSelector({ selectedMealType, foodData, onGetRe
 
   console.log('📋 Elérhető kategóriák:', categories);
   console.log('🥕 Kiválasztott kategória alapanyagai:', ingredients);
+  console.log('📊 FoodData categories teljes:', foodData?.categories);
 
   const handleCategoryChange = (category: string) => {
     console.log('📂 Kategória kiválasztva:', category);
@@ -87,9 +88,10 @@ export function CategoryIngredientSelector({ selectedMealType, foodData, onGetRe
               <SelectContent className="bg-white border-gray-200">
                 {categories.map((category) => {
                   const displayName = categoryDisplayNames[category] || category;
+                  const ingredientCount = foodData?.categories?.[category]?.length || 0;
                   return (
                     <SelectItem key={category} value={category} className="hover:bg-gray-100">
-                      {displayName}
+                      {displayName} ({ingredientCount} alapanyag)
                     </SelectItem>
                   );
                 })}

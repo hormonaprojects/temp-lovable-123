@@ -31,6 +31,7 @@ export function MealTypeSelector({ selectedMealType, onSelectMealType, foodData 
   const availableMealTypes = foodData?.mealTypes ? Object.keys(foodData.mealTypes) : [];
   
   console.log('🍽️ Elérhető étkezési típusok:', availableMealTypes);
+  console.log('🍽️ MealTypes adatok:', foodData?.mealTypes);
 
   if (availableMealTypes.length === 0) {
     return (
@@ -55,6 +56,9 @@ export function MealTypeSelector({ selectedMealType, onSelectMealType, foodData 
         {availableMealTypes.map((mealType) => {
           const displayName = mealTypeNames[mealType] || mealType;
           const icon = mealTypeIcons[mealType] || '🍽️';
+          const recipeCount = foodData.mealTypes[mealType]?.length || 0;
+          
+          console.log(`🍽️ ${mealType} receptek száma:`, recipeCount);
           
           return (
             <Button
@@ -74,7 +78,7 @@ export function MealTypeSelector({ selectedMealType, onSelectMealType, foodData 
                 </div>
                 <div className="text-sm font-medium">{displayName}</div>
                 <div className="text-xs opacity-75 mt-1">
-                  {foodData.mealTypes[mealType]?.length || 0} recept
+                  {recipeCount} recept
                 </div>
               </div>
             </Button>
