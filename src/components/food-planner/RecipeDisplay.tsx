@@ -4,6 +4,8 @@ import { Recipe } from "@/types/recipe";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { LoadingChef } from "@/components/ui/LoadingChef";
+import { X } from "lucide-react";
 
 interface RecipeDisplayProps {
   recipe: Recipe | null;
@@ -45,13 +47,7 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe }: 
   };
 
   if (isLoading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
-        <div className="text-white text-xl font-semibold">Recept keresése...</div>
-        <div className="text-white/70 mt-2">🍳 Főzünk valamit finomat!</div>
-      </div>
-    );
+    return <LoadingChef />;
   }
 
   if (!recipe) {
@@ -68,7 +64,7 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe }: 
             <img 
               src={recipe.képUrl} 
               alt={recipe.név}
-              className="max-w-full max-h-64 mx-auto rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform duration-300"
+              className="max-w-full max-h-64 mx-auto rounded-xl shadow-lg cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl"
               onClick={openImageModal}
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -159,13 +155,19 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe }: 
         </div>
       </div>
 
-      {/* Image Modal */}
+      {/* Enhanced Image Modal */}
       {imageModalOpen && recipe.képUrl && (
         <div 
-          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 cursor-pointer"
+          className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 backdrop-blur-sm"
           onClick={closeImageModal}
         >
-          <div className="max-w-90vw max-h-90vh text-center">
+          <div className="relative max-w-90vw max-h-90vh text-center animate-scale-in">
+            <button
+              onClick={closeImageModal}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="w-8 h-8" />
+            </button>
             <img 
               src={recipe.képUrl} 
               alt={recipe.név}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
 import { CategoryIngredientSelector } from "./CategoryIngredientSelector";
@@ -7,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Recipe } from "@/types/recipe";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { LoadingChef } from "@/components/ui/LoadingChef";
 
 interface SingleRecipeAppProps {
   user: any;
@@ -118,13 +118,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   console.log('🗂️ FoodData átadva komponenseknek:', foodData);
 
   if (dataLoading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
-        <div className="text-white text-xl font-semibold">Adatok betöltése az adatbázisból...</div>
-        <div className="text-white/70 mt-2">Kérjük várjon...</div>
-      </div>
-    );
+    return <LoadingChef />;
   }
 
   return (

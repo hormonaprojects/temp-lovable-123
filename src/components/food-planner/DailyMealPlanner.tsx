@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -203,12 +202,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
   };
 
   if (dataLoading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
-        <div className="text-white text-xl font-semibold">Adatok betöltése az adatbázisból...</div>
-      </div>
-    );
+    return <LoadingChef />;
   }
 
   return (
@@ -339,14 +333,35 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                         </div>
                         
                         {mealData.recipe && (
-                          <div className="flex items-center gap-4 text-white/80 text-sm bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              {mealData.recipe.elkészítésiIdő}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="w-4 h-4" />
-                              {mealData.recipe.hozzávalók?.length || 0} hozzávaló
+                          <div className="flex items-center gap-6">
+                            {/* Recipe image in circle */}
+                            {mealData.recipe.képUrl && (
+                              <div className="relative">
+                                <img 
+                                  src={mealData.recipe.képUrl} 
+                                  alt={mealData.recipe.név}
+                                  className="w-16 h-16 object-cover rounded-full shadow-lg border-3 border-white/40 cursor-pointer transition-all duration-300 hover:scale-110 hover:shadow-xl"
+                                  onClick={() => toggleMealDetails(mealType)}
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                                <div className="absolute inset-0 rounded-full bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                  <span className="text-white text-xs font-bold">KLIK</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Enhanced meal info layout */}
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center gap-2 text-white/90 text-sm bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
+                                <Clock className="w-4 h-4 text-blue-300" />
+                                <span className="font-medium">{mealData.recipe.elkészítésiIdő}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-white/90 text-sm bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
+                                <Users className="w-4 h-4 text-green-300" />
+                                <span className="font-medium">{mealData.recipe.hozzávalók?.length || 0} hozzávaló</span>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -372,7 +387,10 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                 <img 
                                   src={mealData.recipe.képUrl} 
                                   alt={mealData.recipe.név}
-                                  className="w-56 h-56 object-cover rounded-2xl mx-auto shadow-2xl border-4 border-white/30"
+                                  className="w-56 h-56 object-cover rounded-2xl mx-auto shadow-2xl border-4 border-white/30 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-3xl"
+                                  onClick={() => {
+                                    // Image modal functionality would go here
+                                  }}
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                   }}
