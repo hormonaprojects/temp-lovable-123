@@ -136,7 +136,7 @@ export function useSupabaseData() {
                 .replace(/ő/g, 'o');
               const normalizedMealType = mealType.toLowerCase()
                 .replace(/í/g, 'i')
-                .replace /ó/g, 'o')
+                .replace(/ó/g, 'o')
                 .replace(/á/g, 'a')
                 .replace(/é/g, 'e')
                 .replace(/ű/g, 'u')
