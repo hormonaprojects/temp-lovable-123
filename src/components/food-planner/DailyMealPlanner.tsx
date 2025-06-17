@@ -185,22 +185,25 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
         let recipe = null;
         let isSpecific = false;
 
-        if (selection && (selection.category || selection.ingredient)) {
-          // Has specific criteria
+        // Ha van konkrét kategória vagy alapanyag kiválasztva
+        if (selection && selection.category && selection.category !== "" && selection.ingredient && selection.ingredient !== "") {
+          // Specifikus szűrés kategória + alapanyag alapján
           recipe = generateRecipeForMeal(mealType, selection.category, selection.ingredient);
           isSpecific = true;
           
           if (!recipe) {
-            let failureReason = mealType;
-            if (selection.category && selection.ingredient) {
-              failureReason += ` (${selection.category} - ${selection.ingredient})`;
-            } else if (selection.category) {
-              failureReason += ` (${selection.category})`;
-            }
-            failedMeals.push(failureReason);
+            failedMeals.push(`${mealType} (${selection.category} - ${selection.ingredient})`);
+          }
+        } else if (selection && selection.category && selection.category !== "") {
+          // Csak kategória alapján szűrés
+          recipe = generateRecipeForMeal(mealType, selection.category);
+          isSpecific = true;
+          
+          if (!recipe) {
+            failedMeals.push(`${mealType} (${selection.category})`);
           }
         } else {
-          // No specific criteria - generate random recipe for this meal type
+          // Nincs specifikus kritérium - random recept az étkezési típushoz
           recipe = generateRecipeForMeal(mealType);
           isSpecific = false;
           
@@ -428,7 +431,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                 ))}
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 pt-4">
+              <div className="flex justify-center pt-4">
                 <Button
                   onClick={generateMealPlan}
                   disabled={isGenerating || selectedMeals.length === 0}
@@ -446,16 +449,6 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                     </>
                   )}
                 </Button>
-                
-                {showResults && (
-                  <Button
-                    onClick={regenerateAllMeals}
-                    disabled={isGenerating}
-                    className="bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 px-4 py-3 sm:px-6 sm:py-4 text-base sm:text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    🔄 Összes Újragenerálás
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -561,7 +554,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                   <img 
                                     src={mealData.recipe.képUrl} 
                                     alt={mealData.recipe.név}
-                                    className="w-48 h-48 sm:w-56 sm:h-56 object-cover rounded-2xl mx-auto shadow-2xl border-4 border-white/30 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-3xl"
+                                    className="w-48 h-48 sm:w-56 sm:h-56 object-cover rounded-2xl mx-auto shadow-2xl border-4 border-white/30"
                                     onClick={() => openFullScreenRecipe(mealData.recipe, mealType)}
                                     onError={(e) => {
                                       (e.target as HTMLImageElement).style.display = 'none';

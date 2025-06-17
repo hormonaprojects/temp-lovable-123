@@ -104,9 +104,12 @@ export function MealSelectionCard({
               <label className="block text-white/90 font-medium mb-2 text-sm">Kategória:</label>
               <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                 <SelectTrigger className="bg-white/20 border-white/30 text-white text-sm">
-                  <SelectValue placeholder="Választható..." />
+                  <SelectValue placeholder="Nincs megadva" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
+                  <SelectItem value="" className="hover:bg-gray-100 text-sm">
+                    🚫 Nincs megadva
+                  </SelectItem>
                   {categories.map((category) => {
                     const displayName = categoryDisplayNames[category] || category;
                     const ingredientCount = getIngredientsByCategory(category).length;
@@ -125,13 +128,15 @@ export function MealSelectionCard({
               <Select 
                 value={selectedIngredient} 
                 onValueChange={handleIngredientChange}
-                disabled={!selectedCategory}
               >
                 <SelectTrigger className="bg-white/20 border-white/30 text-white text-sm">
-                  <SelectValue placeholder={selectedCategory ? "Választható..." : "Kategória kell"} />
+                  <SelectValue placeholder="Nincs megadva" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
-                  {ingredients.map((ingredient: string) => (
+                  <SelectItem value="" className="hover:bg-gray-100 text-sm">
+                    🚫 Nincs megadva
+                  </SelectItem>
+                  {selectedCategory && ingredients.map((ingredient: string) => (
                     <SelectItem key={ingredient} value={ingredient} className="hover:bg-gray-100 text-sm">
                       {ingredient}
                     </SelectItem>
@@ -145,7 +150,7 @@ export function MealSelectionCard({
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 onClick={handleGetSpecificRecipe}
-                disabled={!selectedCategory || !selectedIngredient || isGenerating}
+                disabled={isGenerating}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 flex-1"
               >
                 {isGenerating ? (
@@ -156,7 +161,7 @@ export function MealSelectionCard({
                 ) : (
                   <>
                     <Target className="w-3 h-3 mr-2" />
-                    Specifikus Recept
+                    {selectedCategory || selectedIngredient ? 'Specifikus Recept' : 'Random Recept'}
                   </>
                 )}
               </Button>
