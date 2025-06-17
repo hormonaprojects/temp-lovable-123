@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ interface MealSelectionCardProps {
   categories: string[];
   getIngredientsByCategory: (category: string) => string[];
   onGetRecipe: (mealType: string, category: string, ingredient: string) => void;
+  onSelectionChange?: (mealType: string, category: string, ingredient: string) => void;
   isGenerating?: boolean;
   showRecipeButton?: boolean;
 }
@@ -38,6 +39,7 @@ export function MealSelectionCard({
   categories,
   getIngredientsByCategory,
   onGetRecipe,
+  onSelectionChange,
   isGenerating = false,
   showRecipeButton = false
 }: MealSelectionCardProps) {
@@ -49,6 +51,18 @@ export function MealSelectionCard({
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     setSelectedIngredient("");
+    // Notify parent about the selection change
+    if (onSelectionChange) {
+      onSelectionChange(mealType, category, "");
+    }
+  };
+
+  const handleIngredientChange = (ingredient: string) => {
+    setSelectedIngredient(ingredient);
+    // Notify parent about the selection change
+    if (onSelectionChange) {
+      onSelectionChange(mealType, selectedCategory, ingredient);
+    }
   };
 
   const handleGetSpecificRecipe = () => {
@@ -58,6 +72,13 @@ export function MealSelectionCard({
   const handleGetRandomRecipe = () => {
     onGetRecipe(mealType, '', '');
   };
+
+  // Notify parent whenever selections change
+  useEffect(() => {
+    if (onSelectionChange) {
+      onSelectionChange(mealType, selectedCategory, selectedIngredient);
+    }
+  }, [selectedCategory, selectedIngredient, mealType, onSelectionChange]);
 
   return (
     <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
@@ -103,7 +124,7 @@ export function MealSelectionCard({
               <label className="block text-white/90 font-medium mb-2 text-sm">Alapanyag:</label>
               <Select 
                 value={selectedIngredient} 
-                onValueChange={setSelectedIngredient}
+                onValueChange={handleIngredientChange}
                 disabled={!selectedCategory}
               >
                 <SelectTrigger className="bg-white/20 border-white/30 text-white text-sm">
