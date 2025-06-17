@@ -1,9 +1,9 @@
-
 import { Button } from "@/components/ui/button";
 import { StarRating } from "./StarRating";
 import { Recipe } from "@/types/recipe";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 
 interface RecipeDisplayProps {
   recipe: Recipe | null;
@@ -15,12 +15,25 @@ interface RecipeDisplayProps {
 export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe }: RecipeDisplayProps) {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const { toast } = useToast();
+  const { saveRating } = useSupabaseData();
 
-  const handleRating = (rating: number) => {
-    toast({
-      title: "Köszönjük az értékelést!",
-      description: `${rating}/5 csillag adva a recepthez.`,
-    });
+  const handleRating = async (rating: number) => {
+    if (!recipe) return;
+
+    const success = await saveRating(recipe.név, rating);
+    
+    if (success) {
+      toast({
+        title: "Köszönjük az értékelést!",
+        description: `${rating}/5 csillag mentve az adatbázisba.`,
+      });
+    } else {
+      toast({
+        title: "Hiba",
+        description: "Nem sikerült menteni az értékelést.",
+        variant: "destructive"
+      });
+    }
   };
 
   const openImageModal = () => {

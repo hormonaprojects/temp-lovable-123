@@ -39,6 +39,7 @@ export function useSupabaseData() {
   const [categories, setCategories] = useState<Record<string, string[]>>({});
   const [mealTypes, setMealTypes] = useState<MealTypeData>({});
   const [recipes, setRecipes] = useState<SupabaseRecipe[]>([]);
+  const [mealTypeRecipes, setMealTypeRecipes] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -80,13 +81,15 @@ export function useSupabaseData() {
         throw recipesError;
       }
 
-      // Kategóriák feldolgozása
+      // Kategóriák feldolgozása - csak a nem üres értékek
       const processedCategories: Record<string, string[]> = {};
       if (categoriesData && categoriesData.length > 0) {
         const categoryRow = categoriesData[0];
         Object.entries(categoryRow).forEach(([key, value]) => {
-          if (value && typeof value === 'string') {
-            const items = value.split(',').map(item => item.trim()).filter(item => item);
+          if (value && typeof value === 'string' && value.trim()) {
+            const items = value.split(',')
+              .map(item => item.trim())
+              .filter(item => item && item !== '');
             if (items.length > 0) {
               processedCategories[key] = items;
             }
@@ -94,26 +97,37 @@ export function useSupabaseData() {
         });
       }
 
-      // Étkezések feldolgozása
-      const processedMealTypes: MealTypeData = {};
+      // Étkezések feldolgozása - csak a specifikus étkezési típusok
+      const allowedMealTypes = ['reggeli', 'tízórai', 'ebéd', 'leves', 'uzsonna', 'vacsora'];
+      const processedMealTypeRecipes: Record<string, string[]> = {};
+      
       if (mealTypesData && mealTypesData.length > 0) {
         mealTypesData.forEach(row => {
           Object.entries(row).forEach(([mealType, recipeName]) => {
             if (recipeName && typeof recipeName === 'string' && mealType !== 'Recept Neve') {
               const normalizedMealType = mealType.toLowerCase();
-              if (!processedMealTypes[normalizedMealType]) {
-                processedMealTypes[normalizedMealType] = [];
-              }
-              if (!processedMealTypes[normalizedMealType].includes(recipeName)) {
-                processedMealTypes[normalizedMealType].push(recipeName);
+              if (allowedMealTypes.includes(normalizedMealType)) {
+                if (!processedMealTypeRecipes[normalizedMealType]) {
+                  processedMealTypeRecipes[normalizedMealType] = [];
+                }
+                if (!processedMealTypeRecipes[normalizedMealType].includes(recipeName)) {
+                  processedMealTypeRecipes[normalizedMealType].push(recipeName);
+                }
               }
             }
           });
         });
       }
 
+      // Meal types objektum létrehozása a meglévő komponensek számára
+      const processedMealTypes: MealTypeData = {};
+      allowedMealTypes.forEach(mealType => {
+        processedMealTypes[mealType] = processedMealTypeRecipes[mealType] || [];
+      });
+
       setCategories(processedCategories);
       setMealTypes(processedMealTypes);
+      setMealTypeRecipes(processedMealTypeRecipes);
       setRecipes(recipesData || []);
       
       console.log('✅ Adatok sikeresen betöltve:', {
@@ -135,7 +149,7 @@ export function useSupabaseData() {
   };
 
   const getRecipesByMealType = (mealType: string): SupabaseRecipe[] => {
-    const recipeNames = mealTypes[mealType.toLowerCase()] || [];
+    const recipeNames = mealTypeRecipes[mealType.toLowerCase()] || [];
     return recipes.filter(recipe => 
       recipeNames.includes(recipe['Recept_Neve'])
     );
@@ -176,6 +190,29 @@ export function useSupabaseData() {
     return recipes[Math.floor(Math.random() * recipes.length)];
   };
 
+  const saveRating = async (recipeName: string, rating: number) => {
+    try {
+      const { error } = await supabase
+        .from('Értékelések')
+        .insert({
+          'Recept neve': recipeName,
+          'Értékelés': rating.toString(),
+          'Dátum': new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Értékelés mentési hiba:', error);
+        throw error;
+      }
+
+      console.log('✅ Értékelés sikeresen mentve:', { recipeName, rating });
+      return true;
+    } catch (error) {
+      console.error('❌ Értékelés mentési hiba:', error);
+      return false;
+    }
+  };
+
   const convertToStandardRecipe = (supabaseRecipe: SupabaseRecipe) => {
     const ingredients = [
       supabaseRecipe['Hozzavalo_1'], supabaseRecipe['Hozzavalo_2'], supabaseRecipe['Hozzavalo_3'],
@@ -207,6 +244,7 @@ export function useSupabaseData() {
     getRecipesByCategory,
     getRandomRecipe,
     convertToStandardRecipe,
+    saveRating,
     refetch: loadData
   };
 }
