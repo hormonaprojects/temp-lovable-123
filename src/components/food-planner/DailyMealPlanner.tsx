@@ -8,6 +8,7 @@ import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { StarRating } from "./StarRating";
 import { LoadingChef } from "@/components/ui/LoadingChef";
 import { MealSelectionCard } from "./MealSelectionCard";
+import { FavoriteButton } from "./FavoriteButton";
 
 interface User {
   id: string;
@@ -607,13 +608,19 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                 </div>
                               </div>
 
-                              <div className="text-center pt-4 sm:pt-6 border-t border-white/20">
-                                <p className="text-white/80 mb-2 sm:mb-3 font-medium text-sm sm:text-base">Értékeld a receptet:</p>
-                                <StarRating 
-                                  recipeName={mealData.recipe.név} 
-                                  onRate={(rating) => handleRating(mealData.recipe!.név, rating)}
-                                  className="justify-center"
-                                />
+                              <div className="flex items-center justify-between pt-4 border-t border-white/20">
+                                <div>
+                                  <p className="text-white/80 mb-2 font-medium text-sm">Értékeld a receptet:</p>
+                                  <StarRating 
+                                    recipeName={mealData.recipe.név} 
+                                    onRate={(rating) => handleRating(mealData.recipe!.név, rating)}
+                                  />
+                                </div>
+                                
+                                {/* Kedvencekhez adás gomb */}
+                                <div>
+                                  <FavoriteButton user={user} recipe={mealData.recipe} />
+                                </div>
                               </div>
                             </div>
                           </CollapsibleContent>
@@ -720,12 +727,19 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                 </div>
               </div>
 
-              <div className="text-center pt-4 sm:pt-6 border-t border-white/20">
-                <h3 className="text-lg sm:text-2xl font-bold text-white mb-4 sm:mb-6">⭐ Értékeld a receptet:</h3>
-                <StarRating 
-                  recipeName={fullScreenRecipe.recipe.név} 
-                  onRate={(rating) => handleRating(fullScreenRecipe.recipe.név, rating)}
-                />
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-white/20">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2">⭐ Értékeld a receptet:</h3>
+                  <StarRating 
+                    recipeName={fullScreenRecipe.recipe.név} 
+                    onRate={(rating) => handleRating(fullScreenRecipe.recipe.név, rating)}
+                  />
+                </div>
+                
+                {/* Kedvencekhez adás gomb a teljes képernyős nézetben */}
+                <div>
+                  <FavoriteButton user={user} recipe={fullScreenRecipe.recipe} />
+                </div>
               </div>
               
               <div className="text-center mt-6 sm:mt-8">
