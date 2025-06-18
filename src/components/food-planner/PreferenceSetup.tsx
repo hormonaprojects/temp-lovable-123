@@ -44,45 +44,49 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
       try {
         console.log('🔄 Preferencia adatok betöltése...');
         
-        // Minden oszlopot explicit módon lekérünk idézőjelekkel
-        const { data, error } = await supabase
+        // Először próbáljuk meg egyszerűen, minden oszloppal
+        const { data, error, count } = await supabase
           .from('Preferencia')
-          .select(`
-            "ID",
-            "Húsfélék",
-            "Halak",
-            "Zöldségek / Vegetáriánus",
-            "Tejtermékek",
-            "Gyümölcsök",
-            "Gabonák és Tészták",
-            "Olajok és Magvak"
-          `);
+          .select('*', { count: 'exact' });
         
-        console.log('📊 Supabase válasz:', { data, error });
+        console.log('📊 Supabase válasz:', { data, error, count });
+        console.log('📊 Teljes lekérdezés eredménye:', data);
         
         if (error) {
           console.error('❌ Preferencia adatok betöltési hiba:', error);
-          throw error;
-        }
-        
-        console.log('✅ Sikeres lekérdezés');
-        console.log('📊 Preferencia adatok:', data);
-        console.log('📊 Adatok száma:', data?.length || 0);
-        
-        if (data && data.length > 0) {
-          console.log('📊 Első sor adatok:', data[0]);
-          console.log('📊 Oszlopok:', Object.keys(data[0]));
+          // Próbáljuk meg az Ételkategóriák táblát helyette
+          console.log('🔄 Próbáljuk az Ételkategóriák táblát...');
+          const { data: categoryData, error: categoryError } = await supabase
+            .from('Ételkategóriák')
+            .select('*');
           
-          // Ellenőrizzük, hogy vannak-e a várt oszlopok
-          const firstRow = data[0];
-          categoryNames.forEach(categoryName => {
-            console.log(`📋 ${categoryName} oszlop értéke:`, firstRow[categoryName]);
-          });
+          if (categoryError) {
+            console.error('❌ Ételkategóriák betöltési hiba:', categoryError);
+            throw categoryError;
+          }
+          
+          console.log('✅ Ételkategóriák adatok:', categoryData);
+          setPreferencesData(categoryData || []);
+        } else {
+          console.log('✅ Sikeres Preferencia lekérdezés');
+          console.log('📊 Preferencia adatok:', data);
+          console.log('📊 Adatok száma:', data?.length || 0);
+          
+          if (data && data.length > 0) {
+            console.log('📊 Első sor adatok:', data[0]);
+            console.log('📊 Oszlopok:', Object.keys(data[0]));
+            
+            // Ellenőrizzük, hogy vannak-e a várt oszlopok
+            const firstRow = data[0];
+            categoryNames.forEach(categoryName => {
+              console.log(`📋 ${categoryName} oszlop értéke:`, firstRow[categoryName]);
+            });
+          }
+          
+          setPreferencesData(data || []);
         }
-        
-        setPreferencesData(data || []);
       } catch (error) {
-        console.error('💥 Preferencia adatok betöltési hiba:', error);
+        console.error('💥 Adatok betöltési hiba:', error);
         toast({
           title: "Hiba történt",
           description: "Nem sikerült betölteni az alapanyagokat.",
@@ -269,9 +273,11 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
               Talált alapanyagok: {currentIngredients.length}
             </p>
             {preferencesData.length > 0 && (
-              <p className="text-sm text-blue-600">
-                Első sor oszlopai: {Object.keys(preferencesData[0]).join(', ')}
-              </p>
+              <div className="text-sm text-blue-600 mt-2">
+                <p>Első sor oszlopai: {Object.keys(preferencesData[0]).join(', ')}</p>
+                <p>Húsfélék minta: {preferencesData[0]?.['Húsfélék'] || 'nincs'}</p>
+                <p>Halak minta: {preferencesData[0]?.['Halak'] || 'nincs'}</p>
+              </div>
             )}
           </div>
 
@@ -283,6 +289,11 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
               <p className="text-sm text-yellow-600 mt-2">
                 Összes adat: {preferencesData.length} sor
               </p>
+              {preferencesData.length > 0 && (
+                <p className="text-sm text-yellow-600">
+                  Táblázat: {preferencesData.length > 0 ? 'Preferencia/Ételkategóriák' : 'nincs adat'}
+                </p>
+              )}
             </div>
           )}
 
