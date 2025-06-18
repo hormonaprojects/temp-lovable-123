@@ -132,7 +132,7 @@ export function useSupabaseData() {
         mealTypesData.forEach((row, index) => {
           console.log(`🔍 ÉTKEZÉS DEBUG - Sor ${index}:`, row);
           
-          // Megnézzük az összes oszlopot és megkeressük a Tízórait
+          // Megnézzük az összes oszlopot és megkeressük a megfelelő étkezési típusokat
           Object.keys(row).forEach(columnName => {
             const cellValue = row[columnName];
             console.log(`🔍 Oszlop: "${columnName}", érték: "${cellValue}"`);
@@ -141,21 +141,21 @@ export function useSupabaseData() {
             if (cellValue === 'X' && row['Recept Neve']) {
               const recipeName = row['Recept Neve'];
               
-              // Normalizált oszlopnév alapján döntünk
-              const normalizedColumnName = normalizeText(columnName);
-              
+              // JAVÍTOTT mapping logic - pontos oszlopnév alapján
               let mealTypeKey = '';
-              if (normalizedColumnName === 'reggeli') {
+              
+              // Pontos oszlopnév egyezések (case sensitive)
+              if (columnName === 'Reggeli') {
                 mealTypeKey = 'reggeli';
-              } else if (normalizedColumnName === 'tizorai') {
-                mealTypeKey = 'tizorai';
-              } else if (normalizedColumnName === 'ebed') {
+              } else if (columnName === 'Tízórai') {
+                mealTypeKey = 'tizorai';  // Ez a kulcs!
+              } else if (columnName === 'Ebéd') {
                 mealTypeKey = 'ebed';
-              } else if (normalizedColumnName === 'leves') {
+              } else if (columnName === 'Leves') {
                 mealTypeKey = 'leves';
-              } else if (normalizedColumnName === 'uzsonna') {
+              } else if (columnName === 'Uzsonna') {
                 mealTypeKey = 'uzsonna';
-              } else if (normalizedColumnName === 'vacsora') {
+              } else if (columnName === 'Vacsora') {
                 mealTypeKey = 'vacsora';
               }
               
@@ -179,7 +179,7 @@ export function useSupabaseData() {
       const processedMealTypes: MealTypeData = {};
       const displayMapping = {
         'reggeli': 'reggeli',
-        'tizorai': 'tízórai',
+        'tizorai': 'tízórai',  // JAVÍTVA: tizorai -> tízórai
         'ebed': 'ebéd',
         'leves': 'leves',
         'uzsonna': 'uzsonna',
@@ -225,7 +225,7 @@ export function useSupabaseData() {
     // JAVÍTOTT mapping a megfelelő belső kulcsra
     const mealTypeMapping: Record<string, string> = {
       'reggeli': 'reggeli',
-      'tízórai': 'tizorai',
+      'tízórai': 'tizorai',  // JAVÍTVA: tízórai -> tizorai
       'ebéd': 'ebed',
       'leves': 'leves',
       'uzsonna': 'uzsonna',
@@ -267,7 +267,7 @@ export function useSupabaseData() {
     // JAVÍTOTT mapping a megfelelő belső kulcsra
     const mealTypeMapping: Record<string, string> = {
       'reggeli': 'reggeli',
-      'tízórai': 'tizorai',
+      'tízórai': 'tizorai',  // JAVÍTVA: tízórai -> tizorai
       'ebéd': 'ebed',
       'leves': 'leves',
       'uzsonna': 'uzsonna',
