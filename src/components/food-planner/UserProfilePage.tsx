@@ -128,7 +128,7 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Profil betöltése...</p>
@@ -139,8 +139,8 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <Card className="max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <p className="text-gray-600 mb-4">Nem sikerült betölteni a profil adatokat.</p>
             <Button onClick={onClose} variant="outline">
@@ -155,41 +155,45 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      {/* Header - mobil optimalizált */}
+      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
+          {/* Mobil header */}
+          <div className="flex items-center justify-between mb-2 sm:mb-0">
             <Button
               onClick={onClose}
               variant="ghost"
               size="sm"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 p-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              Vissza
+              <span className="hidden sm:inline">Vissza</span>
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Felhasználói Profil</h1>
-              <p className="text-sm text-gray-600">{user.email}</p>
-            </div>
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              size="sm"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              <Save className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">{saving ? 'Mentés...' : 'Mentés'}</span>
+            </Button>
           </div>
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Mentés...' : 'Mentés'}
-          </Button>
+          
+          {/* Cím és email */}
+          <div className="text-center sm:text-left">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Felhasználói Profil</h1>
+            <p className="text-xs sm:text-sm text-gray-600 truncate">{user.email}</p>
+          </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Profile Header Card */}
-        <Card className="mb-8">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center text-center space-y-4">
+      {/* Content - mobil optimalizált padding */}
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+        {/* Profile Header Card - mobil optimalizált */}
+        <Card className="mb-6 sm:mb-8">
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
               <AvatarUpload
                 currentAvatarUrl={profile.avatar_url}
                 userId={user.id}
@@ -197,51 +201,54 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
                 userName={profile.full_name || user.fullName}
               />
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                   {profile.full_name || user.fullName}
                 </h2>
-                <p className="text-gray-600">{user.email}</p>
+                <p className="text-gray-600 text-sm sm:text-base truncate max-w-xs sm:max-w-none">{user.email}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Kártyák grid - mobil optimalizált */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {/* Alapadatok */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-600" />
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 Alapadatok
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Személyes információk és fizikai adatok
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Teljes név</Label>
+                <Label htmlFor="fullName" className="text-sm">Teljes név</Label>
                 <Input
                   id="fullName"
                   value={profile.full_name || ''}
                   onChange={(e) => setProfile({...profile, full_name: e.target.value})}
                   placeholder="Teljes név"
+                  className="text-sm sm:text-base"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="age">Kor (év)</Label>
+                  <Label htmlFor="age" className="text-sm">Kor (év)</Label>
                   <Input
                     id="age"
                     type="number"
                     value={profile.age || ''}
                     onChange={(e) => setProfile({...profile, age: parseInt(e.target.value) || null})}
                     placeholder="25"
+                    className="text-sm sm:text-base"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="weight">Súly (kg)</Label>
+                  <Label htmlFor="weight" className="text-sm">Súly (kg)</Label>
                   <Input
                     id="weight"
                     type="number"
@@ -249,18 +256,20 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
                     value={profile.weight || ''}
                     onChange={(e) => setProfile({...profile, weight: parseFloat(e.target.value) || null})}
                     placeholder="70"
+                    className="text-sm sm:text-base"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="height">Magasság (cm)</Label>
+                <Label htmlFor="height" className="text-sm">Magasság (cm)</Label>
                 <Input
                   id="height"
                   type="number"
                   value={profile.height || ''}
                   onChange={(e) => setProfile({...profile, height: parseFloat(e.target.value) || null})}
                   placeholder="175"
+                  className="text-sm sm:text-base"
                 />
               </div>
             </CardContent>
@@ -268,12 +277,12 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
 
           {/* Aktivitási szint */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-green-600" />
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                 Aktivitási szint
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Napi fizikai aktivitás mértéke
               </CardDescription>
             </CardHeader>
@@ -282,15 +291,15 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
                 value={profile.activity_level || ''}
                 onValueChange={(value) => setProfile({...profile, activity_level: value})}
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-sm sm:text-base">
                   <SelectValue placeholder="Válassz aktivitási szintet" />
                 </SelectTrigger>
                 <SelectContent>
                   {activityLevels.map((level) => (
                     <SelectItem key={level.value} value={level.value}>
                       <div>
-                        <div className="font-medium">{level.label}</div>
-                        <div className="text-sm text-gray-500">{level.description}</div>
+                        <div className="font-medium text-sm">{level.label}</div>
+                        <div className="text-xs text-gray-500">{level.description}</div>
                       </div>
                     </SelectItem>
                   ))}
@@ -301,12 +310,12 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
 
           {/* Étkezési preferenciák */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-red-600" />
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
                 Étkezési preferenciák
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Speciális étrendek és preferenciák
               </CardDescription>
             </CardHeader>
@@ -316,7 +325,7 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
                   <Badge
                     key={pref}
                     variant={selectedDietaryPrefs.includes(pref) ? "default" : "outline"}
-                    className="cursor-pointer"
+                    className="cursor-pointer text-xs sm:text-sm py-1 px-2 sm:px-3"
                     onClick={() => toggleDietaryPref(pref)}
                   >
                     {pref}
@@ -328,12 +337,12 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
 
           {/* Allergiák */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-orange-600" />
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
                 Allergiák és intoleranciák
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Kerülendő összetevők és allergiák
               </CardDescription>
             </CardHeader>
@@ -343,7 +352,7 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
                   <Badge
                     key={allergy}
                     variant={selectedAllergies.includes(allergy) ? "destructive" : "outline"}
-                    className="cursor-pointer"
+                    className="cursor-pointer text-xs sm:text-sm py-1 px-2 sm:px-3"
                     onClick={() => toggleAllergy(allergy)}
                   >
                     {allergy}
@@ -355,24 +364,24 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
         </div>
 
         {/* Fiók információk */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Fiók információk</CardTitle>
+        <Card className="mt-6 sm:mt-8">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg sm:text-xl">Fiók információk</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-700">Email cím:</span>
-                <span className="text-gray-600">{user.email}</span>
+            <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-2 sm:gap-4 text-sm">
+              <div className="flex flex-col sm:flex-row sm:justify-between">
+                <span className="font-medium text-gray-700 mb-1 sm:mb-0">Email cím:</span>
+                <span className="text-gray-600 break-all sm:break-normal">{user.email}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-700">Profil létrehozva:</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between">
+                <span className="font-medium text-gray-700 mb-1 sm:mb-0">Profil létrehozva:</span>
                 <span className="text-gray-600">
                   {new Date(profile.created_at).toLocaleDateString('hu-HU')}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-700">Utolsó frissítés:</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between">
+                <span className="font-medium text-gray-700 mb-1 sm:mb-0">Utolsó frissítés:</span>
                 <span className="text-gray-600">
                   {new Date(profile.updated_at).toLocaleDateString('hu-HU')}
                 </span>
@@ -380,6 +389,21 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Mobil mentés gomb alul - csak mobilon látható */}
+        <div className="mt-6 sm:hidden">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Mentés...' : 'Mentés'}
+          </Button>
+        </div>
+
+        {/* Extra padding alul mobil navigációnak */}
+        <div className="h-6 sm:h-0"></div>
       </div>
     </div>
   );
