@@ -54,6 +54,11 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
         }
         
         console.log('📊 Preferencia adatok:', data);
+        console.log('📊 Adatok száma:', data?.length);
+        if (data && data.length > 0) {
+          console.log('📊 Első sor adatok:', data[0]);
+          console.log('📊 Oszlopok:', Object.keys(data[0]));
+        }
         setPreferencesData(data || []);
       } catch (error) {
         console.error('Preferencia adatok betöltési hiba:', error);
@@ -81,21 +86,26 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     
     const ingredients: string[] = [];
     
-    preferencesData.forEach(row => {
-      const value = row[categoryName];
-      console.log(`📝 ${categoryName} értéke:`, value);
+    // Végigmegyünk az összes soron
+    preferencesData.forEach((row, rowIndex) => {
+      console.log(`🔍 Sor ${rowIndex + 1} feldolgozása:`, row);
       
-      if (value && typeof value === 'string') {
-        const items = value.split(',').map(item => item.trim()).filter(item => item);
-        console.log(`✅ Talált alapanyagok (${categoryName}):`, items);
-        ingredients.push(...items);
+      // Megkeressük a kategória oszlopot
+      const categoryValue = row[categoryName];
+      console.log(`📝 ${categoryName} értéke a ${rowIndex + 1}. sorban:`, categoryValue);
+      
+      if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
+        // Az alapanyag közvetlenül a cella értéke
+        const ingredient = categoryValue.trim();
+        if (ingredient && !ingredients.includes(ingredient)) {
+          ingredients.push(ingredient);
+          console.log(`✅ Hozzáadva: ${ingredient} (${categoryName})`);
+        }
       }
     });
     
-    const uniqueIngredients = [...new Set(ingredients)];
-    console.log(`🎯 Egyedi alapanyagok (${categoryName}):`, uniqueIngredients);
-    
-    return uniqueIngredients;
+    console.log(`🎯 Összegyűjtött alapanyagok (${categoryName}):`, ingredients);
+    return ingredients;
   };
 
   const handlePreferenceChange = (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => {
@@ -235,7 +245,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                 <Card
                   key={ingredient}
                   className={`
-                    relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fade-in
+                    relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fadeInUp
                     ${preference === 'like' ? 'bg-green-100 border-green-300 scale-110 shadow-lg' : ''}
                     ${preference === 'dislike' ? 'bg-red-100 border-red-300 scale-90 opacity-70' : ''}
                     ${preference === 'neutral' ? 'bg-white border-gray-200 hover:shadow-md' : ''}

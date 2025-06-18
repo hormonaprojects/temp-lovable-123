@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -84,21 +85,26 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     
     console.log('🔍 Kategória keresése:', categoryName);
     
-    preferencesData.forEach(row => {
-      const value = row[categoryName];
-      console.log(`📝 ${categoryName} értéke:`, value);
+    // Végigmegyünk az összes soron
+    preferencesData.forEach((row, rowIndex) => {
+      console.log(`🔍 Sor ${rowIndex + 1} feldolgozása:`, row);
       
-      if (value && typeof value === 'string') {
-        const items = value.split(',').map(item => item.trim()).filter(item => item);
-        console.log(`✅ Talált alapanyagok (${categoryName}):`, items);
-        ingredients.push(...items);
+      // Megkeressük a kategória oszlopot
+      const categoryValue = row[categoryName];
+      console.log(`📝 ${categoryName} értéke a ${rowIndex + 1}. sorban:`, categoryValue);
+      
+      if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
+        // Az alapanyag közvetlenül a cella értéke
+        const ingredient = categoryValue.trim();
+        if (ingredient && !ingredients.includes(ingredient)) {
+          ingredients.push(ingredient);
+          console.log(`✅ Hozzáadva: ${ingredient} (${categoryName})`);
+        }
       }
     });
     
-    const uniqueIngredients = [...new Set(ingredients)];
-    console.log(`🎯 Egyedi alapanyagok (${categoryName}):`, uniqueIngredients);
-    
-    return uniqueIngredients;
+    console.log(`🎯 Összegyűjtött alapanyagok (${categoryName}):`, ingredients);
+    return ingredients;
   };
 
   const handlePreferenceChange = (category: string, ingredient: string, preference: 'like' | 'dislike' | 'neutral') => {
