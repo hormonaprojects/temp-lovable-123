@@ -116,7 +116,7 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="max-w-md mx-auto bg-white rounded-xl shadow-2xl border-0 max-h-[95vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-md mx-auto bg-white rounded-xl shadow-2xl border-0 max-h-[95vh] overflow-hidden flex flex-col p-0 [&>button]:hidden">
         {/* Fixed Header */}
         <DialogHeader className="shrink-0 px-6 py-4 border-b border-gray-100 bg-white">
           <div className="flex items-center justify-center relative">
