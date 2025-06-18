@@ -1,10 +1,13 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
 import { DailyMealPlanner } from "./DailyMealPlanner";
 import { UserProfilePage } from "./UserProfilePage";
+import { UserProfileModal } from "./UserProfileModal";
 import { User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { fetchUserProfile } from "@/services/profileQueries";
 
 interface User {
   id: string;
@@ -19,6 +22,25 @@ interface FoodPlannerAppProps {
 
 export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
   const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile'>('single');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const profile = await fetchUserProfile(user.id);
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Profil betöltési hiba:', error);
+      }
+    };
+
+    loadUserProfile();
+  }, [user.id]);
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   if (currentView === 'profile') {
     return (
@@ -41,14 +63,19 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
           
           {/* Jobb oldali gombok */}
           <div className="flex items-center gap-3">
-            {/* Profil gomb */}
+            {/* Profil gomb profilképpel */}
             <Button
-              onClick={() => setCurrentView('profile')}
+              onClick={() => setShowProfileModal(true)}
               variant="outline"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2 pl-2"
             >
-              <User className="w-4 h-4" />
+              <Avatar className="w-6 h-6 border border-white/30">
+                <AvatarImage src={userProfile?.avatar_url || undefined} alt="Profilkép" />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-bold">
+                  {getInitials(userProfile?.full_name || user.fullName)}
+                </AvatarFallback>
+              </Avatar>
               <span className="hidden sm:inline">Profil</span>
             </Button>
             
@@ -78,6 +105,17 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
           />
         )}
       </div>
+
+      {/* Profil Modal */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+        onOpenFullProfile={() => {
+          setShowProfileModal(false);
+          setCurrentView('profile');
+        }}
+      />
     </div>
   );
 }
