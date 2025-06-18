@@ -43,6 +43,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   useEffect(() => {
     const loadPreferencesData = async () => {
       try {
+        console.log('🔄 Preferencia adatok betöltése...');
         const { data, error } = await supabase
           .from('Preferencia')
           .select('*');
@@ -52,6 +53,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
           throw error;
         }
         
+        console.log('📊 Preferencia adatok:', data);
         setPreferencesData(data || []);
       } catch (error) {
         console.error('Preferencia adatok betöltési hiba:', error);
@@ -69,20 +71,31 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   }, [toast]);
 
   const getCurrentCategoryIngredients = () => {
-    if (!preferencesData.length || currentCategoryIndex >= categoryNames.length) return [];
+    if (!preferencesData.length || currentCategoryIndex >= categoryNames.length) {
+      console.log('❌ Nincs adat vagy érvénytelen kategória index');
+      return [];
+    }
     
     const categoryName = categoryNames[currentCategoryIndex];
+    console.log('🔍 Kategória keresése:', categoryName);
+    
     const ingredients: string[] = [];
     
     preferencesData.forEach(row => {
       const value = row[categoryName];
+      console.log(`📝 ${categoryName} értéke:`, value);
+      
       if (value && typeof value === 'string') {
         const items = value.split(',').map(item => item.trim()).filter(item => item);
+        console.log(`✅ Talált alapanyagok (${categoryName}):`, items);
         ingredients.push(...items);
       }
     });
     
-    return [...new Set(ingredients)];
+    const uniqueIngredients = [...new Set(ingredients)];
+    console.log(`🎯 Egyedi alapanyagok (${categoryName}):`, uniqueIngredients);
+    
+    return uniqueIngredients;
   };
 
   const handlePreferenceChange = (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => {
@@ -99,48 +112,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   };
 
   const getIngredientImage = (ingredient: string): string => {
-    // AI generált képek placeholder URL-ek
-    const imageMap: { [key: string]: string } = {
-      // Húsfélék
-      'Marha': '/placeholder.svg',
-      'Sertés': '/placeholder.svg',
-      'Csirke': '/placeholder.svg',
-      'Pulyka': '/placeholder.svg',
-      'Bárány': '/placeholder.svg',
-      // Halak
-      'Lazac': '/placeholder.svg',
-      'Tonhal': '/placeholder.svg',
-      'Pisztráng': '/placeholder.svg',
-      'Hering': '/placeholder.svg',
-      // Zöldségek
-      'Paradicsom': '/placeholder.svg',
-      'Uborka': '/placeholder.svg',
-      'Paprika': '/placeholder.svg',
-      'Hagyma': '/placeholder.svg',
-      'Fokhagyma': '/placeholder.svg',
-      // Tejtermékek
-      'Tej': '/placeholder.svg',
-      'Sajt': '/placeholder.svg',
-      'Joghurt': '/placeholder.svg',
-      'Vaj': '/placeholder.svg',
-      // Gyümölcsök
-      'Alma': '/placeholder.svg',
-      'Banán': '/placeholder.svg',
-      'Narancs': '/placeholder.svg',
-      'Eper': '/placeholder.svg',
-      // Gabonák
-      'Rizs': '/placeholder.svg',
-      'Tészta': '/placeholder.svg',
-      'Kenyér': '/placeholder.svg',
-      'Zab': '/placeholder.svg',
-      // Olajok
-      'Olívaolaj': '/placeholder.svg',
-      'Napraforgóolaj': '/placeholder.svg',
-      'Mogyoró': '/placeholder.svg',
-      'Dió': '/placeholder.svg'
-    };
-    
-    return imageMap[ingredient] || '/placeholder.svg';
+    return '/placeholder.svg';
   };
 
   const handleNext = () => {
@@ -202,6 +174,9 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   const isLastCategory = currentCategoryIndex === categoryNames.length - 1;
   const progress = ((currentCategoryIndex + 1) / categoryNames.length) * 100;
 
+  console.log('🎯 Aktuális kategória:', categoryNames[currentCategoryIndex]);
+  console.log('🍽️ Aktuális alapanyagok:', currentIngredients);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
       {/* Header */}
@@ -240,6 +215,18 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
             </p>
           </div>
 
+          {/* Debug Info */}
+          {currentIngredients.length === 0 && (
+            <div className="text-center mb-8 p-4 bg-yellow-100 rounded-lg">
+              <p className="text-yellow-800">
+                Nincsenek alapanyagok betöltve ehhez a kategóriához: {categoryNames[currentCategoryIndex]}
+              </p>
+              <p className="text-sm text-yellow-600 mt-2">
+                Összes adat: {preferencesData.length} sor
+              </p>
+            </div>
+          )}
+
           {/* Ingredients Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
             {currentIngredients.map((ingredient, index) => {
@@ -248,7 +235,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                 <Card
                   key={ingredient}
                   className={`
-                    relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fadeInUp
+                    relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fade-in
                     ${preference === 'like' ? 'bg-green-100 border-green-300 scale-110 shadow-lg' : ''}
                     ${preference === 'dislike' ? 'bg-red-100 border-red-300 scale-90 opacity-70' : ''}
                     ${preference === 'neutral' ? 'bg-white border-gray-200 hover:shadow-md' : ''}

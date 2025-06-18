@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -43,6 +42,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('🔄 Adatok betöltése...');
         const [preferencesDataResult, userPreferences] = await Promise.all([
           supabase.from('Preferencia').select('*'),
           fetchUserPreferences(user.id)
@@ -53,6 +53,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
           throw preferencesDataResult.error;
         }
         
+        console.log('📊 Preferencia adatok:', preferencesDataResult.data);
         setPreferencesData(preferencesDataResult.data || []);
         
         // Preferenciák átalakítása objektummá
@@ -81,15 +82,23 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   const getCategoryIngredients = (categoryName: string) => {
     const ingredients: string[] = [];
     
+    console.log('🔍 Kategória keresése:', categoryName);
+    
     preferencesData.forEach(row => {
       const value = row[categoryName];
+      console.log(`📝 ${categoryName} értéke:`, value);
+      
       if (value && typeof value === 'string') {
         const items = value.split(',').map(item => item.trim()).filter(item => item);
+        console.log(`✅ Talált alapanyagok (${categoryName}):`, items);
         ingredients.push(...items);
       }
     });
     
-    return [...new Set(ingredients)];
+    const uniqueIngredients = [...new Set(ingredients)];
+    console.log(`🎯 Egyedi alapanyagok (${categoryName}):`, uniqueIngredients);
+    
+    return uniqueIngredients;
   };
 
   const handlePreferenceChange = (category: string, ingredient: string, preference: 'like' | 'dislike' | 'neutral') => {
@@ -213,7 +222,10 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
         {categoryNames.map((categoryName) => {
           const ingredients = getCategoryIngredients(categoryName);
-          if (ingredients.length === 0) return null;
+          if (ingredients.length === 0) {
+            console.log(`⚠️ Nincs alapanyag a kategóriában: ${categoryName}`);
+            return null;
+          }
 
           return (
             <div key={categoryName} className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
