@@ -24,7 +24,7 @@ interface PreferenceState {
 
 export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   const [categories, setCategories] = useState<any[]>([]);
-  const [currentCategoryIndex, setCurrent CategoryIndex] = useState(0);
+  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [preferences, setPreferences] = useState<PreferenceState>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -137,13 +137,13 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
   const handleNext = () => {
     if (currentCategoryIndex < categoryNames.length - 1) {
-      setCurrent CategoryIndex(prev => prev + 1);
+      setCurrentCategoryIndex(prev => prev + 1);
     }
   };
 
   const handlePrev = () => {
     if (currentCategoryIndex > 0) {
-      setCurrent CategoryIndex(prev => prev - 1);
+      setCurrentCategoryIndex(prev => prev - 1);
     }
   };
 

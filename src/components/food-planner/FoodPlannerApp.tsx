@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -25,7 +24,7 @@ interface FoodPlannerAppProps {
   onLogout: () => void;
 }
 
-export function FoodPlannerApp({ user, onLogout }: FoodPlannerApp Props) {
+export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
   const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'preferences'>('single');
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
