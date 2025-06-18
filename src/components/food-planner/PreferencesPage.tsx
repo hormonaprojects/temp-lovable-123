@@ -44,15 +44,36 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       try {
         console.log('🔄 Adatok betöltése...');
         
-        // Először próbáljuk meg a Preferencia táblát
-        let { data: preferencesDataResult, error: preferencesError } = await supabase
+        // Próbáljuk meg a Preferencia táblát részletes debuggolással
+        const { data: preferencesDataResult, error: preferencesError } = await supabase
           .from('Preferencia')
           .select('*');
         
-        console.log('📊 Preferencia lekérdezés eredménye:', { data: preferencesDataResult, error: preferencesError });
+        console.log('📊 Preferencia lekérdezés eredménye:', { 
+          data: preferencesDataResult, 
+          error: preferencesError,
+          dataLength: preferencesDataResult?.length,
+          errorMessage: preferencesError?.message,
+          errorDetails: preferencesError?.details
+        });
         
-        if (preferencesError || !preferencesDataResult || preferencesDataResult.length === 0) {
-          console.log('⚠️ Preferencia tábla üres vagy hiba, próbáljuk az Ételkategóriák táblát...');
+        if (preferencesError) {
+          console.error('❌ Preferencia lekérdezési hiba:', preferencesError);
+          console.log('🔄 Próbáljuk az Ételkategóriák táblát...');
+          
+          const { data: categoryData, error: categoryError } = await supabase
+            .from('Ételkategóriák')
+            .select('*');
+          
+          if (categoryError) {
+            console.error('❌ Ételkategóriák betöltési hiba:', categoryError);
+            throw categoryError;
+          }
+          
+          console.log('✅ Ételkategóriák adatok:', categoryData);
+          setPreferencesData(categoryData || []);
+        } else if (!preferencesDataResult || preferencesDataResult.length === 0) {
+          console.log('⚠️ Preferencia tábla üres vagy null, próbáljuk az Ételkategóriák táblát...');
           
           const { data: categoryData, error: categoryError } = await supabase
             .from('Ételkategóriák')
@@ -66,8 +87,8 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
           console.log('✅ Ételkategóriák adatok:', categoryData);
           setPreferencesData(categoryData || []);
         } else {
-          console.log('✅ Preferencia adatok:', preferencesDataResult);
-          setPreferencesData(preferencesDataResult || []);
+          console.log('✅ Preferencia adatok sikeresen betöltve:', preferencesDataResult);
+          setPreferencesData(preferencesDataResult);
         }
         
         // Felhasználói preferenciák betöltése
@@ -245,12 +266,12 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         <div className="bg-blue-100 rounded-lg p-4 mb-4">
           <h3 className="font-bold text-blue-800">Debug információk:</h3>
           <p className="text-blue-600">Betöltött sorok száma: {preferencesData.length}</p>
+          <p className="text-blue-600">Használt tábla: {preferencesData.length > 0 ? (preferencesData[0].hasOwnProperty('ID') ? 'Preferencia' : 'Ételkategóriák') : 'nincs adat'}</p>
           {preferencesData.length > 0 && (
             <div className="text-blue-600 text-sm mt-2">
               <p>Oszlopok: {Object.keys(preferencesData[0]).join(', ')}</p>
-              <p>Húsfélék minta: {preferencesData[0]?.['Húsfélék'] || 'nincs'}</p>
+              <p>Húsfélék m��nta: {preferencesData[0]?.['Húsfélék'] || 'nincs'}</p>
               <p>Halak minta: {preferencesData[0]?.['Halak'] || 'nincs'}</p>
-              <p>Tábla típusa: {preferencesData.length > 0 ? 'Preferencia/Ételkategóriák' : 'nincs adat'}</p>
             </div>
           )}
         </div>
@@ -269,8 +290,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                 </h2>
                 <div className="text-center p-8 bg-yellow-100 rounded-lg">
                   <p className="text-yellow-800">
-                    N
-                    ek alapanyagok ebben a kategóriában: {categoryName}
+                    Nincsenek alapanyagok ebben a kategóriában: {categoryName}
                   </p>
                 </div>
               </div>
