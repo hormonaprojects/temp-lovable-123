@@ -123,7 +123,7 @@ export function useSupabaseData() {
 
       console.log('📊 Feldolgozott kategóriák:', processedCategories);
 
-      // Étkezések feldolgozása - EGYSZERŰSÍTETT logika a pontos oszlopnevek használatával
+      // Étkezések feldolgozása - TELJESEN ÚJ logika a Tízórai kezelésére
       const processedMealTypeRecipes: Record<string, string[]> = {};
       
       console.log('🔍 ÉTKEZÉS DEBUG - Nyers mealTypesData:', mealTypesData);
@@ -132,7 +132,7 @@ export function useSupabaseData() {
         mealTypesData.forEach((row, index) => {
           console.log(`🔍 ÉTKEZÉS DEBUG - Sor ${index}:`, row);
           
-          // Az összes oszlopot végignézzük és egyszerűen az oszlopnév alapján mappelünk
+          // Megnézzük az összes oszlopot és megkeressük a megfelelő étkezési típusokat
           Object.keys(row).forEach(columnName => {
             const cellValue = row[columnName];
             console.log(`🔍 Oszlop: "${columnName}", érték: "${cellValue}"`);
@@ -141,29 +141,22 @@ export function useSupabaseData() {
             if (cellValue === 'X' && row['Recept Neve']) {
               const recipeName = row['Recept Neve'];
               
-              // EGYSZERŰ mapping - pontosan az oszlopnév alapján
+              // JAVÍTOTT mapping logic - pontos oszlopnév alapján
               let mealTypeKey = '';
               
-              // Pontos oszlopnév -> belső kulcs mapping
-              switch (columnName) {
-                case 'Reggeli':
-                  mealTypeKey = 'reggeli';
-                  break;
-                case 'Tízórai':
-                  mealTypeKey = 'tízórai';  // Pontosan ahogy az adatbázisban van!
-                  break;
-                case 'Ebéd':
-                  mealTypeKey = 'ebed';
-                  break;
-                case 'Leves':
-                  mealTypeKey = 'leves';
-                  break;
-                case 'Uzsonna':
-                  mealTypeKey = 'uzsonna';
-                  break;
-                case 'Vacsora':
-                  mealTypeKey = 'vacsora';
-                  break;
+              // Pontos oszlopnév egyezések (case sensitive)
+              if (columnName === 'Reggeli') {
+                mealTypeKey = 'reggeli';
+              } else if (columnName === 'Tízórai') {
+                mealTypeKey = 'tizorai';  // Ez a kulcs!
+              } else if (columnName === 'Ebéd') {
+                mealTypeKey = 'ebed';
+              } else if (columnName === 'Leves') {
+                mealTypeKey = 'leves';
+              } else if (columnName === 'Uzsonna') {
+                mealTypeKey = 'uzsonna';
+              } else if (columnName === 'Vacsora') {
+                mealTypeKey = 'vacsora';
               }
               
               if (mealTypeKey) {
@@ -182,13 +175,21 @@ export function useSupabaseData() {
 
       console.log('🍽️ Feldolgozott étkezési típusok receptekkel:', processedMealTypeRecipes);
 
-      // Meal types objektum létrehozása - EGYSZERŰ mapping
+      // Meal types objektum létrehozása - display nevek
       const processedMealTypes: MealTypeData = {};
+      const displayMapping = {
+        'reggeli': 'reggeli',
+        'tizorai': 'tízórai',  // JAVÍTVA: tizorai -> tízórai
+        'ebed': 'ebéd',
+        'leves': 'leves',
+        'uzsonna': 'uzsonna',
+        'vacsora': 'vacsora'
+      };
       
-      // Egyszerű átmásolás
-      Object.keys(processedMealTypeRecipes).forEach(mealTypeKey => {
-        if (processedMealTypeRecipes[mealTypeKey] && processedMealTypeRecipes[mealTypeKey].length > 0) {
-          processedMealTypes[mealTypeKey] = processedMealTypeRecipes[mealTypeKey];
+      Object.keys(displayMapping).forEach(internalKey => {
+        const displayName = displayMapping[internalKey as keyof typeof displayMapping];
+        if (processedMealTypeRecipes[internalKey] && processedMealTypeRecipes[internalKey].length > 0) {
+          processedMealTypes[displayName] = processedMealTypeRecipes[internalKey];
         }
       });
 
@@ -221,10 +222,20 @@ export function useSupabaseData() {
   const getRecipesByMealType = (mealType: string): SupabaseRecipe[] => {
     console.log(`🔍 getRecipesByMealType hívva: ${mealType}`);
     
-    // EGYSZERŰ kulcs használat
-    const recipeNames = mealTypeRecipes[mealType] || [];
+    // JAVÍTOTT mapping a megfelelő belső kulcsra
+    const mealTypeMapping: Record<string, string> = {
+      'reggeli': 'reggeli',
+      'tízórai': 'tizorai',  // JAVÍTVA: tízórai -> tizorai
+      'ebéd': 'ebed',
+      'leves': 'leves',
+      'uzsonna': 'uzsonna',
+      'vacsora': 'vacsora'
+    };
     
-    console.log(`🔍 ${mealType} engedélyezett receptnevek:`, recipeNames);
+    const mealTypeKey = mealTypeMapping[mealType.toLowerCase()] || mealType.toLowerCase();
+    const recipeNames = mealTypeRecipes[mealTypeKey] || [];
+    
+    console.log(`🔍 ${mealType} engedélyezett receptnevek (${mealTypeKey}):`, recipeNames);
     
     const foundRecipes = recipes.filter(recipe => 
       recipeNames.some(allowedName => {
@@ -253,9 +264,21 @@ export function useSupabaseData() {
       return [];
     }
 
-    // 1. LÉPÉS: Étkezési típus alapján szűrés - EGYSZERŰ kulcs használat
-    const allowedRecipeNames = mealTypeRecipes[mealType] || [];
-    console.log(`📋 Engedélyezett receptek ${mealType}-hoz:`, allowedRecipeNames);
+    // JAVÍTOTT mapping a megfelelő belső kulcsra
+    const mealTypeMapping: Record<string, string> = {
+      'reggeli': 'reggeli',
+      'tízórai': 'tizorai',  // JAVÍTVA: tízórai -> tizorai
+      'ebéd': 'ebed',
+      'leves': 'leves',
+      'uzsonna': 'uzsonna',
+      'vacsora': 'vacsora'
+    };
+
+    const mealTypeKey = mealTypeMapping[mealType.toLowerCase()] || mealType.toLowerCase();
+
+    // 1. LÉPÉS: Étkezési típus alapján szűrés
+    const allowedRecipeNames = mealTypeRecipes[mealTypeKey] || [];
+    console.log(`📋 Engedélyezett receptek ${mealType}-hoz (${mealTypeKey}):`, allowedRecipeNames);
 
     if (allowedRecipeNames.length === 0) {
       console.log('❌ Nincs recept ehhez az étkezési típushoz');
@@ -277,8 +300,6 @@ export function useSupabaseData() {
     });
 
     console.log(`📋 Étkezési típus alapján szűrt receptek:`, mealTypeFilteredRecipes.length);
-
-    // ... keep existing code (category and ingredient filtering logic)
 
     // Ha konkrét alapanyag nincs megadva, csak kategória alapján szűrünk
     if (!ingredient) {
