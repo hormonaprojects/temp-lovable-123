@@ -22,7 +22,11 @@ export const fetchUserPreferences = async (userId: string): Promise<FoodPreferen
     throw error;
   }
 
-  return data || [];
+  // Type assertion to ensure the preference field matches our type
+  return (data || []).map(item => ({
+    ...item,
+    preference: item.preference as 'like' | 'dislike' | 'neutral'
+  }));
 };
 
 export const saveUserPreferences = async (userId: string, preferences: Array<{

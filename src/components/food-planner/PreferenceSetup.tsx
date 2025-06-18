@@ -240,14 +240,13 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                 <Card
                   key={ingredient}
                   className={`
-                    relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105
+                    relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fadeInUp
                     ${preference === 'like' ? 'bg-green-100 border-green-300 scale-110 shadow-lg' : ''}
                     ${preference === 'dislike' ? 'bg-red-100 border-red-300 scale-90 opacity-70' : ''}
                     ${preference === 'neutral' ? 'bg-white border-gray-200 hover:shadow-md' : ''}
                   `}
                   style={{
-                    animationDelay: `${index * 0.1}s`,
-                    animation: 'fadeInUp 0.6s ease-out forwards'
+                    animationDelay: `${index * 0.1}s`
                   }}
                 >
                   <div className="p-4">
@@ -338,19 +337,6 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }
