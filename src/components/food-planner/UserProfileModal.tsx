@@ -120,19 +120,18 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
       <DialogContent className="max-w-md mx-auto bg-white rounded-xl shadow-2xl border-0 max-h-[95vh] overflow-hidden flex flex-col p-0">
         {/* Fixed Header */}
         <DialogHeader className="shrink-0 px-6 py-4 border-b border-gray-100 bg-white">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center relative">
             <Button
               onClick={onClose}
               variant="ghost"
               size="sm"
-              className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 p-2 h-8 w-8"
+              className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 p-2 h-8 w-8 absolute left-0"
             >
               <X className="w-4 h-4" />
             </Button>
-            <DialogTitle className="text-xl font-bold text-gray-800 flex-1 text-center">
+            <DialogTitle className="text-xl font-bold text-gray-800">
               Felhasználói Profil
             </DialogTitle>
-            <div className="w-8"></div> {/* Spacer for centering */}
           </div>
         </DialogHeader>
 
