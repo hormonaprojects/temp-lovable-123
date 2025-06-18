@@ -44,24 +44,51 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     const loadPreferencesData = async () => {
       try {
         console.log('🔄 Preferencia adatok betöltése...');
-        const { data, error } = await supabase
+        
+        // Először próbáljuk meg az alap lekérdezést
+        const { data, error, count } = await supabase
           .from('Preferencia')
-          .select('*');
+          .select('*', { count: 'exact' });
+        
+        console.log('📊 Supabase válasz:', { data, error, count });
         
         if (error) {
-          console.error('Preferencia adatok betöltési hiba:', error);
-          throw error;
+          console.error('❌ Preferencia adatok betöltési hiba:', error);
+          
+          // Próbáltuk meg konkrét oszlopokkal
+          console.log('🔄 Próbálkozás konkrét oszlopokkal...');
+          const { data: specificData, error: specificError } = await supabase
+            .from('Preferencia')
+            .select('ID, Húsfélék, Halak, "Zöldségek / Vegetáriánus", Tejtermékek, Gyümölcsök, "Gabonák és Tészták", "Olajok és Magvak"');
+          
+          console.log('📊 Konkrét oszlopok válasz:', { specificData, specificError });
+          
+          if (specificError) {
+            throw specificError;
+          }
+          
+          setPreferencesData(specificData || []);
+        } else {
+          console.log('✅ Sikeres lekérdezés');
+          console.log('📊 Preferencia adatok:', data);
+          console.log('📊 Adatok száma:', data?.length);
+          console.log('📊 Sorok száma (count):', count);
+          
+          if (data && data.length > 0) {
+            console.log('📊 Első sor adatok:', data[0]);
+            console.log('📊 Oszlopok:', Object.keys(data[0]));
+            
+            // Ellenőrizzük, hogy vannak-e a várt oszlopok
+            const firstRow = data[0];
+            categoryNames.forEach(categoryName => {
+              console.log(`📋 ${categoryName} oszlop értéke:`, firstRow[categoryName]);
+            });
+          }
+          
+          setPreferencesData(data || []);
         }
-        
-        console.log('📊 Preferencia adatok:', data);
-        console.log('📊 Adatok száma:', data?.length);
-        if (data && data.length > 0) {
-          console.log('📊 Első sor adatok:', data[0]);
-          console.log('📊 Oszlopok:', Object.keys(data[0]));
-        }
-        setPreferencesData(data || []);
       } catch (error) {
-        console.error('Preferencia adatok betöltési hiba:', error);
+        console.error('💥 Preferencia adatok betöltési hiba:', error);
         toast({
           title: "Hiba történt",
           description: "Nem sikerült betölteni az alapanyagokat.",
@@ -76,6 +103,11 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   }, [toast]);
 
   const getCurrentCategoryIngredients = () => {
+    console.log('🔍 getCurrentCategoryIngredients meghívva');
+    console.log('🔍 preferencesData.length:', preferencesData.length);
+    console.log('🔍 currentCategoryIndex:', currentCategoryIndex);
+    console.log('🔍 categoryNames.length:', categoryNames.length);
+    
     if (!preferencesData.length || currentCategoryIndex >= categoryNames.length) {
       console.log('❌ Nincs adat vagy érvénytelen kategória index');
       return [];
@@ -89,10 +121,13 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     // Végigmegyünk az összes soron
     preferencesData.forEach((row, rowIndex) => {
       console.log(`🔍 Sor ${rowIndex + 1} feldolgozása:`, row);
+      console.log(`🔍 Sor ${rowIndex + 1} típusa:`, typeof row);
+      console.log(`🔍 Sor ${rowIndex + 1} kulcsai:`, Object.keys(row));
       
       // Megkeressük a kategória oszlopot
       const categoryValue = row[categoryName];
       console.log(`📝 ${categoryName} értéke a ${rowIndex + 1}. sorban:`, categoryValue);
+      console.log(`📝 ${categoryName} típusa:`, typeof categoryValue);
       
       if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
         // Az alapanyag közvetlenül a cella értéke
@@ -226,6 +261,26 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
           </div>
 
           {/* Debug Info */}
+          <div className="text-center mb-8 p-4 bg-blue-100 rounded-lg">
+            <p className="text-blue-800 font-medium">
+              Debug információk:
+            </p>
+            <p className="text-sm text-blue-600 mt-2">
+              Összes betöltött sor: {preferencesData.length}
+            </p>
+            <p className="text-sm text-blue-600">
+              Aktuális kategória: {categoryNames[currentCategoryIndex]}
+            </p>
+            <p className="text-sm text-blue-600">
+              Talált alapanyagok: {currentIngredients.length}
+            </p>
+            {preferencesData.length > 0 && (
+              <p className="text-sm text-blue-600">
+                Első sor oszlopai: {Object.keys(preferencesData[0]).join(', ')}
+              </p>
+            )}
+          </div>
+
           {currentIngredients.length === 0 && (
             <div className="text-center mb-8 p-4 bg-yellow-100 rounded-lg">
               <p className="text-yellow-800">

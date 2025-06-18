@@ -44,18 +44,33 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     const loadData = async () => {
       try {
         console.log('🔄 Adatok betöltése...');
-        const [preferencesDataResult, userPreferences] = await Promise.all([
-          supabase.from('Preferencia').select('*'),
-          fetchUserPreferences(user.id)
-        ]);
         
-        if (preferencesDataResult.error) {
-          console.error('Preferencia adatok betöltési hiba:', preferencesDataResult.error);
-          throw preferencesDataResult.error;
+        // Preferencia adatok betöltése
+        const { data: preferencesDataResult, error: preferencesError } = await supabase
+          .from('Preferencia')
+          .select('*');
+        
+        if (preferencesError) {
+          console.error('❌ Preferencia adatok betöltési hiba:', preferencesError);
+          
+          // Próbáljuk meg konkrét oszlopokkal
+          const { data: specificData, error: specificError } = await supabase
+            .from('Preferencia')
+            .select('ID, Húsfélék, Halak, "Zöldségek / Vegetáriánus", Tejtermékek, Gyümölcsök, "Gabonák és Tészták", "Olajok és Magvak"');
+          
+          if (specificError) {
+            throw specificError;
+          }
+          
+          console.log('📊 Konkrét oszlopok adatok:', specificData);
+          setPreferencesData(specificData || []);
+        } else {
+          console.log('📊 Preferencia adatok:', preferencesDataResult);
+          setPreferencesData(preferencesDataResult || []);
         }
         
-        console.log('📊 Preferencia adatok:', preferencesDataResult.data);
-        setPreferencesData(preferencesDataResult.data || []);
+        // Felhasználói preferenciák betöltése
+        const userPreferences = await fetchUserPreferences(user.id);
         
         // Preferenciák átalakítása objektummá
         const prefsObj: PreferenceState = {};
@@ -224,19 +239,41 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         </div>
       </div>
 
+      {/* Debug Panel */}
+      <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="bg-blue-100 rounded-lg p-4 mb-4">
+          <h3 className="font-bold text-blue-800">Debug információk:</h3>
+          <p className="text-blue-600">Betöltött sorok száma: {preferencesData.length}</p>
+          {preferencesData.length > 0 && (
+            <p className="text-blue-600">Oszlopok: {Object.keys(preferencesData[0]).join(', ')}</p>
+          )}
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
         {categoryNames.map((categoryName) => {
           const ingredients = getCategoryIngredients(categoryName);
           if (ingredients.length === 0) {
             console.log(`⚠️ Nincs alapanyag a kategóriában: ${categoryName}`);
-            return null;
+            return (
+              <div key={categoryName} className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+                  {categoryName}
+                </h2>
+                <div className="text-center p-8 bg-yellow-100 rounded-lg">
+                  <p className="text-yellow-800">
+                    Nincsenek alapanyagok ebben a kategóriában: {categoryName}
+                  </p>
+                </div>
+              </div>
+            );
           }
 
           return (
             <div key={categoryName} className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-                {categoryName}
+                {categoryName} ({ingredients.length} alapanyag)
               </h2>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
