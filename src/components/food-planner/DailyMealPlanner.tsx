@@ -68,7 +68,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
   const mealOptions = [
     { key: "reggeli", label: "🌅 Reggeli", emoji: "🌅" },
-    { key: "tizórai", label: "☕ Tízórai", emoji: "☕" },
+    { key: "tízórai", label: "☕ Tízórai", emoji: "☕" },
     { key: "ebéd", label: "🍛 Ebéd", emoji: "🍛" },
     { key: "uzsonna", label: "🥨 Uzsonna", emoji: "🥨" },
     { key: "vacsora", label: "🌙 Vacsora", emoji: "🌙" }
