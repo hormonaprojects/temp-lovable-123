@@ -53,7 +53,7 @@ export const processMealTypes = (mealTypesData: any[]) => {
           if (columnName === 'Reggeli') {
             mealTypeKey = 'Reggeli';
           } else if (columnName === 'Tízórai') {
-            mealTypeKey = 'Tízórai';  // Pontosan az adatbázis oszlop neve!
+            mealTypeKey = 'Tízórai';  // JAVÍTVA: pontosan az adatbázis oszlop neve!
           } else if (columnName === 'Ebéd') {
             mealTypeKey = 'Ebéd';
           } else if (columnName === 'Leves') {
@@ -89,7 +89,7 @@ export const createMealTypesDisplay = (processedMealTypeRecipes: Record<string, 
   // Display mapping - pontosan az adatbázis oszlopneveket használjuk
   const displayMapping = {
     'Reggeli': 'reggeli',
-    'Tízórai': 'tízórai',  // JAVÍTVA: pontosan az adatbázis oszlop neve
+    'Tízórai': 'tízórai',  // JAVÍTVA: pontos mapping
     'Ebéd': 'ebéd',
     'Leves': 'leves',
     'Uzsonna': 'uzsonna',

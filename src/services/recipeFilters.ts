@@ -12,7 +12,7 @@ export const getRecipesByMealType = (
   // JAVÍTOTT mapping - pontosan az adatbázis oszlopneveket használjuk
   const mealTypeMapping: Record<string, string> = {
     'reggeli': 'Reggeli',
-    'tízórai': 'Tízórai',  // JAVÍTVA: pontosan az adatbázis oszlop neve
+    'tízórai': 'Tízórai',  // JAVÍTVA: pontos mapping
     'ebéd': 'Ebéd',
     'leves': 'Leves',
     'uzsonna': 'Uzsonna',
@@ -61,7 +61,7 @@ export const getRecipesByCategory = (
   // JAVÍTOTT mapping - pontosan az adatbázis oszlopneveket használjuk
   const mealTypeMapping: Record<string, string> = {
     'reggeli': 'Reggeli',
-    'tízórai': 'Tízórai',  // JAVÍTVA: pontosan az adatbázis oszlop neve
+    'tízórai': 'Tízórai',  // JAVÍTVA: pontos mapping
     'ebéd': 'Ebéd',
     'leves': 'Leves',
     'uzsonna': 'Uzsonna',
