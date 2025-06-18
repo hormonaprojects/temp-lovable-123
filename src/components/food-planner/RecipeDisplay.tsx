@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { StarRating } from "./StarRating";
+import { FavoriteButton } from "./FavoriteButton";
 import { Recipe } from "@/types/recipe";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -13,9 +14,10 @@ interface RecipeDisplayProps {
   isLoading: boolean;
   onRegenerate: () => void;
   onNewRecipe: () => void;
+  user: any;
 }
 
-export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe }: RecipeDisplayProps) {
+export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, user }: RecipeDisplayProps) {
   const [fullScreenModalOpen, setFullScreenModalOpen] = useState(false);
   const { toast } = useToast();
   const { saveRating } = useSupabaseData();
@@ -158,6 +160,7 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe }: 
             >
               🎯 Új recept
             </Button>
+            <FavoriteButton user={user} recipe={recipe} />
           </div>
         </div>
       </div>

@@ -231,6 +231,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         isLoading={isLoading}
         onRegenerate={regenerateRecipe}
         onNewRecipe={resetForm}
+        user={user}
       />
     </div>
   );

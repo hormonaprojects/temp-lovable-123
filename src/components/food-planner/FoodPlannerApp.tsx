@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -8,6 +7,7 @@ import { UserProfileModal } from "./UserProfileModal";
 import { User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchUserProfile } from "@/services/profileQueries";
+import { Star } from "lucide-react";
 
 interface User {
   id: string;
@@ -21,7 +21,7 @@ interface FoodPlannerAppProps {
 }
 
 export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
-  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile'>('single');
+  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites'>('single');
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
 
@@ -51,6 +51,15 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
     );
   }
 
+  if (currentView === 'favorites') {
+    return (
+      <FavoritesPage
+        user={user}
+        onClose={() => setCurrentView('single')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
       {/* Header */}
@@ -63,6 +72,17 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
           
           {/* Jobb oldali gombok */}
           <div className="flex items-center gap-3">
+            {/* Kedvencek gomb */}
+            <Button
+              onClick={() => setCurrentView('favorites')}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+              <span className="hidden sm:inline">Kedvencek</span>
+            </Button>
+
             {/* Profil gomb profilképpel */}
             <Button
               onClick={() => setShowProfileModal(true)}
