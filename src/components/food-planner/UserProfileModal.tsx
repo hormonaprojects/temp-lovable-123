@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { User, Save, Edit3, ExternalLink } from "lucide-react";
+import { User, Save, Edit3, ExternalLink, ArrowLeft } from "lucide-react";
 import { fetchUserProfile, updateUserProfile, UserProfile } from "@/services/profileQueries";
 import { AvatarUpload } from "./AvatarUpload";
 
@@ -119,9 +119,20 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md mx-auto bg-white rounded-xl shadow-2xl border-0">
         <DialogHeader className="text-center pb-4 border-b border-gray-100">
-          <DialogTitle className="text-2xl font-bold text-gray-800">
-            Felhasználói Profil
-          </DialogTitle>
+          <div className="flex items-center justify-between mb-2">
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 p-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <DialogTitle className="text-2xl font-bold text-gray-800 flex-1">
+              Felhasználói Profil
+            </DialogTitle>
+            <div className="w-10"></div> {/* Spacer for centering */}
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 py-6">
