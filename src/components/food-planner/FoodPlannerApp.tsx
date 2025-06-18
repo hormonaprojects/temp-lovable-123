@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
 import { DailyMealPlanner } from "./DailyMealPlanner";
 import { UserProfilePage } from "./UserProfilePage";
 import { UserProfileModal } from "./UserProfileModal";
+import { FavoritesPage } from "./FavoritesPage";
 import { User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchUserProfile } from "@/services/profileQueries";

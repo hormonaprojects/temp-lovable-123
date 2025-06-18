@@ -8,7 +8,7 @@ export const addToFavorites = async (userId: string, recipe: Recipe) => {
     .insert({
       user_id: userId,
       recipe_name: recipe.név,
-      recipe_data: recipe
+      recipe_data: recipe as any // Cast to any to satisfy Json type requirement
     });
 
   if (error) {
