@@ -185,6 +185,7 @@ export type Database = {
           activity_level: string | null
           age: number | null
           allergies: string[] | null
+          avatar_url: string | null
           created_at: string
           dietary_preferences: string[] | null
           full_name: string | null
@@ -197,6 +198,7 @@ export type Database = {
           activity_level?: string | null
           age?: number | null
           allergies?: string[] | null
+          avatar_url?: string | null
           created_at?: string
           dietary_preferences?: string[] | null
           full_name?: string | null
@@ -209,6 +211,7 @@ export type Database = {
           activity_level?: string | null
           age?: number | null
           allergies?: string[] | null
+          avatar_url?: string | null
           created_at?: string
           dietary_preferences?: string[] | null
           full_name?: string | null

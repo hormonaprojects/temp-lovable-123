@@ -5,11 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, User, Activity, Heart, AlertTriangle } from 'lucide-react';
 import { fetchUserProfile, updateUserProfile, UserProfile } from '@/services/profileQueries';
+import { AvatarUpload } from './AvatarUpload';
 
 interface User {
   id: string;
@@ -97,6 +97,19 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
     }
   };
 
+  const handleAvatarUpdate = async (newAvatarUrl: string) => {
+    if (profile) {
+      const updatedProfile = { ...profile, avatar_url: newAvatarUrl };
+      setProfile(updatedProfile);
+      
+      try {
+        await updateUserProfile(user.id, { avatar_url: newAvatarUrl });
+      } catch (error) {
+        console.error('Avatar URL mentési hiba:', error);
+      }
+    }
+  };
+
   const toggleDietaryPref = (pref: string) => {
     setSelectedDietaryPrefs(prev => 
       prev.includes(pref) 
@@ -173,6 +186,26 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        {/* Profile Header Card */}
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <AvatarUpload
+                currentAvatarUrl={profile.avatar_url}
+                userId={user.id}
+                onAvatarUpdate={handleAvatarUpdate}
+                userName={profile.full_name || user.fullName}
+              />
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {profile.full_name || user.fullName}
+                </h2>
+                <p className="text-gray-600">{user.email}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Alapadatok */}
           <Card>
@@ -321,7 +354,7 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
           </Card>
         </div>
 
-        {/* Profil információk alsó rész */}
+        {/* Fiók információk */}
         <Card className="mt-8">
           <CardHeader>
             <CardTitle>Fiók információk</CardTitle>

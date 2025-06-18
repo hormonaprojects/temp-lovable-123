@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { User, Save, Edit3, ExternalLink } from "lucide-react";
 import { fetchUserProfile, updateUserProfile, UserProfile } from "@/services/profileQueries";
+import { AvatarUpload } from "./AvatarUpload";
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -79,6 +80,19 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
     }
   };
 
+  const handleAvatarUpdate = async (newAvatarUrl: string) => {
+    if (profile) {
+      const updatedProfile = { ...profile, avatar_url: newAvatarUrl };
+      setProfile(updatedProfile);
+      
+      try {
+        await updateUserProfile(user.id, { avatar_url: newAvatarUrl });
+      } catch (error) {
+        console.error('Avatar URL mentési hiba:', error);
+      }
+    }
+  };
+
   const handleInputChange = (field: keyof UserProfile, value: string | number | null) => {
     if (profile) {
       setProfile(prev => prev ? {
@@ -105,15 +119,22 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md mx-auto bg-white rounded-xl shadow-2xl border-0">
         <DialogHeader className="text-center pb-4 border-b border-gray-100">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
-            <User className="w-8 h-8 text-white" />
-          </div>
           <DialogTitle className="text-2xl font-bold text-gray-800">
             Felhasználói Profil
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-6">
+          {/* Profilkép */}
+          <div className="flex justify-center">
+            <AvatarUpload
+              currentAvatarUrl={profile?.avatar_url}
+              userId={user.id}
+              onAvatarUpdate={handleAvatarUpdate}
+              userName={profile?.full_name || user.fullName}
+            />
+          </div>
+
           {/* Teljes Név */}
           <div className="space-y-2">
             <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">

@@ -10,6 +10,7 @@ export interface UserProfile {
   activity_level: string | null;
   dietary_preferences: string[] | null;
   allergies: string[] | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -64,4 +65,24 @@ export const createUserProfile = async (userId: string, profileData: Partial<Use
   }
 
   return data;
+};
+
+export const uploadAvatar = async (userId: string, file: File) => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${userId}/avatar.${fileExt}`;
+  
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(fileName, file, { upsert: true });
+
+  if (uploadError) {
+    console.error('Avatar feltöltési hiba:', uploadError);
+    throw uploadError;
+  }
+
+  const { data } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(fileName);
+
+  return data.publicUrl;
 };
