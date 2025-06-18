@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
 import { DailyMealPlanner } from "./DailyMealPlanner";
+import { UserProfileModal } from "./UserProfileModal";
+import { User } from "lucide-react";
 
 interface User {
   id: string;
@@ -17,6 +19,7 @@ interface FoodPlannerAppProps {
 
 export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
   const [currentView, setCurrentView] = useState<'single' | 'daily'>('single');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
@@ -27,13 +30,29 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
             <h1 className="text-lg sm:text-xl font-bold">🍽️ Ételtervező</h1>
             <p className="text-xs sm:text-sm opacity-80">Üdv, {user.fullName}!</p>
           </div>
-          <Button
-            onClick={onLogout}
-            variant="outline"
-            className="text-white border-white/30 hover:bg-white/10 bg-white/10 text-sm px-4 py-2"
-          >
-            Kijelentkezés
-          </Button>
+          
+          {/* Jobb oldali gombok */}
+          <div className="flex items-center gap-3">
+            {/* Profil gomb */}
+            <Button
+              onClick={() => setIsProfileOpen(true)}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Profil</span>
+            </Button>
+            
+            {/* Kijelentkezés gomb */}
+            <Button
+              onClick={onLogout}
+              variant="outline"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 text-sm px-4 py-2"
+            >
+              Kijelentkezés
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -51,6 +70,13 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
           />
         )}
       </div>
+
+      {/* Profil Modal */}
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        user={user}
+      />
     </div>
   );
 }

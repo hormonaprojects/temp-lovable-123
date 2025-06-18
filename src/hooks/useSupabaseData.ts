@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +33,20 @@ export interface SupabaseRecipe {
 export interface MealTypeData {
   [key: string]: string[];
 }
+
+// Normalizációs függvény az ékezetek kezelésére
+const normalizeText = (text: string): string => {
+  return text.toLowerCase()
+    .replace(/á/g, 'a')
+    .replace(/é/g, 'e')
+    .replace(/í/g, 'i')
+    .replace(/ó/g, 'o')
+    .replace(/ö/g, 'o')
+    .replace(/ő/g, 'o')
+    .replace(/ú/g, 'u')
+    .replace(/ü/g, 'u')
+    .replace(/ű/g, 'u');
+};
 
 export function useSupabaseData() {
   const [categories, setCategories] = useState<Record<string, string[]>>({});
@@ -114,8 +127,8 @@ export function useSupabaseData() {
 
       console.log('📊 Feldolgozott kategóriák:', processedCategories);
 
-      // Étkezések feldolgozása - rugalmasabb megközelítéssel
-      const allowedMealTypes = ['reggeli', 'tízórai', 'ebéd', 'leves', 'uzsonna', 'vacsora'];
+      // Étkezések feldolgozása - javított ékezetes kezeléssel
+      const allowedMealTypes = ['reggeli', 'tizorai', 'ebed', 'leves', 'uzsonna', 'vacsora'];
       const processedMealTypeRecipes: Record<string, string[]> = {};
       
       console.log('🔍 TÍZÓRAI DEBUG - Nyers mealTypesData:', mealTypesData);
@@ -125,26 +138,14 @@ export function useSupabaseData() {
           console.log(`🔍 TÍZÓRAI DEBUG - Sor ${index}:`, row);
           
           allowedMealTypes.forEach(mealType => {
-            // Keressük meg a megfelelő oszlopot
+            // Keressük meg a megfelelő oszlopot ékezetek nélkül
             const columnName = Object.keys(row).find(key => {
-              const normalizedKey = key.toLowerCase()
-                .replace(/í/g, 'i')
-                .replace(/ó/g, 'o')
-                .replace(/á/g, 'a')
-                .replace(/é/g, 'e')
-                .replace(/ű/g, 'u')
-                .replace(/ő/g, 'o');
-              const normalizedMealType = mealType.toLowerCase()
-                .replace(/í/g, 'i')
-                .replace(/ó/g, 'o')
-                .replace(/á/g, 'a')
-                .replace(/é/g, 'e')
-                .replace(/ű/g, 'u')
-                .replace(/ő/g, 'o');
+              const normalizedKey = normalizeText(key);
+              const normalizedMealType = normalizeText(mealType);
               return normalizedKey === normalizedMealType;
             });
             
-            if (mealType === 'tízórai') {
+            if (mealType === 'tizorai') {
               console.log(`🔍 TÍZÓRAI DEBUG - Keresett oszlop: ${columnName}, érték: ${row[columnName || '']}`);
             }
             
@@ -162,7 +163,7 @@ export function useSupabaseData() {
                   if (!processedMealTypeRecipes[mealType].includes(recipeName)) {
                     processedMealTypeRecipes[mealType].push(recipeName);
                     
-                    if (mealType === 'tízórai') {
+                    if (mealType === 'tizorai') {
                       console.log(`🔍 TÍZÓRAI DEBUG - Hozzáadva recept: ${recipeName}`);
                     }
                   }
@@ -174,13 +175,23 @@ export function useSupabaseData() {
       }
 
       console.log('🍽️ Feldolgozott étkezési típusok receptekkel:', processedMealTypeRecipes);
-      console.log('🔍 TÍZÓRAI DEBUG - Végső tízórai receptek:', processedMealTypeRecipes['tízórai']);
+      console.log('🔍 TÍZÓRAI DEBUG - Végső tízórai receptek:', processedMealTypeRecipes['tizorai']);
 
-      // Meal types objektum létrehozása
+      // Meal types objektum létrehozása - ékezetek nélküli kulcsokkal
       const processedMealTypes: MealTypeData = {};
+      const mealTypeMapping = {
+        'reggeli': 'reggeli',
+        'tizorai': 'tízórai', // Itt visszamappeljük az eredeti ékezetes névre
+        'ebed': 'ebéd',
+        'leves': 'leves',
+        'uzsonna': 'uzsonna',
+        'vacsora': 'vacsora'
+      };
+
       allowedMealTypes.forEach(mealType => {
         if (processedMealTypeRecipes[mealType] && processedMealTypeRecipes[mealType].length > 0) {
-          processedMealTypes[mealType] = processedMealTypeRecipes[mealType];
+          const displayName = mealTypeMapping[mealType as keyof typeof mealTypeMapping] || mealType;
+          processedMealTypes[displayName] = processedMealTypeRecipes[mealType];
         }
       });
 
@@ -213,7 +224,11 @@ export function useSupabaseData() {
   const getRecipesByMealType = (mealType: string): SupabaseRecipe[] => {
     console.log(`🔍 getRecipesByMealType hívva: ${mealType}`);
     
-    const recipeNames = mealTypeRecipes[mealType.toLowerCase()] || [];
+    // Ékezetek nélküli keresés
+    const normalizedMealType = normalizeText(mealType);
+    const mealTypeKey = normalizedMealType === 'tizorai' ? 'tizorai' : mealType.toLowerCase();
+    
+    const recipeNames = mealTypeRecipes[mealTypeKey] || [];
     console.log(`🔍 ${mealType} engedélyezett receptnevek:`, recipeNames);
     
     const foundRecipes = recipes.filter(recipe => 
@@ -238,8 +253,12 @@ export function useSupabaseData() {
       return [];
     }
 
+    // Ékezetek nélküli keresés
+    const normalizedMealType = normalizeText(mealType);
+    const mealTypeKey = normalizedMealType === 'tizorai' ? 'tizorai' : mealType.toLowerCase();
+
     // 1. LÉPÉS: Étkezési típus alapján szűrés
-    const allowedRecipeNames = mealTypeRecipes[mealType.toLowerCase()] || [];
+    const allowedRecipeNames = mealTypeRecipes[mealTypeKey] || [];
     console.log(`📋 Engedélyezett receptek ${mealType}-hoz:`, allowedRecipeNames);
 
     if (allowedRecipeNames.length === 0) {
