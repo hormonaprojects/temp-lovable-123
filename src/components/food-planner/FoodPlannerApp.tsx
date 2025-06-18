@@ -6,9 +6,12 @@ import { DailyMealPlanner } from "./DailyMealPlanner";
 import { UserProfilePage } from "./UserProfilePage";
 import { UserProfileModal } from "./UserProfileModal";
 import { FavoritesPage } from "./FavoritesPage";
-import { User } from "lucide-react";
+import { PreferenceSetup } from "./PreferenceSetup";
+import { PreferencesPage } from "./PreferencesPage";
+import { User, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchUserProfile } from "@/services/profileQueries";
+import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
 import { Star } from "lucide-react";
 
 interface User {
@@ -22,27 +25,68 @@ interface FoodPlannerAppProps {
   onLogout: () => void;
 }
 
-export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
-  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites'>('single');
+export function FoodPlannerApp({ user, onLogout }: FoodPlannerApp Props) {
+  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'preferences'>('single');
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUserProfile = async () => {
+    const loadUserData = async () => {
       try {
-        const profile = await fetchUserProfile(user.id);
+        const [profile, preferencesExist] = await Promise.all([
+          fetchUserProfile(user.id),
+          checkUserHasPreferences(user.id)
+        ]);
+        
         setUserProfile(profile);
+        setHasPreferences(preferencesExist);
+        
+        // Ha nincs preferencia beállítva, mutassuk a setup oldalt
+        if (!preferencesExist) {
+          setCurrentView('preference-setup');
+        }
+        
       } catch (error) {
-        console.error('Profil betöltési hiba:', error);
+        console.error('Felhasználó adatok betöltési hiba:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadUserProfile();
+    loadUserData();
   }, [user.id]);
+
+  const handlePreferenceSetupComplete = () => {
+    setHasPreferences(true);
+    setCurrentView('single');
+  };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-lg">Betöltés...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Ha nincs preferencia beállítva, mutassuk a setup oldalt
+  if (hasPreferences === false && currentView === 'preference-setup') {
+    return (
+      <PreferenceSetup
+        user={user}
+        onComplete={handlePreferenceSetupComplete}
+      />
+    );
+  }
 
   if (currentView === 'profile') {
     return (
@@ -56,6 +100,15 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
   if (currentView === 'favorites') {
     return (
       <FavoritesPage
+        user={user}
+        onClose={() => setCurrentView('single')}
+      />
+    );
+  }
+
+  if (currentView === 'preferences') {
+    return (
+      <PreferencesPage
         user={user}
         onClose={() => setCurrentView('single')}
       />
@@ -83,6 +136,17 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
             >
               <Star className="w-4 h-4 text-yellow-400 fill-current" />
               <span className="hidden sm:inline">Kedvencek</span>
+            </Button>
+
+            {/* Preferenciák gomb */}
+            <Button
+              onClick={() => setCurrentView('preferences')}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Preferenciák</span>
             </Button>
 
             {/* Profil gomb profilképpel */}

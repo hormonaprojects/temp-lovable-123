@@ -117,6 +117,7 @@ export type Database = {
           Gyümölcsök: string | null
           Halak: string | null
           Húsfélék: string | null
+          id: number
           "Olajok és Magvak": string | null
           Tejtermékek: string | null
           "Zöldségek / Vegetáriánus": string | null
@@ -126,6 +127,7 @@ export type Database = {
           Gyümölcsök?: string | null
           Halak?: string | null
           Húsfélék?: string | null
+          id?: number
           "Olajok és Magvak"?: string | null
           Tejtermékek?: string | null
           "Zöldségek / Vegetáriánus"?: string | null
@@ -135,9 +137,40 @@ export type Database = {
           Gyümölcsök?: string | null
           Halak?: string | null
           Húsfélék?: string | null
+          id?: number
           "Olajok és Magvak"?: string | null
           Tejtermékek?: string | null
           "Zöldségek / Vegetáriánus"?: string | null
+        }
+        Relationships: []
+      }
+      Ételpreferenciák: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          ingredient: string
+          preference: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          ingredient: string
+          preference: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          ingredient?: string
+          preference?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -201,6 +234,39 @@ export type Database = {
           recipe_data?: Json
           recipe_name?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      Preferencia: {
+        Row: {
+          "Gabonák és Tészták": string | null
+          Gyümölcsök: string | null
+          Halak: string | null
+          Húsfélék: string | null
+          ID: number
+          "Olajok és Magvak": string | null
+          Tejtermékek: string | null
+          "Zöldségek / Vegetáriánus": string | null
+        }
+        Insert: {
+          "Gabonák és Tészták"?: string | null
+          Gyümölcsök?: string | null
+          Halak?: string | null
+          Húsfélék?: string | null
+          ID: number
+          "Olajok és Magvak"?: string | null
+          Tejtermékek?: string | null
+          "Zöldségek / Vegetáriánus"?: string | null
+        }
+        Update: {
+          "Gabonák és Tészták"?: string | null
+          Gyümölcsök?: string | null
+          Halak?: string | null
+          Húsfélék?: string | null
+          ID?: number
+          "Olajok és Magvak"?: string | null
+          Tejtermékek?: string | null
+          "Zöldségek / Vegetáriánus"?: string | null
         }
         Relationships: []
       }
