@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -38,15 +37,8 @@ export interface MealTypeData {
 // Javított normalizációs függvény az ékezetek kezelésére
 const normalizeText = (text: string): string => {
   return text.toLowerCase()
-    .replace(/á/g, 'a')
-    .replace(/é/g, 'e')
-    .replace(/í/g, 'i')
-    .replace(/ó/g, 'o')
-    .replace(/ö/g, 'o')
-    .replace(/ő/g, 'o')
-    .replace(/ú/g, 'u')
-    .replace(/ü/g, 'u')
-    .replace(/ű/g, 'u')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .trim();
 };
 
@@ -129,8 +121,16 @@ export function useSupabaseData() {
 
       console.log('📊 Feldolgozott kategóriák:', processedCategories);
 
-      // Étkezések feldolgozása - javított ékezetes kezeléssel
-      const allowedMealTypes = ['reggeli', 'tizorai', 'ebed', 'leves', 'uzsonna', 'vacsora'];
+      // Étkezések feldolgozása - javított mapping
+      const mealTypeMapping = {
+        'reggeli': 'reggeli',
+        'tízórai': 'tizorai',
+        'ebéd': 'ebed',
+        'leves': 'leves',
+        'uzsonna': 'uzsonna',
+        'vacsora': 'vacsora'
+      };
+
       const processedMealTypeRecipes: Record<string, string[]> = {};
       
       console.log('🔍 ÉTKEZÉS DEBUG - Nyers mealTypesData:', mealTypesData);
@@ -139,34 +139,17 @@ export function useSupabaseData() {
         mealTypesData.forEach((row, index) => {
           console.log(`🔍 ÉTKEZÉS DEBUG - Sor ${index}:`, row);
           
-          allowedMealTypes.forEach(mealType => {
-            // Keressük meg a megfelelő oszlopot ékezetek nélkül és különböző változatokkal
+          Object.keys(mealTypeMapping).forEach(displayMealType => {
+            const internalKey = mealTypeMapping[displayMealType as keyof typeof mealTypeMapping];
+            
+            // Keressük meg a megfelelő oszlopot
             let columnName = Object.keys(row).find(key => {
               const normalizedKey = normalizeText(key);
-              const normalizedMealType = normalizeText(mealType);
-              return normalizedKey === normalizedMealType;
+              const normalizedSearchKey = normalizeText(displayMealType);
+              return normalizedKey === normalizedSearchKey;
             });
 
-            // Ha nem találjuk meg, próbáljuk az eredeti ékezetes nevekkel is
-            if (!columnName) {
-              const mealTypeVariations: Record<string, string[]> = {
-                'reggeli': ['Reggeli', 'reggeli'],
-                'tizorai': ['Tízórai', 'tizorai', 'Tizorai'],
-                'ebed': ['Ebéd', 'ebed', 'Ebed'],
-                'leves': ['Leves', 'leves'],
-                'uzsonna': ['Uzsonna', 'uzsonna'],
-                'vacsora': ['Vacsora', 'vacsora']
-              };
-
-              const variations = mealTypeVariations[mealType] || [mealType];
-              columnName = Object.keys(row).find(key => 
-                variations.some(variation => key === variation)
-              );
-            }
-            
-            if (mealType === 'ebed' || mealType === 'vacsora') {
-              console.log(`🔍 ${mealType.toUpperCase()} DEBUG - Keresett oszlop: ${columnName}, érték: ${row[columnName || '']}`);
-            }
+            console.log(`🔍 ${displayMealType} DEBUG - Keresett oszlop: ${columnName}, érték: ${row[columnName || '']}`);
             
             if (columnName && row[columnName]) {
               const cellValue = row[columnName];
@@ -176,15 +159,12 @@ export function useSupabaseData() {
                 // Ha X van a cellában, akkor a recept nevét a "Recept Neve" oszlopból vesszük
                 if (cellValue.trim().toUpperCase() === 'X' && row['Recept Neve']) {
                   const recipeName = row['Recept Neve'];
-                  if (!processedMealTypeRecipes[mealType]) {
-                    processedMealTypeRecipes[mealType] = [];
+                  if (!processedMealTypeRecipes[internalKey]) {
+                    processedMealTypeRecipes[internalKey] = [];
                   }
-                  if (!processedMealTypeRecipes[mealType].includes(recipeName)) {
-                    processedMealTypeRecipes[mealType].push(recipeName);
-                    
-                    if (mealType === 'ebed' || mealType === 'vacsora') {
-                      console.log(`🔍 ${mealType.toUpperCase()} DEBUG - Hozzáadva recept: ${recipeName}`);
-                    }
+                  if (!processedMealTypeRecipes[internalKey].includes(recipeName)) {
+                    processedMealTypeRecipes[internalKey].push(recipeName);
+                    console.log(`🔍 ${displayMealType} DEBUG - Hozzáadva recept: ${recipeName}`);
                   }
                 }
               }
@@ -194,24 +174,13 @@ export function useSupabaseData() {
       }
 
       console.log('🍽️ Feldolgozott étkezési típusok receptekkel:', processedMealTypeRecipes);
-      console.log('🔍 EBÉD DEBUG - Végső ebéd receptek:', processedMealTypeRecipes['ebed']);
-      console.log('🔍 VACSORA DEBUG - Végső vacsora receptek:', processedMealTypeRecipes['vacsora']);
 
-      // Meal types objektum létrehozása - ékezetek nélküli kulcsokkal
+      // Meal types objektum létrehozása - display nevek
       const processedMealTypes: MealTypeData = {};
-      const mealTypeMapping = {
-        'reggeli': 'reggeli',
-        'tizorai': 'tízórai',
-        'ebed': 'ebéd',
-        'leves': 'leves',
-        'uzsonna': 'uzsonna',
-        'vacsora': 'vacsora'
-      };
-
-      allowedMealTypes.forEach(mealType => {
-        if (processedMealTypeRecipes[mealType] && processedMealTypeRecipes[mealType].length > 0) {
-          const displayName = mealTypeMapping[mealType as keyof typeof mealTypeMapping] || mealType;
-          processedMealTypes[displayName] = processedMealTypeRecipes[mealType];
+      Object.keys(mealTypeMapping).forEach(displayName => {
+        const internalKey = mealTypeMapping[displayName as keyof typeof mealTypeMapping];
+        if (processedMealTypeRecipes[internalKey] && processedMealTypeRecipes[internalKey].length > 0) {
+          processedMealTypes[displayName] = processedMealTypeRecipes[internalKey];
         }
       });
 
@@ -244,28 +213,31 @@ export function useSupabaseData() {
   const getRecipesByMealType = (mealType: string): SupabaseRecipe[] => {
     console.log(`🔍 getRecipesByMealType hívva: ${mealType}`);
     
-    // Ékezetek nélküli keresés és javított mapping
-    let mealTypeKey = mealType.toLowerCase();
-    if (mealType === 'tízórai') {
-      mealTypeKey = 'tizorai';
-    } else if (mealType === 'ebéd') {
-      mealTypeKey = 'ebed';
-    }
+    // Mapping a megfelelő belső kulcsra
+    const mealTypeMapping: Record<string, string> = {
+      'reggeli': 'reggeli',
+      'tízórai': 'tizorai',
+      'ebéd': 'ebed',
+      'leves': 'leves',
+      'uzsonna': 'uzsonna',
+      'vacsora': 'vacsora'
+    };
     
+    const mealTypeKey = mealTypeMapping[mealType.toLowerCase()] || mealType.toLowerCase();
     const recipeNames = mealTypeRecipes[mealTypeKey] || [];
+    
     console.log(`🔍 ${mealType} engedélyezett receptnevek (${mealTypeKey}):`, recipeNames);
     
     const foundRecipes = recipes.filter(recipe => 
       recipeNames.some(allowedName => {
         if (!recipe['Recept_Neve'] || !allowedName) return false;
         
-        const recipeName = recipe['Recept_Neve'].toLowerCase().trim();
-        const allowedNameLower = allowedName.toLowerCase().trim();
+        const recipeName = normalizeText(recipe['Recept_Neve']);
+        const allowedNameNormalized = normalizeText(allowedName);
         
-        // Pontosabb egyeztetés
-        return recipeName === allowedNameLower ||
-               recipeName.includes(allowedNameLower) ||
-               allowedNameLower.includes(recipeName);
+        return recipeName === allowedNameNormalized ||
+               recipeName.includes(allowedNameNormalized) ||
+               allowedNameNormalized.includes(recipeName);
       })
     );
     
@@ -283,13 +255,17 @@ export function useSupabaseData() {
       return [];
     }
 
-    // Javított ékezetes kezelés
-    let mealTypeKey = mealType.toLowerCase();
-    if (mealType === 'tízórai') {
-      mealTypeKey = 'tizorai';
-    } else if (mealType === 'ebéd') {
-      mealTypeKey = 'ebed';
-    }
+    // Mapping a megfelelő belső kulcsra
+    const mealTypeMapping: Record<string, string> = {
+      'reggeli': 'reggeli',
+      'tízórai': 'tizorai',
+      'ebéd': 'ebed',
+      'leves': 'leves',
+      'uzsonna': 'uzsonna',
+      'vacsora': 'vacsora'
+    };
+
+    const mealTypeKey = mealTypeMapping[mealType.toLowerCase()] || mealType.toLowerCase();
 
     // 1. LÉPÉS: Étkezési típus alapján szűrés
     const allowedRecipeNames = mealTypeRecipes[mealTypeKey] || [];
@@ -305,13 +281,12 @@ export function useSupabaseData() {
       if (!recipe['Recept_Neve']) return false;
       
       return allowedRecipeNames.some(allowedName => {
-        const recipeName = recipe['Recept_Neve'].toLowerCase().trim();
-        const allowedNameLower = allowedName.toLowerCase().trim();
+        const recipeName = normalizeText(recipe['Recept_Neve']);
+        const allowedNameNormalized = normalizeText(allowedName);
         
-        // Pontos egyezés vagy tartalmazzák egymást
-        return recipeName === allowedNameLower ||
-               recipeName.includes(allowedNameLower) ||
-               allowedNameLower.includes(recipeName);
+        return recipeName === allowedNameNormalized ||
+               recipeName.includes(allowedNameNormalized) ||
+               allowedNameNormalized.includes(recipeName);
       });
     });
 
@@ -341,8 +316,8 @@ export function useSupabaseData() {
         const hasCategory = categoryIngredients.some(categoryIngredient =>
           allIngredients.some(ing => 
             ing && (
-              ing.toLowerCase().includes(categoryIngredient.toLowerCase()) ||
-              categoryIngredient.toLowerCase().includes(ing.toLowerCase())
+              normalizeText(ing).includes(normalizeText(categoryIngredient)) ||
+              normalizeText(categoryIngredient).includes(normalizeText(ing))
             )
           )
         );
@@ -365,19 +340,14 @@ export function useSupabaseData() {
         recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
       ].filter(Boolean);
 
-      // SZIGORÚ keresés: az alapanyagnak pontosan szerepelnie kell
       const hasSpecificIngredient = allIngredients.some(ing => {
         if (!ing) return false;
         
-        const ingredientLower = ing.toLowerCase().trim();
-        const searchIngredientLower = ingredient.toLowerCase().trim();
+        const ingredientNormalized = normalizeText(ing);
+        const searchIngredientNormalized = normalizeText(ingredient);
         
-        // Pontosabb egyeztetés: az alapanyag nevének tartalmaznia kell a keresett szót
-        // vagy a keresett szó tartalmazhatja az alapanyag nevét
-        const containsIngredient = ingredientLower.includes(searchIngredientLower) || 
-                                   searchIngredientLower.includes(ingredientLower);
-        
-        return containsIngredient;
+        return ingredientNormalized.includes(searchIngredientNormalized) || 
+               searchIngredientNormalized.includes(ingredientNormalized);
       });
 
       return hasSpecificIngredient;
