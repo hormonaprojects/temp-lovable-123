@@ -39,6 +39,8 @@ const normalizeText = (text: string): string => {
   return text.toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ű/g, 'u')
+    .replace(/ő/g, 'o')
     .trim();
 };
 
@@ -121,10 +123,10 @@ export function useSupabaseData() {
 
       console.log('📊 Feldolgozott kategóriák:', processedCategories);
 
-      // Étkezések feldolgozása - javított mapping
+      // Étkezések feldolgozása - javított mapping ékezetekkel
       const mealTypeMapping = {
         'reggeli': 'reggeli',
-        'tízórai': 'tizorai',
+        'tízórai': 'tízórai', // Javítva: "tizórai" helyett "tízórai"
         'ebéd': 'ebed',
         'leves': 'leves',
         'uzsonna': 'uzsonna',
@@ -142,10 +144,11 @@ export function useSupabaseData() {
           Object.keys(mealTypeMapping).forEach(displayMealType => {
             const internalKey = mealTypeMapping[displayMealType as keyof typeof mealTypeMapping];
             
-            // Keressük meg a megfelelő oszlopot
+            // Keressük meg a megfelelő oszlopot - javított keresés
             let columnName = Object.keys(row).find(key => {
               const normalizedKey = normalizeText(key);
               const normalizedSearchKey = normalizeText(displayMealType);
+              console.log(`🔍 Oszlop keresés: "${key}" (${normalizedKey}) vs "${displayMealType}" (${normalizedSearchKey})`);
               return normalizedKey === normalizedSearchKey;
             });
 
@@ -213,10 +216,10 @@ export function useSupabaseData() {
   const getRecipesByMealType = (mealType: string): SupabaseRecipe[] => {
     console.log(`🔍 getRecipesByMealType hívva: ${mealType}`);
     
-    // Mapping a megfelelő belső kulcsra
+    // Javított mapping a megfelelő belső kulcsra
     const mealTypeMapping: Record<string, string> = {
       'reggeli': 'reggeli',
-      'tízórai': 'tizorai',
+      'tízórai': 'tízórai', // Javítva
       'ebéd': 'ebed',
       'leves': 'leves',
       'uzsonna': 'uzsonna',
@@ -255,10 +258,10 @@ export function useSupabaseData() {
       return [];
     }
 
-    // Mapping a megfelelő belső kulcsra
+    // Javított mapping a megfelelő belső kulcsra
     const mealTypeMapping: Record<string, string> = {
       'reggeli': 'reggeli',
-      'tízórai': 'tizorai',
+      'tízórai': 'tízórai', // Javítva
       'ebéd': 'ebed',
       'leves': 'leves',
       'uzsonna': 'uzsonna',
