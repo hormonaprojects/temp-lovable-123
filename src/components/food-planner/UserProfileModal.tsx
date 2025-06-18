@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { User, Save, Edit3, ExternalLink, ArrowLeft, X } from "lucide-react";
+import { User, Save, Edit3, ExternalLink, ArrowLeft } from "lucide-react";
 import { fetchUserProfile, updateUserProfile, UserProfile } from "@/services/profileQueries";
 import { AvatarUpload } from "./AvatarUpload";
 
@@ -116,7 +115,7 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen}>
       <DialogContent className="max-w-md mx-auto bg-white rounded-xl shadow-2xl border-0 max-h-[95vh] overflow-hidden flex flex-col p-0">
         {/* Fixed Header */}
         <DialogHeader className="shrink-0 px-6 py-4 border-b border-gray-100 bg-white">
@@ -127,7 +126,7 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
               size="sm"
               className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 p-2 h-8 w-8 absolute left-0"
             >
-              <X className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4" />
             </Button>
             <DialogTitle className="text-xl font-bold text-gray-800">
               Felhasználói Profil
