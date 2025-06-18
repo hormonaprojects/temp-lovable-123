@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { User, Save, Edit3 } from "lucide-react";
+import { User, Save, Edit3, ExternalLink } from "lucide-react";
+import { fetchUserProfile, updateUserProfile, UserProfile } from "@/services/profileQueries";
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -15,57 +16,56 @@ interface UserProfileModalProps {
     email: string;
     fullName: string;
   };
+  onOpenFullProfile?: () => void;
 }
 
-interface UserProfile {
-  fullName: string;
-  email: string;
-  age: string;
-  weight: string;
-}
-
-export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProps) {
-  const [profile, setProfile] = useState<UserProfile>({
-    fullName: user.fullName,
-    email: user.email,
-    age: '',
-    weight: ''
-  });
+export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: UserProfileModalProps) {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Betöltjük a mentett profil adatokat localStorage-ból
-    const savedProfile = localStorage.getItem(`userProfile_${user.id}`);
-    if (savedProfile) {
-      try {
-        const parsedProfile = JSON.parse(savedProfile);
-        setProfile({
-          ...parsedProfile,
-          email: user.email // Email-t mindig az aktuális session-ből vesszük
-        });
-      } catch (error) {
-        console.error('Profil betöltési hiba:', error);
-      }
+    if (isOpen) {
+      loadProfile();
     }
-  }, [user.id, user.email]);
+  }, [isOpen, user.id]);
+
+  const loadProfile = async () => {
+    setLoading(true);
+    try {
+      const profileData = await fetchUserProfile(user.id);
+      if (profileData) {
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error('Profil betöltési hiba:', error);
+      toast({
+        title: "Hiba történt",
+        description: "Nem sikerült betölteni a profil adatokat.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
+    if (!profile) return;
+
     setIsSaving(true);
     try {
-      // Mentjük a profil adatokat localStorage-ba
-      const profileToSave = {
-        fullName: profile.fullName,
+      await updateUserProfile(user.id, {
+        full_name: profile.full_name,
         age: profile.age,
         weight: profile.weight
-      };
-      localStorage.setItem(`userProfile_${user.id}`, JSON.stringify(profileToSave));
+      });
       
       setIsEditing(false);
       toast({
         title: "Profil mentve! ✅",
-        description: "Az adatok sikeresen frissítve lettek.",
+        description: "Az alapadatok sikeresen frissítve lettek.",
       });
     } catch (error) {
       console.error('Profil mentési hiba:', error);
@@ -79,12 +79,27 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
     }
   };
 
-  const handleInputChange = (field: keyof UserProfile, value: string) => {
-    setProfile(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleInputChange = (field: keyof UserProfile, value: string | number | null) => {
+    if (profile) {
+      setProfile(prev => prev ? {
+        ...prev,
+        [field]: value
+      } : null);
+    }
   };
+
+  if (loading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md mx-auto bg-white rounded-xl shadow-2xl border-0">
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-gray-600">Betöltés...</span>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -106,8 +121,8 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
             </Label>
             <Input
               id="fullName"
-              value={profile.fullName}
-              onChange={(e) => handleInputChange('fullName', e.target.value)}
+              value={profile?.full_name || ''}
+              onChange={(e) => handleInputChange('full_name', e.target.value)}
               disabled={!isEditing}
               className={`transition-all duration-200 ${
                 isEditing 
@@ -124,7 +139,7 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
             </Label>
             <Input
               id="email"
-              value={profile.email}
+              value={user.email}
               disabled={true}
               className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed"
             />
@@ -139,8 +154,8 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
             <Input
               id="age"
               type="number"
-              value={profile.age}
-              onChange={(e) => handleInputChange('age', e.target.value)}
+              value={profile?.age || ''}
+              onChange={(e) => handleInputChange('age', parseInt(e.target.value) || null)}
               disabled={!isEditing}
               placeholder="Például: 25"
               className={`transition-all duration-200 ${
@@ -159,8 +174,9 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
             <Input
               id="weight"
               type="number"
-              value={profile.weight}
-              onChange={(e) => handleInputChange('weight', e.target.value)}
+              step="0.1"
+              value={profile?.weight || ''}
+              onChange={(e) => handleInputChange('weight', parseFloat(e.target.value) || null)}
               disabled={!isEditing}
               placeholder="Például: 70"
               className={`transition-all duration-200 ${
@@ -173,34 +189,52 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
         </div>
 
         {/* Gombok */}
-        <div className="flex justify-center gap-3 pt-4 border-t border-gray-100">
-          {!isEditing ? (
+        <div className="flex flex-col gap-3 pt-4 border-t border-gray-100">
+          {/* Részletes profil gomb */}
+          {onOpenFullProfile && (
             <Button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              onClick={() => {
+                onOpenFullProfile();
+                onClose();
+              }}
+              variant="outline"
+              className="flex items-center gap-2 border-blue-300 text-blue-700 hover:bg-blue-50"
             >
-              <Edit3 className="w-4 h-4" />
-              Szerkesztés
+              <ExternalLink className="w-4 h-4" />
+              Részletes profil megnyitása
             </Button>
-          ) : (
-            <>
-              <Button
-                onClick={() => setIsEditing(false)}
-                variant="outline"
-                className="px-6 py-2 rounded-lg font-medium border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
-              >
-                Mégse
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Save className="w-4 h-4" />
-                {isSaving ? 'Mentés...' : 'Mentés'}
-              </Button>
-            </>
           )}
+
+          {/* Szerkesztés/Mentés gombok */}
+          <div className="flex justify-center gap-3">
+            {!isEditing ? (
+              <Button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                <Edit3 className="w-4 h-4" />
+                Szerkesztés
+              </Button>
+            ) : (
+              <>
+                <Button
+                  onClick={() => setIsEditing(false)}
+                  variant="outline"
+                  className="px-6 py-2 rounded-lg font-medium border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                >
+                  Mégse
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Save className="w-4 h-4" />
+                  {isSaving ? 'Mentés...' : 'Mentés'}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

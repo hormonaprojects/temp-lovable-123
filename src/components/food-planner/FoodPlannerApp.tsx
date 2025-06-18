@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
 import { DailyMealPlanner } from "./DailyMealPlanner";
-import { UserProfileModal } from "./UserProfileModal";
+import { UserProfilePage } from "./UserProfilePage";
 import { User } from "lucide-react";
 
 interface User {
@@ -18,8 +18,16 @@ interface FoodPlannerAppProps {
 }
 
 export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
-  const [currentView, setCurrentView] = useState<'single' | 'daily'>('single');
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile'>('single');
+
+  if (currentView === 'profile') {
+    return (
+      <UserProfilePage
+        user={user}
+        onClose={() => setCurrentView('single')}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
@@ -35,7 +43,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
           <div className="flex items-center gap-3">
             {/* Profil gomb */}
             <Button
-              onClick={() => setIsProfileOpen(true)}
+              onClick={() => setCurrentView('profile')}
               variant="outline"
               size="sm"
               className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
@@ -70,13 +78,6 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
           />
         )}
       </div>
-
-      {/* Profil Modal */}
-      <UserProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        user={user}
-      />
     </div>
   );
 }
