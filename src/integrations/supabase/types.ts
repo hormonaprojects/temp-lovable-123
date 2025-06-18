@@ -144,6 +144,39 @@ export type Database = {
         }
         Relationships: []
       }
+      Ételkategóriák_Új: {
+        Row: {
+          "Gabonák és Tészták": string | null
+          Gyümölcsök: string | null
+          Halak: string | null
+          Húsfélék: string | null
+          id: number
+          "Olajok és Magvak": string | null
+          Tejtermékek: string | null
+          "Zöldségek / Vegetáriánus": string | null
+        }
+        Insert: {
+          "Gabonák és Tészták"?: string | null
+          Gyümölcsök?: string | null
+          Halak?: string | null
+          Húsfélék?: string | null
+          id?: number
+          "Olajok és Magvak"?: string | null
+          Tejtermékek?: string | null
+          "Zöldségek / Vegetáriánus"?: string | null
+        }
+        Update: {
+          "Gabonák és Tészták"?: string | null
+          Gyümölcsök?: string | null
+          Halak?: string | null
+          Húsfélék?: string | null
+          id?: number
+          "Olajok és Magvak"?: string | null
+          Tejtermékek?: string | null
+          "Zöldségek / Vegetáriánus"?: string | null
+        }
+        Relationships: []
+      }
       Ételpreferenciák: {
         Row: {
           category: string

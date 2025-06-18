@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,54 +43,25 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('🔄 Adatok betöltése...');
+        console.log('🔄 Adatok betöltése az új táblából...');
         
-        // Próbáljuk meg a Preferencia táblát részletes debuggolással
         const { data: preferencesDataResult, error: preferencesError } = await supabase
-          .from('Preferencia')
+          .from('Ételkategóriák_Új')
           .select('*');
         
-        console.log('📊 Preferencia lekérdezés eredménye:', { 
+        console.log('📊 Ételkategóriák_Új lekérdezés eredménye:', { 
           data: preferencesDataResult, 
           error: preferencesError,
-          dataLength: preferencesDataResult?.length,
-          errorMessage: preferencesError?.message,
-          errorDetails: preferencesError?.details
+          dataLength: preferencesDataResult?.length
         });
         
         if (preferencesError) {
-          console.error('❌ Preferencia lekérdezési hiba:', preferencesError);
-          console.log('🔄 Próbáljuk az Ételkategóriák táblát...');
-          
-          const { data: categoryData, error: categoryError } = await supabase
-            .from('Ételkategóriák')
-            .select('*');
-          
-          if (categoryError) {
-            console.error('❌ Ételkategóriák betöltési hiba:', categoryError);
-            throw categoryError;
-          }
-          
-          console.log('✅ Ételkategóriák adatok:', categoryData);
-          setPreferencesData(categoryData || []);
-        } else if (!preferencesDataResult || preferencesDataResult.length === 0) {
-          console.log('⚠️ Preferencia tábla üres vagy null, próbáljuk az Ételkategóriák táblát...');
-          
-          const { data: categoryData, error: categoryError } = await supabase
-            .from('Ételkategóriák')
-            .select('*');
-          
-          if (categoryError) {
-            console.error('❌ Ételkategóriák betöltési hiba:', categoryError);
-            throw categoryError;
-          }
-          
-          console.log('✅ Ételkategóriák adatok:', categoryData);
-          setPreferencesData(categoryData || []);
-        } else {
-          console.log('✅ Preferencia adatok sikeresen betöltve:', preferencesDataResult);
-          setPreferencesData(preferencesDataResult);
+          console.error('❌ Ételkategóriák_Új lekérdezési hiba:', preferencesError);
+          throw preferencesError;
         }
+        
+        console.log('✅ Ételkategóriák_Új adatok sikeresen betöltve:', preferencesDataResult);
+        setPreferencesData(preferencesDataResult || []);
         
         // Felhasználói preferenciák betöltése
         const userPreferences = await fetchUserPreferences(user.id);
@@ -266,14 +238,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         <div className="bg-blue-100 rounded-lg p-4 mb-4">
           <h3 className="font-bold text-blue-800">Debug információk:</h3>
           <p className="text-blue-600">Betöltött sorok száma: {preferencesData.length}</p>
-          <p className="text-blue-600">Használt tábla: {preferencesData.length > 0 ? (preferencesData[0].hasOwnProperty('ID') ? 'Preferencia' : 'Ételkategóriák') : 'nincs adat'}</p>
-          {preferencesData.length > 0 && (
-            <div className="text-blue-600 text-sm mt-2">
-              <p>Oszlopok: {Object.keys(preferencesData[0]).join(', ')}</p>
-              <p>Húsfélék m��nta: {preferencesData[0]?.['Húsfélék'] || 'nincs'}</p>
-              <p>Halak minta: {preferencesData[0]?.['Halak'] || 'nincs'}</p>
-            </div>
-          )}
+          <p className="text-blue-600">Használt tábla: Ételkategóriák_Új</p>
         </div>
       </div>
 
