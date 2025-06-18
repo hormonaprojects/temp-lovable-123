@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Heart, X, Save, Edit3 } from "lucide-react";
-import { fetchCategories } from "@/services/supabaseQueries";
+import { supabase } from '@/integrations/supabase/client';
 import { fetchUserPreferences, saveUserPreferences, FoodPreference } from "@/services/foodPreferencesQueries";
 
 interface User {
@@ -23,7 +23,7 @@ interface PreferenceState {
 }
 
 export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [preferencesData, setPreferencesData] = useState<any[]>([]);
   const [preferences, setPreferences] = useState<PreferenceState>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,16 +43,21 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [categoriesData, preferencesData] = await Promise.all([
-          fetchCategories(),
+        const [preferencesDataResult, userPreferences] = await Promise.all([
+          supabase.from('Preferencia').select('*'),
           fetchUserPreferences(user.id)
         ]);
         
-        setCategories(categoriesData || []);
+        if (preferencesDataResult.error) {
+          console.error('Preferencia adatok betöltési hiba:', preferencesDataResult.error);
+          throw preferencesDataResult.error;
+        }
+        
+        setPreferencesData(preferencesDataResult.data || []);
         
         // Preferenciák átalakítása objektummá
         const prefsObj: PreferenceState = {};
-        preferencesData.forEach((pref: FoodPreference) => {
+        userPreferences.forEach((pref: FoodPreference) => {
           const key = `${pref.category}-${pref.ingredient}`;
           prefsObj[key] = pref.preference;
         });
@@ -76,7 +81,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   const getCategoryIngredients = (categoryName: string) => {
     const ingredients: string[] = [];
     
-    categories.forEach(row => {
+    preferencesData.forEach(row => {
       const value = row[categoryName];
       if (value && typeof value === 'string') {
         const items = value.split(',').map(item => item.trim()).filter(item => item);

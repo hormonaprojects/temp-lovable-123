@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, X, ChevronRight, ChevronLeft } from "lucide-react";
-import { fetchCategories } from "@/services/supabaseQueries";
+import { supabase } from '@/integrations/supabase/client';
 import { saveUserPreferences } from "@/services/foodPreferencesQueries";
 
 interface User {
@@ -23,7 +23,7 @@ interface PreferenceState {
 }
 
 export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [preferencesData, setPreferencesData] = useState<any[]>([]);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [preferences, setPreferences] = useState<PreferenceState>({});
   const [loading, setLoading] = useState(true);
@@ -41,15 +41,23 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   ];
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadPreferencesData = async () => {
       try {
-        const data = await fetchCategories();
-        setCategories(data || []);
+        const { data, error } = await supabase
+          .from('Preferencia')
+          .select('*');
+        
+        if (error) {
+          console.error('Preferencia adatok betöltési hiba:', error);
+          throw error;
+        }
+        
+        setPreferencesData(data || []);
       } catch (error) {
-        console.error('Kategóriák betöltési hiba:', error);
+        console.error('Preferencia adatok betöltési hiba:', error);
         toast({
           title: "Hiba történt",
-          description: "Nem sikerült betölteni a kategóriákat.",
+          description: "Nem sikerült betölteni az alapanyagokat.",
           variant: "destructive"
         });
       } finally {
@@ -57,16 +65,16 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
       }
     };
 
-    loadCategories();
+    loadPreferencesData();
   }, [toast]);
 
   const getCurrentCategoryIngredients = () => {
-    if (!categories.length || currentCategoryIndex >= categoryNames.length) return [];
+    if (!preferencesData.length || currentCategoryIndex >= categoryNames.length) return [];
     
     const categoryName = categoryNames[currentCategoryIndex];
     const ingredients: string[] = [];
     
-    categories.forEach(row => {
+    preferencesData.forEach(row => {
       const value = row[categoryName];
       if (value && typeof value === 'string') {
         const items = value.split(',').map(item => item.trim()).filter(item => item);
