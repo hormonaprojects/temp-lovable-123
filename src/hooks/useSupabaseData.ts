@@ -123,10 +123,10 @@ export function useSupabaseData() {
 
       console.log('📊 Feldolgozott kategóriák:', processedCategories);
 
-      // Étkezések feldolgozása - javított mapping ékezetekkel
+      // Étkezések feldolgozása - JAVÍTOTT mapping az adatbázis oszlopnevekkel
       const mealTypeMapping = {
         'reggeli': 'reggeli',
-        'tízórai': 'tízórai', // Javítva: "tizórai" helyett "tízórai"
+        'tízórai': 'tizorai', // JAVÍTVA: display név -> belső kulcs
         'ebéd': 'ebed',
         'leves': 'leves',
         'uzsonna': 'uzsonna',
@@ -216,10 +216,10 @@ export function useSupabaseData() {
   const getRecipesByMealType = (mealType: string): SupabaseRecipe[] => {
     console.log(`🔍 getRecipesByMealType hívva: ${mealType}`);
     
-    // Javított mapping a megfelelő belső kulcsra
+    // JAVÍTOTT mapping a megfelelő belső kulcsra
     const mealTypeMapping: Record<string, string> = {
       'reggeli': 'reggeli',
-      'tízórai': 'tízórai', // Javítva
+      'tízórai': 'tizorai', // JAVÍTVA: display név -> belső kulcs
       'ebéd': 'ebed',
       'leves': 'leves',
       'uzsonna': 'uzsonna',
@@ -258,10 +258,10 @@ export function useSupabaseData() {
       return [];
     }
 
-    // Javított mapping a megfelelő belső kulcsra
+    // JAVÍTOTT mapping a megfelelő belső kulcsra
     const mealTypeMapping: Record<string, string> = {
       'reggeli': 'reggeli',
-      'tízórai': 'tízórai', // Javítva
+      'tízórai': 'tizorai', // JAVÍTVA: display név -> belső kulcs
       'ebéd': 'ebed',
       'leves': 'leves',
       'uzsonna': 'uzsonna',
