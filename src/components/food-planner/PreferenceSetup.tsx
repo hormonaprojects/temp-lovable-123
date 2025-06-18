@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,48 +44,43 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
       try {
         console.log('🔄 Preferencia adatok betöltése...');
         
-        // Először próbáljuk meg az alap lekérdezést
-        const { data, error, count } = await supabase
+        // Minden oszlopot explicit módon lekérünk idézőjelekkel
+        const { data, error } = await supabase
           .from('Preferencia')
-          .select('*', { count: 'exact' });
+          .select(`
+            "ID",
+            "Húsfélék",
+            "Halak",
+            "Zöldségek / Vegetáriánus",
+            "Tejtermékek",
+            "Gyümölcsök",
+            "Gabonák és Tészták",
+            "Olajok és Magvak"
+          `);
         
-        console.log('📊 Supabase válasz:', { data, error, count });
+        console.log('📊 Supabase válasz:', { data, error });
         
         if (error) {
           console.error('❌ Preferencia adatok betöltési hiba:', error);
-          
-          // Próbáltuk meg konkrét oszlopokkal
-          console.log('🔄 Próbálkozás konkrét oszlopokkal...');
-          const { data: specificData, error: specificError } = await supabase
-            .from('Preferencia')
-            .select('ID, Húsfélék, Halak, "Zöldségek / Vegetáriánus", Tejtermékek, Gyümölcsök, "Gabonák és Tészták", "Olajok és Magvak"');
-          
-          console.log('📊 Konkrét oszlopok válasz:', { specificData, specificError });
-          
-          if (specificError) {
-            throw specificError;
-          }
-          
-          setPreferencesData(specificData || []);
-        } else {
-          console.log('✅ Sikeres lekérdezés');
-          console.log('📊 Preferencia adatok:', data);
-          console.log('📊 Adatok száma:', data?.length);
-          console.log('📊 Sorok száma (count):', count);
-          
-          if (data && data.length > 0) {
-            console.log('📊 Első sor adatok:', data[0]);
-            console.log('📊 Oszlopok:', Object.keys(data[0]));
-            
-            // Ellenőrizzük, hogy vannak-e a várt oszlopok
-            const firstRow = data[0];
-            categoryNames.forEach(categoryName => {
-              console.log(`📋 ${categoryName} oszlop értéke:`, firstRow[categoryName]);
-            });
-          }
-          
-          setPreferencesData(data || []);
+          throw error;
         }
+        
+        console.log('✅ Sikeres lekérdezés');
+        console.log('📊 Preferencia adatok:', data);
+        console.log('📊 Adatok száma:', data?.length || 0);
+        
+        if (data && data.length > 0) {
+          console.log('📊 Első sor adatok:', data[0]);
+          console.log('📊 Oszlopok:', Object.keys(data[0]));
+          
+          // Ellenőrizzük, hogy vannak-e a várt oszlopok
+          const firstRow = data[0];
+          categoryNames.forEach(categoryName => {
+            console.log(`📋 ${categoryName} oszlop értéke:`, firstRow[categoryName]);
+          });
+        }
+        
+        setPreferencesData(data || []);
       } catch (error) {
         console.error('💥 Preferencia adatok betöltési hiba:', error);
         toast({

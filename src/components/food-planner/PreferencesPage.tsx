@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,29 +44,27 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       try {
         console.log('🔄 Adatok betöltése...');
         
-        // Preferencia adatok betöltése
+        // Preferencia adatok betöltése explicit oszlopnevekkel
         const { data: preferencesDataResult, error: preferencesError } = await supabase
           .from('Preferencia')
-          .select('*');
+          .select(`
+            "ID",
+            "Húsfélék",
+            "Halak",
+            "Zöldségek / Vegetáriánus",
+            "Tejtermékek",
+            "Gyümölcsök",
+            "Gabonák és Tészták",
+            "Olajok és Magvak"
+          `);
         
         if (preferencesError) {
           console.error('❌ Preferencia adatok betöltési hiba:', preferencesError);
-          
-          // Próbáljuk meg konkrét oszlopokkal
-          const { data: specificData, error: specificError } = await supabase
-            .from('Preferencia')
-            .select('ID, Húsfélék, Halak, "Zöldségek / Vegetáriánus", Tejtermékek, Gyümölcsök, "Gabonák és Tészták", "Olajok és Magvak"');
-          
-          if (specificError) {
-            throw specificError;
-          }
-          
-          console.log('📊 Konkrét oszlopok adatok:', specificData);
-          setPreferencesData(specificData || []);
-        } else {
-          console.log('📊 Preferencia adatok:', preferencesDataResult);
-          setPreferencesData(preferencesDataResult || []);
+          throw preferencesError;
         }
+        
+        console.log('📊 Preferencia adatok:', preferencesDataResult);
+        setPreferencesData(preferencesDataResult || []);
         
         // Felhasználói preferenciák betöltése
         const userPreferences = await fetchUserPreferences(user.id);
@@ -309,7 +306,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                         </h3>
                         
                         {/* Preference Buttons */}
-                        {isEditing ? (
+                        {isEditing ?  (
                           <div className="flex justify-center gap-2">
                             <Button
                               onClick={() => handlePreferenceChange(categoryName, ingredient, 'like')}
