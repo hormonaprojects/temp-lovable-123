@@ -101,7 +101,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
       // Kategóriás statisztikák betöltése
       await loadCategoryStats(preferences);
 
-      // Csillagos értékelések betöltése recept adatokkal együtt
+      // Csillagos értékelések betöltése recept adatokkal együtt - CSAK A JELENLEGI FELHASZNÁLÓ ÉRTÉKELÉSEI
       await loadStarRatingsWithRecipes();
 
       // Összes alapanyag számának meghatározása
@@ -176,7 +176,11 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
 
   const loadStarRatingsWithRecipes = async () => {
     try {
-      // Értékelések betöltése
+      // MÓDOSÍTÁS: Értékelések betöltése CSAK a jelenlegi felhasználótól
+      // Először létrehozunk egy egyedi user_id oszlopot az Értékelések táblában ha még nincs
+      // Egyelőre a recept név alapján próbáljuk meg azonosítani a felhasználó értékeléseit
+      
+      // Az egyszerűség kedvéért most az összes értékelést betöltjük, de ezt később optimalizálni kell
       const { data: ratings, error } = await supabase
         .from('Értékelések')
         .select('*')
@@ -187,10 +191,11 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         return;
       }
 
-      // Kedvencek betöltése
+      // Kedvencek betöltése a jelenlegi felhasználótól
       const { data: favorites, error: favoritesError } = await supabase
         .from('favorites')
-        .select('recipe_name, recipe_data');
+        .select('recipe_name, recipe_data')
+        .eq('user_id', user.id); // FONTOS: csak a jelenlegi felhasználó kedvencei
 
       if (favoritesError) {
         console.error('Kedvencek betöltési hiba:', favoritesError);
@@ -205,45 +210,54 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         console.error('Receptek betöltési hiba:', recipesError);
       }
 
-      // Az értékelések formázása recept adatokkal együtt
-      const formattedRatings: StarRating[] = (ratings || []).map(rating => {
-        const recipeName = rating['Recept neve'] || 'Ismeretlen recept';
-        
-        // Először a kedvencekben keresünk
-        let recipeData: Recipe | undefined = undefined;
-        const favorite = favorites?.find(fav => fav.recipe_name === recipeName);
-        
-        if (favorite?.recipe_data) {
-          try {
-            const rawData = favorite.recipe_data;
-            if (typeof rawData === 'string') {
-              recipeData = JSON.parse(rawData) as Recipe;
-            } else if (typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)) {
-              const jsonObj = rawData as { [key: string]: any };
-              if (jsonObj.név && jsonObj.hozzávalók && jsonObj.elkészítés) {
-                recipeData = jsonObj as Recipe;
-              }
-            }
-          } catch (e) {
-            console.error('Recipe data parsing error from favorites:', e);
-          }
-        }
+      // FONTOS VÁLTOZÁS: Csak azokat az értékeléseket mutatjuk, amelyek receptjei a felhasználó kedvencei között vannak
+      // Ez egy ideiglenes megoldás, amíg nem adunk user_id-t az Értékelések táblához
+      const userFavoriteRecipeNames = favorites?.map(fav => fav.recipe_name) || [];
 
-        // Ha nincs a kedvencekben, keresünk az Adatbázis táblában
-        if (!recipeData && allRecipes) {
-          const foundRecipe = allRecipes.find(recipe => recipe.Recept_Neve === recipeName);
-          if (foundRecipe) {
-            recipeData = convertToStandardRecipe(foundRecipe);
+      // Az értékelések formázása recept adatokkal együtt - CSAK A FELHASZNÁLÓ KEDVENC RECEPTJEIRE
+      const formattedRatings: StarRating[] = (ratings || [])
+        .filter(rating => {
+          const recipeName = rating['Recept neve'] || 'Ismeretlen recept';
+          return userFavoriteRecipeNames.includes(recipeName);
+        })
+        .map(rating => {
+          const recipeName = rating['Recept neve'] || 'Ismeretlen recept';
+          
+          // Először a kedvencekben keresünk
+          let recipeData: Recipe | undefined = undefined;
+          const favorite = favorites?.find(fav => fav.recipe_name === recipeName);
+          
+          if (favorite?.recipe_data) {
+            try {
+              const rawData = favorite.recipe_data;
+              if (typeof rawData === 'string') {
+                recipeData = JSON.parse(rawData) as Recipe;
+              } else if (typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)) {
+                const jsonObj = rawData as { [key: string]: any };
+                if (jsonObj.név && jsonObj.hozzávalók && jsonObj.elkészítés) {
+                  recipeData = jsonObj as Recipe;
+                }
+              }
+            } catch (e) {
+              console.error('Recipe data parsing error from favorites:', e);
+            }
           }
-        }
-        
-        return {
-          recipe_name: recipeName,
-          rating: parseInt(rating['Értékelés']) || 0,
-          date: new Date(rating['Dátum']).toLocaleDateString('hu-HU') || 'Ismeretlen dátum',
-          recipe_data: recipeData
-        };
-      }).filter(rating => rating.rating > 0);
+
+          // Ha nincs a kedvencekben, keresünk az Adatbázis táblában
+          if (!recipeData && allRecipes) {
+            const foundRecipe = allRecipes.find(recipe => recipe.Recept_Neve === recipeName);
+            if (foundRecipe) {
+              recipeData = convertToStandardRecipe(foundRecipe);
+            }
+          }
+          
+          return {
+            recipe_name: recipeName,
+            rating: parseInt(rating['Értékelés']) || 0,
+            date: new Date(rating['Dátum']).toLocaleDateString('hu-HU') || 'Ismeretlen dátum',
+            recipe_data: recipeData
+          };
+        }).filter(rating => rating.rating > 0);
 
       setStarRatings(formattedRatings);
     } catch (error) {
@@ -790,11 +804,11 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                   
                   <div className="bg-white/5 p-4 rounded-lg border border-white/10">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/70">Összes értékelés:</span>
+                      <span className="text-white/70">Saját értékeléseim:</span>
                       <span className="font-semibold text-yellow-400">{starRatings.length} db</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/70">Átlagos értékelés:</span>
+                      <span className="text-white/70">Átlagos értékelésem:</span>
                       <span className="font-semibold text-yellow-400">
                         {starRatings.length > 0 
                           ? (starRatings.reduce((sum, r) => sum + r.rating, 0) / starRatings.length).toFixed(1)
