@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -286,8 +287,8 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                   }}
                 >
                   <div className="p-4">
-                    {/* Ingredient Image */}
-                    <div className="w-full h-20 mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
+                    {/* Ingredient Image - Now 1:1 aspect ratio */}
+                    <div className="w-full aspect-square mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
                       <img
                         src={jpgImageUrl}
                         alt={ingredient}
