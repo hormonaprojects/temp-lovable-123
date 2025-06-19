@@ -91,89 +91,101 @@ export function FavoritesPage({ user, onClose }: FavoritesPageProps) {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {favorites.map((favorite) => (
-              <div
-                key={favorite.id}
-                className="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer group border border-white/20"
-              >
-                {/* Kép */}
-                <div 
-                  className="relative h-48 overflow-hidden"
-                  onClick={() => openRecipeModal(favorite.recipe_data)}
+          <>
+            {/* Header with count */}
+            <div className="mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-2">
+                ⭐ Kedvenc Receptek
+              </h2>
+              <p className="text-white/70 text-lg">
+                {favorites.length} kedvenc recept
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {favorites.map((favorite) => (
+                <div
+                  key={favorite.id}
+                  className="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer group border border-white/20"
                 >
-                  {favorite.recipe_data.képUrl ? (
-                    <img
-                      src={favorite.recipe_data.képUrl}
-                      alt={favorite.recipe_data.név}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
-                      <span className="text-4xl">🍽️</span>
-                    </div>
-                  )}
-                  
-                  {/* Kedvenc törlés gomb */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFromFavorites(favorite.recipe_name);
-                    }}
-                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200"
+                  {/* Kép */}
+                  <div 
+                    className="relative h-48 overflow-hidden"
+                    onClick={() => openRecipeModal(favorite.recipe_data)}
                   >
-                    <Heart className="w-4 h-4 fill-current" />
-                  </button>
-                </div>
-
-                {/* Tartalom */}
-                <div className="p-4">
-                  <h3 className="font-bold text-white text-lg mb-2 line-clamp-2">
-                    {favorite.recipe_data.név}
-                  </h3>
-                  
-                  {/* Infók */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {favorite.recipe_data.elkészítésiIdő && (
-                      <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
-                        ⏱️ {favorite.recipe_data.elkészítésiIdő}
-                      </span>
+                    {favorite.recipe_data.képUrl ? (
+                      <img
+                        src={favorite.recipe_data.képUrl}
+                        alt={favorite.recipe_data.név}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
+                        <span className="text-4xl">🍽️</span>
+                      </div>
                     )}
-                    <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
-                      📝 {favorite.recipe_data.hozzávalók?.length || 0} hozzávaló
-                    </span>
+                    
+                    {/* Kedvenc törlés gomb */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFromFavorites(favorite.recipe_name);
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200"
+                    >
+                      <Heart className="w-4 h-4 fill-current" />
+                    </button>
                   </div>
 
-                  {/* Tápértékek */}
-                  {(favorite.recipe_data.fehérje || favorite.recipe_data.szénhidrát || favorite.recipe_data.zsír) && (
-                    <div className="grid grid-cols-3 gap-1 text-center">
-                      {favorite.recipe_data.fehérje && (
-                        <div className="bg-white/10 rounded-lg p-2">
-                          <div className="text-xs text-white/80">🥩</div>
-                          <div className="text-xs text-white font-semibold">{favorite.recipe_data.fehérje}g</div>
-                        </div>
+                  {/* Tartalom */}
+                  <div className="p-4">
+                    <h3 className="font-bold text-white text-lg mb-2 line-clamp-2">
+                      {favorite.recipe_data.név}
+                    </h3>
+                    
+                    {/* Infók */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {favorite.recipe_data.elkészítésiIdő && (
+                        <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
+                          ⏱️ {favorite.recipe_data.elkészítésiIdő}
+                        </span>
                       )}
-                      {favorite.recipe_data.szénhidrát && (
-                        <div className="bg-white/10 rounded-lg p-2">
-                          <div className="text-xs text-white/80">🍞</div>
-                          <div className="text-xs text-white font-semibold">{favorite.recipe_data.szénhidrát}g</div>
-                        </div>
-                      )}
-                      {favorite.recipe_data.zsír && (
-                        <div className="bg-white/10 rounded-lg p-2">
-                          <div className="text-xs text-white/80">🥑</div>
-                          <div className="text-xs text-white font-semibold">{favorite.recipe_data.zsír}g</div>
-                        </div>
-                      )}
+                      <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
+                        📝 {favorite.recipe_data.hozzávalók?.length || 0} hozzávaló
+                      </span>
                     </div>
-                  )}
+
+                    {/* Tápértékek */}
+                    {(favorite.recipe_data.fehérje || favorite.recipe_data.szénhidrát || favorite.recipe_data.zsír) && (
+                      <div className="grid grid-cols-3 gap-1 text-center">
+                        {favorite.recipe_data.fehérje && (
+                          <div className="bg-white/10 rounded-lg p-2">
+                            <div className="text-xs text-white/80">🥩</div>
+                            <div className="text-xs text-white font-semibold">{favorite.recipe_data.fehérje}g</div>
+                          </div>
+                        )}
+                        {favorite.recipe_data.szénhidrát && (
+                          <div className="bg-white/10 rounded-lg p-2">
+                            <div className="text-xs text-white/80">🍞</div>
+                            <div className="text-xs text-white font-semibold">{favorite.recipe_data.szénhidrát}g</div>
+                          </div>
+                        )}
+                        {favorite.recipe_data.zsír && (
+                          <div className="bg-white/10 rounded-lg p-2">
+                            <div className="text-xs text-white/80">🥑</div>
+                            <div className="text-xs text-white font-semibold">{favorite.recipe_data.zsír}g</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
