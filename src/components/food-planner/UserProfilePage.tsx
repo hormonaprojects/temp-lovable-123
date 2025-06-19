@@ -25,6 +25,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
   const [profileData, setProfileData] = useState<any>(null);
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [preferencesData, setPreferencesData] = useState<FoodPreference[]>([]);
+  const [totalIngredientsCount, setTotalIngredientsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -66,6 +67,36 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
       setPreferencesData(preferences);
       console.log('📊 Profil oldalon betöltött preferenciák:', preferences.length, 'db');
       console.log('📝 Preferenciák részletei:', preferences.slice(0, 5));
+
+      // Összes alapanyag számának meghatározása
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('Ételkategóriák_Új')
+        .select('*');
+
+      if (!categoriesError && categoriesData) {
+        const categoryNames = [
+          'Húsfélék',
+          'Halak', 
+          'Zöldségek / Vegetáriánus',
+          'Tejtermékek',
+          'Gyümölcsök',
+          'Gabonák és Tészták',
+          'Olajok és Magvak'
+        ];
+
+        let totalIngredients = 0;
+        categoryNames.forEach(categoryName => {
+          categoriesData.forEach(row => {
+            const categoryValue = row[categoryName];
+            if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
+              totalIngredients++;
+            }
+          });
+        });
+
+        setTotalIngredientsCount(totalIngredients);
+        console.log('📊 Összes alapanyag szám:', totalIngredients);
+      }
       
     } catch (error) {
       console.error('Adatok betöltési hiba:', error);
@@ -82,9 +113,15 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
   const getPreferenceStats = () => {
     const liked = preferencesData.filter(p => p.preference === 'like').length;
     const disliked = preferencesData.filter(p => p.preference === 'dislike').length;
-    const neutral = preferencesData.filter(p => p.preference === 'neutral').length;
+    const neutral = totalIngredientsCount - liked - disliked; // A nem tárolt preferenciák mind neutral-ok
     
-    return { liked, disliked, neutral, total: preferencesData.length };
+    return { 
+      liked, 
+      disliked, 
+      neutral, 
+      total: totalIngredientsCount,
+      storedPreferences: preferencesData.length 
+    };
   };
 
   const getInitials = (name: string) => {
@@ -240,7 +277,8 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
               <div className="space-y-3">
                 <div className="text-center mb-4">
                   <div className="text-4xl font-bold text-green-500 mb-2">{preferenceStats.total}</div>
-                  <p className="text-gray-600">beállított preferencia</p>
+                  <p className="text-gray-600">összesen alapanyag</p>
+                  <p className="text-xs text-gray-500">{preferenceStats.storedPreferences} beállított preferencia</p>
                 </div>
                 
                 <div className="space-y-2">
@@ -285,10 +323,11 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
             </CardHeader>
             <CardContent>
               <div className="text-sm text-yellow-700">
-                <p>Összes preferencia: {preferencesData.length}</p>
+                <p>Tárolt preferenciák: {preferenceStats.storedPreferences}</p>
+                <p>Összes alapanyag: {preferenceStats.total}</p>
                 <p>Kedvelem: {preferenceStats.liked}</p>
                 <p>Nem szeretem: {preferenceStats.disliked}</p>
-                <p>Semleges: {preferenceStats.neutral}</p>
+                <p>Semleges (számított): {preferenceStats.neutral}</p>
                 {preferencesData.length > 0 && (
                   <details className="mt-2">
                     <summary>Preferenciák részletei</summary>
