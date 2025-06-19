@@ -65,9 +65,10 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         
         // Felhasználói preferenciák betöltése
         const userPreferences = await fetchUserPreferences(user.id);
+        console.log('👤 Felhasználói preferenciák betöltve:', userPreferences.length, 'db');
+        console.log('📝 Preferenciák részletei:', userPreferences);
         
         // Preferenciák átalakítása objektummá
-        // Minden alapanyag alapértelmezetten 'neutral', kivéve azokat, amelyeknek van tárolt preferenciája
         const prefsObj: PreferenceState = {};
         
         // Először minden alapanyagot 'neutral'-ra állítunk
@@ -83,11 +84,20 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         userPreferences.forEach((pref: FoodPreference) => {
           const key = `${pref.category}-${pref.ingredient}`;
           prefsObj[key] = pref.preference;
+          console.log(`🎯 Preferencia beállítva: ${key} -> ${pref.preference}`);
         });
         
         setPreferences(prefsObj);
         
-        console.log('🎯 Preferenciák betöltve:', Object.keys(prefsObj).length, 'alapanyag');
+        console.log('🎯 Összes preferencia betöltve:', Object.keys(prefsObj).length, 'alapanyag');
+        
+        // Debug: preferenciák számlálása
+        const stats = {
+          like: Object.values(prefsObj).filter(p => p === 'like').length,
+          dislike: Object.values(prefsObj).filter(p => p === 'dislike').length,
+          neutral: Object.values(prefsObj).filter(p => p === 'neutral').length
+        };
+        console.log('📊 Preferencia statisztikák:', stats);
         
       } catch (error) {
         console.error('❌ Adatok betöltési hiba:', error);

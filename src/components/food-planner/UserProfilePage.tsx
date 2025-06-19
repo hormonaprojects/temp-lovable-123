@@ -64,6 +64,8 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
       // Preferenciák betöltése
       const preferences = await fetchUserPreferences(user.id);
       setPreferencesData(preferences);
+      console.log('📊 Profil oldalon betöltött preferenciák:', preferences.length, 'db');
+      console.log('📝 Preferenciák részletei:', preferences.slice(0, 5));
       
     } catch (error) {
       console.error('Adatok betöltési hiba:', error);
@@ -191,7 +193,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-white/10 border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 flex items-center gap-2"
               >
                 <Edit className="w-4 h-4" />
                 Szerkesztés
@@ -217,7 +219,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-4 bg-white/10 border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="mt-4 bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Részletek
@@ -265,7 +267,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full mt-4 bg-white/10 border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="w-full mt-4 bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Részletek
