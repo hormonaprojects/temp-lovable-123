@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -130,7 +131,8 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // ékezetek eltávolítása
       .replace(/\s+/g, '') // szóközök eltávolítása
-      .replace(/[^\w]/g, ''); // speciális karakterek eltávolítása
+      .replace(/[^\w]/g, '') // speciális karakterek eltávolítása
+      .replace(/\./g, ''); // pontok eltávolítása
     
     console.log('🖼️ Kép keresés:', ingredient, '->', normalizedIngredient);
     
@@ -281,7 +283,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                         className="w-full h-full object-cover rounded-xl"
                         onError={(e) => {
                           console.log('❌ Kép betöltési hiba:', ingredient);
-                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                          (e.target as HTMLImageElement).src = 'https://hhjucbkqyamutshfspyf.supabase.co/storage/v1/object/public/alapanyag/placeholder.jpg';
                         }}
                         onLoad={() => {
                           console.log('✅ Kép sikeresen betöltve:', ingredient);
