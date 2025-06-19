@@ -121,7 +121,16 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       setPreferences(prev => {
         const filtered = prev.filter(p => !(p.ingredient === ingredient && p.category === category));
         if (preference !== 'neutral') {
-          return [...filtered, { ingredient, category, preference }];
+          const newPreference: FoodPreference = {
+            id: `temp_${Date.now()}`,
+            user_id: user.id,
+            ingredient,
+            category,
+            preference,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          return [...filtered, newPreference];
         }
         return filtered;
       });
@@ -129,7 +138,16 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       // Újraszámoljuk a kategória összesítéseket
       const updatedPrefs = preferences.filter(p => !(p.ingredient === ingredient && p.category === category));
       if (preference !== 'neutral') {
-        updatedPrefs.push({ ingredient, category, preference });
+        const newPreference: FoodPreference = {
+          id: `temp_${Date.now()}`,
+          user_id: user.id,
+          ingredient,
+          category,
+          preference,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        updatedPrefs.push(newPreference);
       }
       await calculateCategorySummaries(updatedPrefs);
 
@@ -183,7 +201,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         </div>
 
         <CategoryIngredientSelector
-          category={selectedCategory}
+          selectedCategory={selectedCategory}
           userPreferences={preferences}
           onPreferenceUpdate={handlePreferenceUpdate}
         />

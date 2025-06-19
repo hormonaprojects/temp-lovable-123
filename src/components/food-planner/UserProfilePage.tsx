@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, User, Heart, Utensils, Settings, Star, Save, X, Shield, Calendar } from "lucide-react";
+import { Edit, User, Heart, Utensils, Settings, Star, Save, X, Shield, Calendar, ArrowLeft } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserPreferences, FoodPreference } from "@/services/foodPreferencesQueries";
 import { updateUserProfile } from "@/services/profileQueries";
@@ -203,7 +203,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
           recipe_name: recipeName,
           rating: parseInt(rating['Értékelés']) || 0,
           date: new Date(rating['Dátum']).toLocaleDateString('hu-HU') || 'Ismeretlen dátum',
-          recipe_data: favorite?.recipe_data
+          recipe_data: favorite?.recipe_data ? favorite.recipe_data as Recipe : undefined
         };
       }).filter(rating => rating.rating > 0);
 
