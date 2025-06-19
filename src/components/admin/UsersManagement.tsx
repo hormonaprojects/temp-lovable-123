@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Eye, Shield, ShieldCheck, Calendar, Heart, Settings2 } from 'lucide-react';
 import { fetchAllUsers, searchUsers, getUserDetails, AdminUserOverview } from '@/services/adminQueries';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 export function UsersManagement() {
   const [users, setUsers] = useState<AdminUserOverview[]>([]);
@@ -70,7 +70,34 @@ export function UsersManagement() {
   const viewUserDetails = async (userId: string) => {
     try {
       const userDetails = await getUserDetails(userId);
-      setSelectedUser(userDetails);
+      
+      // Betöltjük a felhasználó tényleges preferenciáit
+      const { data: userPreferences, error: preferencesError } = await supabase
+        .from('Ételpreferenciák')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (preferencesError) {
+        console.error('Preferenciák betöltési hiba:', preferencesError);
+      }
+
+      // Preferenciák átalakítása a megfelelő formátumra
+      const formattedPreferences = (userPreferences || []).map(pref => ({
+        ...pref,
+        preference: pref.preference === 'like' ? 'szeretem' : 
+                   pref.preference === 'dislike' ? 'nem_szeretem' : 'semleges'
+      }));
+
+      // Hozzáadjuk a preferenciákat a felhasználó adataihoz
+      const userWithPreferences = {
+        ...userDetails,
+        preferences: formattedPreferences
+      };
+
+      console.log('Betöltött preferenciák:', formattedPreferences.length, 'db');
+      console.log('Preferenciák részletei:', formattedPreferences.slice(0, 5));
+
+      setSelectedUser(userWithPreferences);
       setShowUserModal(true);
     } catch (error) {
       toast({
