@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Edit, User, Heart, Utensils, LogOut, Settings } from "lucide-react";
+import { ArrowLeft, Edit, User, Heart, Utensils, LogOut, Settings, Star } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserPreferences, FoodPreference } from "@/services/foodPreferencesQueries";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface User {
   id: string;
@@ -21,13 +23,32 @@ interface UserProfilePageProps {
   onLogout: () => void;
 }
 
+interface StarRating {
+  recipe_name: string;
+  rating: number;
+  date: string;
+}
+
 export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProps) {
   const [profileData, setProfileData] = useState<any>(null);
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [preferencesData, setPreferencesData] = useState<FoodPreference[]>([]);
   const [totalIngredientsCount, setTotalIngredientsCount] = useState(0);
+  const [starRatings, setStarRatings] = useState<StarRating[]>([]);
+  const [categoryStats, setCategoryStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
+
+  const categoryNames = [
+    'Húsfélék',
+    'Halak', 
+    'Zöldségek / Vegetáriánus',
+    'Tejtermékek',
+    'Gyümölcsök',
+    'Gabonák és Tészták',
+    'Olajok és Magvak'
+  ];
 
   useEffect(() => {
     loadProfileData();
@@ -65,8 +86,12 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
       // Preferenciák betöltése
       const preferences = await fetchUserPreferences(user.id);
       setPreferencesData(preferences);
-      console.log('📊 Profil oldalon betöltött preferenciák:', preferences.length, 'db');
-      console.log('📝 Preferenciák részletei:', preferences.slice(0, 5));
+
+      // Kategóriás statisztikák betöltése
+      await loadCategoryStats(preferences);
+
+      // Csillagos értékelések betöltése
+      await loadStarRatings();
 
       // Összes alapanyag számának meghatározása
       const { data: categoriesData, error: categoriesError } = await supabase
@@ -74,16 +99,6 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         .select('*');
 
       if (!categoriesError && categoriesData) {
-        const categoryNames = [
-          'Húsfélék',
-          'Halak', 
-          'Zöldségek / Vegetáriánus',
-          'Tejtermékek',
-          'Gyümölcsök',
-          'Gabonák és Tészták',
-          'Olajok és Magvak'
-        ];
-
         let totalIngredients = 0;
         categoryNames.forEach(categoryName => {
           categoriesData.forEach(row => {
@@ -95,7 +110,6 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         });
 
         setTotalIngredientsCount(totalIngredients);
-        console.log('📊 Összes alapanyag szám:', totalIngredients);
       }
       
     } catch (error) {
@@ -110,10 +124,94 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
     }
   };
 
+  const loadCategoryStats = async (preferences: FoodPreference[]) => {
+    try {
+      const { data: categoriesData, error } = await supabase
+        .from('Ételkategóriák_Új')
+        .select('*');
+
+      if (error || !categoriesData) return;
+
+      const stats = categoryNames.map(categoryName => {
+        // Kategóriához tartozó összes alapanyag
+        const categoryIngredients: string[] = [];
+        categoriesData.forEach(row => {
+          const categoryValue = row[categoryName];
+          if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
+            categoryIngredients.push(categoryValue.trim());
+          }
+        });
+
+        // Preferenciák számolása erre a kategóriára
+        const categoryPrefs = preferences.filter(p => p.category === categoryName);
+        const liked = categoryPrefs.filter(p => p.preference === 'like').length;
+        const disliked = categoryPrefs.filter(p => p.preference === 'dislike').length;
+        const neutral = categoryIngredients.length - liked - disliked;
+
+        return {
+          category: categoryName,
+          Kedvelem: liked,
+          'Nem szeretem': disliked,
+          Semleges: neutral,
+          total: categoryIngredients.length
+        };
+      });
+
+      setCategoryStats(stats);
+    } catch (error) {
+      console.error('Kategória statisztikák betöltési hiba:', error);
+    }
+  };
+
+  const loadStarRatings = async () => {
+    try {
+      const { data: ratings, error } = await supabase
+        .from('Értékelések')
+        .select('*')
+        .order('Dátum', { ascending: false });
+
+      if (error) {
+        console.error('Értékelések betöltési hiba:', error);
+        return;
+      }
+
+      // Az értékelések formázása
+      const formattedRatings: StarRating[] = (ratings || []).map(rating => ({
+        recipe_name: rating['Recept neve'] || 'Ismeretlen recept',
+        rating: parseInt(rating['Értékelés']) || 0,
+        date: new Date(rating['Dátum']).toLocaleDateString('hu-HU') || 'Ismeretlen dátum'
+      })).filter(rating => rating.rating > 0);
+
+      setStarRatings(formattedRatings);
+    } catch (error) {
+      console.error('Csillagos értékelések betöltési hiba:', error);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setIsEditing(true);
+    toast({
+      title: "Profil szerkesztés",
+      description: "A profil szerkesztő funkció hamarosan elérhető lesz!",
+    });
+  };
+
+  const handleShowFavorites = () => {
+    onClose();
+    // Navigate to favorites - this will be handled by the parent component
+    window.dispatchEvent(new CustomEvent('navigate-to-favorites'));
+  };
+
+  const handleShowPreferences = () => {
+    onClose();
+    // Navigate to preferences - this will be handled by the parent component  
+    window.dispatchEvent(new CustomEvent('navigate-to-preferences'));
+  };
+
   const getPreferenceStats = () => {
     const liked = preferencesData.filter(p => p.preference === 'like').length;
     const disliked = preferencesData.filter(p => p.preference === 'dislike').length;
-    const neutral = totalIngredientsCount - liked - disliked; // A nem tárolt preferenciák mind neutral-ok
+    const neutral = totalIngredientsCount - liked - disliked;
     
     return { 
       liked, 
@@ -129,6 +227,24 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
   };
 
   const preferenceStats = getPreferenceStats();
+
+  // Chart colors
+  const COLORS = ['#10B981', '#EF4444', '#6B7280']; // green, red, gray
+
+  const chartConfig = {
+    Kedvelem: {
+      label: "Kedvelem",
+      color: "#10B981",
+    },
+    'Nem szeretem': {
+      label: "Nem szeretem", 
+      color: "#EF4444",
+    },
+    Semleges: {
+      label: "Semleges",
+      color: "#6B7280",
+    },
+  };
 
   if (loading) {
     return (
@@ -228,6 +344,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
               </div>
               
               <Button
+                onClick={handleEditProfile}
                 variant="outline"
                 size="sm"
                 className="bg-blue-100 border-blue-400 text-blue-700 hover:bg-blue-200 flex items-center gap-2"
@@ -254,12 +371,13 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                 <div className="text-4xl font-bold text-red-500 mb-2">{favoritesCount}</div>
                 <p className="text-gray-600">mentett recept</p>
                 <Button
+                  onClick={handleShowFavorites}
                   variant="outline"
                   size="sm"
                   className="mt-4 bg-red-100 border-red-400 text-red-700 hover:bg-red-200"
                 >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Részletek
+                  <Heart className="w-4 h-4 mr-2" />
+                  Mutatsd
                 </Button>
               </div>
             </CardContent>
@@ -303,6 +421,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                 </div>
                 
                 <Button
+                  onClick={handleShowPreferences}
                   variant="outline"
                   size="sm"
                   className="w-full mt-4 bg-green-100 border-green-400 text-green-700 hover:bg-green-200"
@@ -315,31 +434,104 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
           </Card>
         </div>
 
-        {/* Debug információk (fejlesztés során) */}
-        {process.env.NODE_ENV === 'development' && (
-          <Card className="bg-yellow-50 border-yellow-200">
-            <CardHeader>
-              <CardTitle className="text-yellow-800">Debug - Preferenciák</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-yellow-700">
-                <p>Tárolt preferenciák: {preferenceStats.storedPreferences}</p>
-                <p>Összes alapanyag: {preferenceStats.total}</p>
-                <p>Kedvelem: {preferenceStats.liked}</p>
-                <p>Nem szeretem: {preferenceStats.disliked}</p>
-                <p>Semleges (számított): {preferenceStats.neutral}</p>
-                {preferencesData.length > 0 && (
-                  <details className="mt-2">
-                    <summary>Preferenciák részletei</summary>
-                    <pre className="text-xs mt-2 bg-yellow-100 p-2 rounded overflow-auto max-h-40">
-                      {JSON.stringify(preferencesData.slice(0, 5), null, 2)}
-                    </pre>
-                  </details>
+        {/* Preferenciák diagram kategóriánként */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-gray-800 flex items-center gap-2">
+              <Utensils className="w-6 h-6 text-green-600" />
+              Ételpreferenciák kategóriánként
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categoryStats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <XAxis 
+                    dataKey="category" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    fontSize={12}
+                  />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="Kedvelem" fill="#10B981" />
+                  <Bar dataKey="Nem szeretem" fill="#EF4444" />
+                  <Bar dataKey="Semleges" fill="#6B7280" />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Csillagos értékelések */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-gray-800 flex items-center gap-2">
+              <Star className="w-6 h-6 text-yellow-500" />
+              Receptértékeléseim
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {starRatings.length > 0 ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {starRatings.slice(0, 9).map((rating, index) => (
+                    <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium text-gray-800 mb-2 truncate">{rating.recipe_name}</h4>
+                      <div className="flex items-center gap-2 mb-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= rating.rating 
+                                ? 'text-yellow-400 fill-current' 
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                        <span className="text-sm text-gray-600">({rating.rating}/5)</span>
+                      </div>
+                      <p className="text-xs text-gray-500">{rating.date}</p>
+                    </div>
+                  ))}
+                </div>
+                
+                {starRatings.length > 9 && (
+                  <div className="text-center pt-4">
+                    <p className="text-gray-600">
+                      És még {starRatings.length - 9} értékelés...
+                    </p>
+                  </div>
                 )}
+                
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Összes értékelés:</span>
+                    <span className="font-semibold text-blue-600">{starRatings.length} db</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Átlagos értékelés:</span>
+                    <span className="font-semibold text-blue-600">
+                      {starRatings.length > 0 
+                        ? (starRatings.reduce((sum, r) => sum + r.rating, 0) / starRatings.length).toFixed(1)
+                        : '0'
+                      } ⭐
+                    </span>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="text-center py-8">
+                <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-600">Még nem értékeltél egyetlen receptet sem.</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Az értékeléseid itt fognak megjelenni, miután csillagokkal értékelsz recepteket.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
