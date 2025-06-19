@@ -108,6 +108,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
       <UserProfilePage
         user={user}
         onClose={() => setCurrentView('single')}
+        onLogout={onLogout}
       />
     );
   }
