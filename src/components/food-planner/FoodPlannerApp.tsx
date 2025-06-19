@@ -164,7 +164,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
               <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                 🍽️ Ételtervező
               </h1>
-              <p className="text-sm sm:text-base text-white/70">Felhasználók és jogosultságok kezelése</p>
+              <p className="text-sm sm:text-base text-white/70">Ételek és receptek tervezése</p>
             </div>
             
             <div className="flex items-center gap-3">
@@ -192,79 +192,81 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setCurrentView('single')}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
-                ${currentView === 'single' || currentView === 'daily'
-                  ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
-                  : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
-                }
-              `}
-            >
-              <ChefHat className="w-4 h-4" />
-              Receptgenerátor
-            </button>
-
-            <button
-              onClick={() => setCurrentView('favorites')}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
-                ${currentView === 'favorites'
-                  ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
-                  : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
-                }
-              `}
-            >
-              <Star className="w-4 h-4" />
-              Kedvencek
-            </button>
-
-            <button
-              onClick={() => setCurrentView('preferences')}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
-                ${currentView === 'preferences'
-                  ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
-                  : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
-                }
-              `}
-            >
-              <Settings className="w-4 h-4" />
-              Preferenciák
-            </button>
-
-            <button
-              onClick={() => setCurrentView('profile')}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
-                ${currentView === 'profile'
-                  ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
-                  : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
-                }
-              `}
-            >
-              <User className="w-4 h-4" />
-              Profil
-            </button>
-
-            {/* Admin - csak adminoknak */}
-            {isAdmin && (
+          <div className="flex items-center">
+            <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-1 flex space-x-1">
               <button
-                onClick={() => setCurrentView('admin')}
+                onClick={() => setCurrentView('single')}
                 className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
-                  ${currentView === 'admin'
-                    ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
-                    : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
+                  flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
+                  ${currentView === 'single' || currentView === 'daily'
+                    ? 'bg-white/20 text-white shadow-lg border border-white/20' 
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
                   }
                 `}
               >
-                <Shield className="w-4 h-4" />
-                Admin
+                <ChefHat className="w-4 h-4" />
+                Receptgenerátor
               </button>
-            )}
+
+              <button
+                onClick={() => setCurrentView('favorites')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
+                  ${currentView === 'favorites'
+                    ? 'bg-white/20 text-white shadow-lg border border-white/20' 
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }
+                `}
+              >
+                <Star className="w-4 h-4" />
+                Kedvencek
+              </button>
+
+              <button
+                onClick={() => setCurrentView('preferences')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
+                  ${currentView === 'preferences'
+                    ? 'bg-white/20 text-white shadow-lg border border-white/20' 
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }
+                `}
+              >
+                <Settings className="w-4 h-4" />
+                Preferenciák
+              </button>
+
+              <button
+                onClick={() => setCurrentView('profile')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
+                  ${currentView === 'profile'
+                    ? 'bg-white/20 text-white shadow-lg border border-white/20' 
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }
+                `}
+              >
+                <User className="w-4 h-4" />
+                Profil
+              </button>
+
+              {/* Admin - csak adminoknak */}
+              {isAdmin && (
+                <button
+                  onClick={() => setCurrentView('admin')}
+                  className={`
+                    flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
+                    ${currentView === 'admin'
+                      ? 'bg-white/20 text-white shadow-lg border border-white/20' 
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }
+                  `}
+                >
+                  <Shield className="w-4 h-4" />
+                  Admin
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
