@@ -20,123 +20,208 @@ export interface AdminUserOverview {
 }
 
 export const checkIsAdmin = async (userId: string): Promise<boolean> => {
-  const { data, error } = await supabase.rpc('is_admin', { user_id: userId });
-  
-  if (error) {
+  try {
+    const { data, error } = await supabase.rpc('is_admin', { user_id: userId });
+    
+    if (error) {
+      console.error('Admin ellenőrzési hiba:', error);
+      return false;
+    }
+    
+    return data || false;
+  } catch (error) {
     console.error('Admin ellenőrzési hiba:', error);
     return false;
   }
-  
-  return data || false;
 };
 
 export const fetchAllUsers = async (): Promise<AdminUserOverview[]> => {
-  const { data, error } = await supabase
-    .from('admin_user_overview')
-    .select('*')
-    .order('user_created_at', { ascending: false });
+  try {
+    // Először ellenőrizzük, hogy a felhasználó admin-e
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Nincs bejelentkezett felhasználó');
+    }
 
-  if (error) {
+    const isAdmin = await checkIsAdmin(user.id);
+    if (!isAdmin) {
+      throw new Error('Nincs admin jogosultság');
+    }
+
+    const { data, error } = await supabase
+      .from('admin_user_overview')
+      .select('*')
+      .order('user_created_at', { ascending: false });
+
+    if (error) {
+      console.error('Felhasználók betöltési hiba:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
     console.error('Felhasználók betöltési hiba:', error);
     throw error;
   }
-
-  return data || [];
 };
 
 export const searchUsers = async (searchTerm: string): Promise<AdminUserOverview[]> => {
-  const { data, error } = await supabase
-    .from('admin_user_overview')
-    .select('*')
-    .or(`email.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`)
-    .order('user_created_at', { ascending: false });
+  try {
+    // Először ellenőrizzük, hogy a felhasználó admin-e
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Nincs bejelentkezett felhasználó');
+    }
 
-  if (error) {
+    const isAdmin = await checkIsAdmin(user.id);
+    if (!isAdmin) {
+      throw new Error('Nincs admin jogosultság');
+    }
+
+    const { data, error } = await supabase
+      .from('admin_user_overview')
+      .select('*')
+      .or(`email.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`)
+      .order('user_created_at', { ascending: false });
+
+    if (error) {
+      console.error('Felhasználók keresési hiba:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
     console.error('Felhasználók keresési hiba:', error);
     throw error;
   }
-
-  return data || [];
 };
 
 export const assignAdminRole = async (email: string, assignedBy: string) => {
-  // Először megkeressük a felhasználót email alapján
-  const { data: userData, error: userError } = await supabase
-    .from('admin_user_overview')
-    .select('id')
-    .eq('email', email)
-    .single();
-
-  if (userError || !userData) {
-    throw new Error('Nem található felhasználó ezzel az email címmel');
-  }
-
-  const { error } = await supabase
-    .from('user_roles')
-    .insert({
-      user_id: userData.id,
-      role: 'admin',
-      assigned_by: assignedBy
-    });
-
-  if (error) {
-    if (error.code === '23505') { // unique constraint violation
-      throw new Error('Ez a felhasználó már admin jogosultsággal rendelkezik');
+  try {
+    // Először ellenőrizzük, hogy a felhasználó admin-e
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Nincs bejelentkezett felhasználó');
     }
+
+    const isAdmin = await checkIsAdmin(user.id);
+    if (!isAdmin) {
+      throw new Error('Nincs admin jogosultság');
+    }
+
+    // Megkeressük a felhasználót email alapján
+    const { data: userData, error: userError } = await supabase
+      .from('admin_user_overview')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (userError || !userData) {
+      throw new Error('Nem található felhasználó ezzel az email címmel');
+    }
+
+    const { error } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: userData.id,
+        role: 'admin',
+        assigned_by: assignedBy
+      });
+
+    if (error) {
+      if (error.code === '23505') { // unique constraint violation
+        throw new Error('Ez a felhasználó már admin jogosultsággal rendelkezik');
+      }
+      console.error('Admin szerepkör kiosztási hiba:', error);
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
     console.error('Admin szerepkör kiosztási hiba:', error);
     throw error;
   }
-
-  return true;
 };
 
 export const removeAdminRole = async (userId: string) => {
-  const { error } = await supabase
-    .from('user_roles')
-    .delete()
-    .eq('user_id', userId)
-    .eq('role', 'admin');
+  try {
+    // Először ellenőrizzük, hogy a felhasználó admin-e
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Nincs bejelentkezett felhasználó');
+    }
 
-  if (error) {
+    const isAdmin = await checkIsAdmin(user.id);
+    if (!isAdmin) {
+      throw new Error('Nincs admin jogosultság');
+    }
+
+    const { error } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', userId)
+      .eq('role', 'admin');
+
+    if (error) {
+      console.error('Admin szerepkör eltávolítási hiba:', error);
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
     console.error('Admin szerepkör eltávolítási hiba:', error);
     throw error;
   }
-
-  return true;
 };
 
 export const getUserDetails = async (userId: string) => {
-  // Felhasználó alapadatai
-  const { data: user, error: userError } = await supabase
-    .from('admin_user_overview')
-    .select('*')
-    .eq('id', userId)
-    .single();
+  try {
+    // Először ellenőrizzük, hogy a felhasználó admin-e
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Nincs bejelentkezett felhasználó');
+    }
 
-  if (userError) {
-    console.error('Felhasználó adatok betöltési hiba:', userError);
-    throw userError;
+    const isAdmin = await checkIsAdmin(user.id);
+    if (!isAdmin) {
+      throw new Error('Nincs admin jogosultság');
+    }
+
+    // Felhasználó alapadatai
+    const { data: userDetail, error: userError } = await supabase
+      .from('admin_user_overview')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (userError) {
+      console.error('Felhasználó adatok betöltési hiba:', userError);
+      throw userError;
+    }
+
+    // Kedvencek
+    const { data: favorites, error: favError } = await supabase
+      .from('favorites')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    // Preferenciák
+    const { data: preferences, error: prefError } = await supabase
+      .from('Ételpreferenciák')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    return {
+      user: userDetail,
+      favorites: favorites || [],
+      preferences: preferences || [],
+      favoritesError: favError,
+      preferencesError: prefError
+    };
+  } catch (error) {
+    console.error('Felhasználó részletek betöltési hiba:', error);
+    throw error;
   }
-
-  // Kedvencek
-  const { data: favorites, error: favError } = await supabase
-    .from('favorites')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  // Preferenciák
-  const { data: preferences, error: prefError } = await supabase
-    .from('Ételpreferenciák')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  return {
-    user,
-    favorites: favorites || [],
-    preferences: preferences || [],
-    favoritesError: favError,
-    preferencesError: prefError
-  };
 };
