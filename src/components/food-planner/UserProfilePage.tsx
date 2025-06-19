@@ -151,7 +151,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
               onClick={onClose}
               variant="outline"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10"
+              className="text-white border-white/50 bg-white/20 hover:bg-white/30 backdrop-blur-sm"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Vissza
@@ -167,7 +167,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
               onClick={onLogout}
               variant="outline"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+              className="text-white border-white/50 bg-red-500/80 hover:bg-red-600/80 backdrop-blur-sm flex items-center gap-2"
             >
               <LogOut className="w-4 h-4" />
               Kijelentkezés
@@ -230,7 +230,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 flex items-center gap-2"
+                className="bg-blue-100 border-blue-400 text-blue-700 hover:bg-blue-200 flex items-center gap-2"
               >
                 <Edit className="w-4 h-4" />
                 Szerkesztés
@@ -256,7 +256,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-4 bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
+                  className="mt-4 bg-red-100 border-red-400 text-red-700 hover:bg-red-200"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Részletek
@@ -305,7 +305,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full mt-4 bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+                  className="w-full mt-4 bg-green-100 border-green-400 text-green-700 hover:bg-green-200"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Részletek
