@@ -115,48 +115,72 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
     );
   }
 
-  if (currentView === 'admin') {
-    return (
-      <AdminDashboard
-        user={user}
-        onLogout={onLogout}
-        onBackToApp={() => setCurrentView('single')}
-      />
-    );
-  }
-
-  if (currentView === 'profile') {
-    return (
-      <UserProfilePage
-        user={user}
-        onClose={() => setCurrentView('single')}
-        onLogout={onLogout}
-      />
-    );
-  }
-
-  if (currentView === 'favorites') {
-    return (
-      <FavoritesPage
-        user={user}
-        onClose={() => setCurrentView('single')}
-      />
-    );
-  }
-
-  if (currentView === 'preferences') {
-    return (
-      <PreferencesPage
-        user={user}
-        onClose={() => setCurrentView('single')}
-      />
-    );
-  }
+  const renderContent = () => {
+    switch (currentView) {
+      case 'single':
+        return (
+          <SingleRecipeApp
+            user={user}
+            onToggleDailyPlanner={() => setCurrentView('daily')}
+          />
+        );
+      case 'daily':
+        return (
+          <DailyMealPlanner
+            user={user}
+            onBackToSingle={() => setCurrentView('single')}
+          />
+        );
+      case 'profile':
+        return (
+          <div className="max-w-6xl mx-auto p-3 sm:p-6">
+            <UserProfilePage
+              user={user}
+              onClose={() => setCurrentView('single')}
+              onLogout={onLogout}
+            />
+          </div>
+        );
+      case 'favorites':
+        return (
+          <div className="max-w-6xl mx-auto p-3 sm:p-6">
+            <FavoritesPage
+              user={user}
+              onClose={() => setCurrentView('single')}
+            />
+          </div>
+        );
+      case 'preferences':
+        return (
+          <div className="max-w-6xl mx-auto p-3 sm:p-6">
+            <PreferencesPage
+              user={user}
+              onClose={() => setCurrentView('single')}
+            />
+          </div>
+        );
+      case 'admin':
+        return (
+          <AdminDashboard
+            user={user}
+            onLogout={onLogout}
+            onBackToApp={() => setCurrentView('single')}
+          />
+        );
+      default:
+        return (
+          <SingleRecipeApp
+            user={user}
+            onToggleDailyPlanner={() => setCurrentView('daily')}
+          />
+        );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
-      {/* Modern Header with Admin-style Design */}
-      <div className="bg-black/20 backdrop-blur-lg border-b border-white/10">
+      {/* Sticky Header with Modern Admin-style Design */}
+      <div className="sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           {/* Top Row - Brand and User Info */}
           <div className="flex justify-between items-center mb-6">
@@ -271,19 +295,9 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - dinamikusan változó tartalom */}
       <div className="py-6 sm:py-8">
-        {currentView === 'single' ? (
-          <SingleRecipeApp
-            user={user}
-            onToggleDailyPlanner={() => setCurrentView('daily')}
-          />
-        ) : (
-          <DailyMealPlanner
-            user={user}
-            onBackToSingle={() => setCurrentView('single')}
-          />
-        )}
+        {renderContent()}
       </div>
     </div>
   );
