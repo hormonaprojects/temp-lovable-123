@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -200,7 +201,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-lg">Betöltés...</p>
@@ -210,16 +211,16 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
-      {/* Header */}
-      <div className="bg-black/20 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
+      {/* Modern Header */}
+      <div className="bg-black/20 backdrop-blur-lg border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Button
               onClick={onClose}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Vissza</span>
@@ -227,17 +228,17 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
             
             <Button
               onClick={handleNavigateToProfile}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
             >
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Profil</span>
             </Button>
             
             <div className="text-white">
-              <h1 className="text-xl font-bold">🍽️ Ételpreferenciáim</h1>
-              <p className="text-sm opacity-80">Kezeld az ételpreferenciáidat</p>
+              <h1 className="text-xl sm:text-2xl font-bold">🍽️ Ételpreferenciáim</h1>
+              <p className="text-sm sm:text-base text-white/70">Kezeld az ételpreferenciáidat</p>
             </div>
           </div>
           
@@ -245,9 +246,9 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
             {!isEditing ? (
               <Button
                 onClick={() => setIsEditing(true)}
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+                className="bg-blue-500/20 backdrop-blur-sm border border-blue-400/30 text-blue-200 hover:bg-blue-500/30 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
               >
                 <Edit3 className="w-4 h-4" />
                 Szerkesztés
@@ -256,9 +257,9 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
               <>
                 <Button
                   onClick={() => setIsEditing(false)}
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="text-white border-white/30 hover:bg-white/10 bg-white/10"
+                  className="bg-gray-500/20 backdrop-blur-sm border border-gray-400/30 text-gray-200 hover:bg-gray-500/30 hover:text-white transition-all duration-200 px-3 py-2"
                 >
                   Mégse
                 </Button>
@@ -266,7 +267,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                   onClick={handleSave}
                   disabled={saving}
                   size="sm"
-                  className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
+                  className="bg-green-500/80 hover:bg-green-600/90 backdrop-blur-sm border border-green-400/30 text-white flex items-center gap-2 px-3 py-2"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? 'Mentés...' : 'Mentés'}
@@ -284,12 +285,12 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
           if (ingredients.length === 0) {
             console.log(`⚠️ Nincs alapanyag a kategóriában: ${categoryName}`);
             return (
-              <div key={categoryName} className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+              <div key={categoryName} className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-xl p-6 border border-white/20">
+                <h2 className="text-2xl font-bold text-white mb-6 text-center">
                   {categoryName}
                 </h2>
-                <div className="text-center p-8 bg-yellow-100 rounded-lg">
-                  <p className="text-yellow-800">
+                <div className="text-center p-8 bg-yellow-500/20 backdrop-blur-sm rounded-lg border border-yellow-400/30">
+                  <p className="text-yellow-200">
                     Nincsenek alapanyagok ebben a kategóriában: {categoryName}
                   </p>
                 </div>
@@ -298,8 +299,8 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
           }
 
           return (
-            <div key={categoryName} className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            <div key={categoryName} className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-xl p-6 border border-white/20">
+              <h2 className="text-2xl font-bold text-white mb-6 text-center">
                 {categoryName} ({ingredients.length} alapanyag)
               </h2>
               
@@ -310,10 +311,10 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                     <Card
                       key={ingredient}
                       className={`
-                        relative overflow-hidden transition-all duration-300
-                        ${preference === 'like' ? 'bg-green-100 border-green-300 scale-105 shadow-lg' : ''}
-                        ${preference === 'dislike' ? 'bg-red-100 border-red-300 scale-95 opacity-70' : ''}
-                        ${preference === 'neutral' ? 'bg-white border-gray-200' : ''}
+                        relative overflow-hidden transition-all duration-300 backdrop-blur-sm border
+                        ${preference === 'like' ? 'bg-green-500/20 border-green-400/40 scale-105 shadow-lg' : ''}
+                        ${preference === 'dislike' ? 'bg-red-500/20 border-red-400/40 scale-95 opacity-70' : ''}
+                        ${preference === 'neutral' ? 'bg-white/10 border-white/20' : ''}
                         ${isEditing ? 'cursor-pointer hover:scale-105' : ''}
                       `}
                     >

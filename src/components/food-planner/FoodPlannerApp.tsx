@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -96,7 +97,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-lg">Betöltés...</p>
@@ -154,58 +155,60 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
-      {/* Header */}
-      <div className="bg-black/20 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
+      {/* Modern Header */}
+      <div className="bg-black/20 backdrop-blur-lg border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
           <div className="text-white text-center sm:text-left">
-            <h1 className="text-lg sm:text-xl font-bold">🍽️ Ételtervező</h1>
-            <p className="text-xs sm:text-sm opacity-80">Üdv, {user.fullName}!</p>
+            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              🍽️ Ételtervező
+            </h1>
+            <p className="text-sm sm:text-base text-white/70">Üdv, {user.fullName}!</p>
           </div>
           
-          {/* Jobb oldali gombok */}
-          <div className="flex items-center gap-3">
-            {/* Kedvencek gomb */}
+          {/* Modern Menu Buttons */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Kedvencek */}
             <Button
               onClick={() => setCurrentView('favorites')}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
             >
               <Star className="w-4 h-4 text-yellow-400 fill-current" />
               <span className="hidden sm:inline">Kedvencek</span>
             </Button>
 
-            {/* Preferenciák gomb */}
+            {/* Preferenciák */}
             <Button
               onClick={() => setCurrentView('preferences')}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
             >
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Preferenciák</span>
             </Button>
 
-            {/* Admin gomb - csak adminoknak */}
+            {/* Admin - csak adminoknak */}
             {isAdmin && (
               <Button
                 onClick={() => setCurrentView('admin')}
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="text-white border-purple-400/50 hover:bg-purple-500/20 bg-purple-500/10 flex items-center gap-2"
+                className="bg-purple-500/20 backdrop-blur-sm border border-purple-400/30 text-purple-200 hover:bg-purple-500/30 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
               >
-                <Shield className="w-4 h-4 text-purple-400" />
+                <Shield className="w-4 h-4" />
                 <span className="hidden sm:inline">Admin</span>
               </Button>
             )}
 
-            {/* Profil gomb profilképpel - közvetlenül a profil oldalra */}
+            {/* Profil */}
             <Button
               onClick={() => setCurrentView('profile')}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2 pl-2"
+              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-2 py-2"
             >
               <Avatar className="w-6 h-6 border border-white/30">
                 <AvatarImage src={userProfile?.avatar_url || undefined} alt="Profilkép" />
@@ -216,11 +219,12 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
               <span className="hidden sm:inline">Profil</span>
             </Button>
             
-            {/* Kijelentkezés gomb */}
+            {/* Kijelentkezés */}
             <Button
               onClick={onLogout}
-              variant="outline"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 text-sm px-4 py-2"
+              variant="ghost"
+              size="sm"
+              className="bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 hover:bg-red-500/30 hover:text-white transition-all duration-200 px-3 py-2"
             >
               Kijelentkezés
             </Button>
@@ -229,7 +233,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
       </div>
 
       {/* Main Content */}
-      <div className="py-4 sm:py-8">
+      <div className="py-6 sm:py-8">
         {currentView === 'single' ? (
           <SingleRecipeApp
             user={user}

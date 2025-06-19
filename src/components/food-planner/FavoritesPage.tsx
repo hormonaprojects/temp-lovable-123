@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Star, Heart, User } from "lucide-react";
@@ -69,7 +70,7 @@ export function FavoritesPage({ user, onClose }: FavoritesPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-lg">Kedvencek betöltése...</p>
@@ -80,15 +81,15 @@ export function FavoritesPage({ user, onClose }: FavoritesPageProps) {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
-        {/* Header */}
-        <div className="bg-black/20 backdrop-blur-sm">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
+        {/* Modern Header */}
+        <div className="bg-black/20 backdrop-blur-lg border-b border-white/10">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
             <Button
               onClick={onClose}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Vissza</span>
@@ -96,20 +97,20 @@ export function FavoritesPage({ user, onClose }: FavoritesPageProps) {
             
             <Button
               onClick={handleNavigateToProfile}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
             >
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Profil</span>
             </Button>
             
             <div className="text-white">
-              <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-400 fill-current" />
+              <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                <Star className="w-6 h-6 text-yellow-400 fill-current" />
                 Kedvenc Receptek
               </h1>
-              <p className="text-xs sm:text-sm opacity-80">{favorites.length} kedvenc recept</p>
+              <p className="text-sm sm:text-base text-white/70">{favorites.length} kedvenc recept</p>
             </div>
           </div>
         </div>
@@ -117,21 +118,23 @@ export function FavoritesPage({ user, onClose }: FavoritesPageProps) {
         {/* Content */}
         <div className="max-w-6xl mx-auto p-4 sm:p-6">
           {favorites.length === 0 ? (
-            <div className="text-center py-12">
-              <Star className="w-16 h-16 text-white/50 mx-auto mb-4" />
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
-                Még nincsenek kedvenceid
-              </h2>
-              <p className="text-white/80">
-                Adj hozzá recepteket a kedvenceidhez a szívecske gombbal!
-              </p>
+            <div className="text-center py-16">
+              <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 sm:p-12 border border-white/20 shadow-2xl max-w-md mx-auto">
+                <Star className="w-20 h-20 text-yellow-400/60 mx-auto mb-6" />
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                  Még nincsenek kedvenceid
+                </h2>
+                <p className="text-white/70 text-lg leading-relaxed">
+                  Adj hozzá recepteket a kedvenceidhez a szívecske gombbal!
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {favorites.map((favorite) => (
                 <div
                   key={favorite.id}
-                  className="bg-white/10 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group"
+                  className="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer group border border-white/20"
                 >
                   {/* Kép */}
                   <div 

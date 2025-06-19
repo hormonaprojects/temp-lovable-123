@@ -194,21 +194,27 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
 
   return (
     <div className="max-w-6xl mx-auto p-3 sm:p-6">
-      <div className="text-center mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2 sm:mb-4">🍽️ Ételtervező</h1>
-        <p className="text-white/80 text-base sm:text-lg px-4">Válassz étkezést és készíts finom ételeket (preferenciáiddal)!</p>
+      {/* Modern Hero Section */}
+      <div className="text-center mb-8 sm:mb-10">
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl">
+          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 sm:mb-4">🍽️ Ételtervező</h1>
+          <p className="text-white/80 text-lg sm:text-xl px-4 leading-relaxed">
+            Válassz étkezést és készíts finom ételeket (preferenciáiddal)!
+          </p>
+        </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6 sm:mb-8 px-4">
+      {/* Modern Action Buttons */}
+      <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-8 sm:mb-10 px-4">
         <Button
           onClick={resetForm}
-          className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
+          className="bg-gradient-to-r from-red-500/80 to-pink-600/80 hover:from-red-600/90 hover:to-pink-700/90 backdrop-blur-sm border border-red-300/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 text-sm sm:text-base"
         >
           🔄 Új választás
         </Button>
         <Button
           onClick={onToggleDailyPlanner}
-          className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
+          className="bg-gradient-to-r from-purple-500/80 to-indigo-600/80 hover:from-purple-600/90 hover:to-indigo-700/90 backdrop-blur-sm border border-purple-300/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 text-sm sm:text-base"
         >
           📅 Napi étrendtervező
         </Button>
