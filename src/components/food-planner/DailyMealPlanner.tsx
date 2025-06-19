@@ -61,11 +61,12 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     categories,
     getRecipesByMealType,
     getRecipesByCategory,
+    getFilteredIngredients,
     getRandomRecipe,
     convertToStandardRecipe,
     saveRating,
     loading: dataLoading
-  } = useSupabaseData();
+  } = useSupabaseData(user.id);
 
   const mealOptions = [
     { key: "reggeli", label: "🌅 Reggeli", emoji: "🌅" },
@@ -76,7 +77,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
   ];
 
   const getIngredientsByCategory = (category: string): string[] => {
-    return categories?.[category] || [];
+    return getFilteredIngredients(category);
   };
 
   const handleMealToggle = (mealKey: string) => {
@@ -118,9 +119,9 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     }
   };
 
-  // Generate recipe for meal with improved logic
+  // Generate recipe for meal with improved logic (using preferences)
   const generateRecipeForMeal = (mealType: string, category?: string, ingredient?: string) => {
-    console.log(`🔍 Recept keresése: ${mealType}`, { category, ingredient });
+    console.log(`🔍 Recept keresése preferenciákkal: ${mealType}`, { category, ingredient });
     
     // If category and ingredient are specified, use strict filtering
     if (category && ingredient) {
@@ -148,9 +149,9 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
       return null;
     }
     
-    // No specific criteria - get random recipe for this meal type
+    // No specific criteria - get random recipe for this meal type (with preferences prioritization)
     const foundRecipes = getRecipesByMealType(mealType);
-    console.log(`🎲 Random recept az étkezési típushoz (${mealType}): ${foundRecipes.length} db`);
+    console.log(`🎲 Random recept az étkezési típushoz (${mealType}) preferenciákkal: ${foundRecipes.length} db`);
     
     if (foundRecipes.length > 0) {
       const randomIndex = Math.floor(Math.random() * foundRecipes.length);
@@ -174,7 +175,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     setIsGenerating(true);
     
     try {
-      console.log('🎯 Étrend generálása...', selectedMeals, mealSelections);
+      console.log('🎯 Étrend generálása preferenciákkal...', selectedMeals, mealSelections);
       
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 4000));
 
@@ -204,7 +205,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
             failedMeals.push(`${mealType} (${selection.category})`);
           }
         } else {
-          // Nincs specifikus kritérium - random recept az étkezési típushoz
+          // Nincs specifikus kritérium - random recept az étkezési típushoz (preferenciákkal prioritizálva)
           recipe = generateRecipeForMeal(mealType);
           isSpecific = false;
           
@@ -238,7 +239,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
       } else {
         toast({
           title: "Generálás kész!",
-          description: `${specificCount} specifikus és ${randomCount} random recept betöltve.`,
+          description: `${specificCount} specifikus és ${randomCount} random recept betöltve (preferenciák figyelembevételével).`,
         });
       }
       
@@ -258,7 +259,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     setRegeneratingMeal(mealType);
     
     try {
-      console.log(`🔄 ${mealType} újragenerálása...`, { category, ingredient });
+      console.log(`🔄 ${mealType} újragenerálása preferenciákkal...`, { category, ingredient });
       
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
       
@@ -284,7 +285,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
         toast({
           title: "Újragenerálás kész!",
-          description: `${mealType} új recepttel frissítve.`,
+          description: `${mealType} új recepttel frissítve (preferenciák figyelembevételével).`,
         });
       } else {
         let errorMessage = "";
@@ -319,7 +320,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     setIsGenerating(true);
     
     try {
-      console.log('🔄 Összes étel újragenerálása...');
+      console.log('🔄 Összes étel újragenerálása preferenciákkal...');
       
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
       
@@ -344,7 +345,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
       toast({
         title: "Újragenerálás kész!",
-        description: "Az összes ételt újrageneráltuk.",
+        description: "Az összes ételt újrageneráltuk (preferenciák figyelembevételével).",
       });
       
     } catch (error) {
@@ -388,7 +389,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
             <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             <h1 className="text-2xl sm:text-4xl font-bold text-white">Napi Étrendtervező</h1>
           </div>
-          <p className="text-white/80 text-base sm:text-lg px-4">Tervezd meg a teljes napodat személyre szabott receptekkel</p>
+          <p className="text-white/80 text-base sm:text-lg px-4">Tervezd meg a teljes napodat személyre szabott receptekkel (preferenciáiddal)</p>
         </div>
 
         {/* Back Button */}
@@ -410,7 +411,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                 <Target className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 <CardTitle className="text-xl sm:text-2xl font-bold text-white">Válaszd ki és szabd személyre az étkezéseket</CardTitle>
               </div>
-              <p className="text-white/70 text-sm sm:text-base">Jelöld be az étkezéseket és válassz kategóriát vagy alapanyagot személyre szabáshoz</p>
+              <p className="text-white/70 text-sm sm:text-base">Jelöld be az étkezéseket és válassz kategóriát vagy alapanyagot személyre szabáshoz (csak kedvelt alapanyagok jelennek meg)</p>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -446,7 +447,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                   ) : (
                     <>
                       <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                      Étrend Generálása
+                      Étrend Generálása (Preferenciákkal)
                     </>
                   )}
                 </Button>
@@ -465,7 +466,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
             <div className="space-y-4 sm:space-y-6">
               <div className="text-center mb-6 sm:mb-8">
                 <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">🍽️ Mai Étrendem</h3>
-                <p className="text-white/70 text-base sm:text-lg px-4">Személyre szabott receptek az egész napra</p>
+                <p className="text-white/70 text-base sm:text-lg px-4">Személyre szabott receptek az egész napra (preferenciáiddal)</p>
               </div>
               
               <div className="grid gap-4 sm:gap-6">
@@ -568,11 +569,11 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                 <h5 className="font-bold mb-3 sm:mb-4 text-white text-base sm:text-lg flex items-center gap-2">
                                   🥘 Hozzávalók ({mealData.recipe.hozzávalók?.length || 0} db)
                                 </h5>
-                                <ul className="space-y-2">
-                                  {mealData.recipe.hozzávalók?.map((ingredient, idx) => (
-                                    <li key={idx} className="text-white/90 flex items-start bg-white/5 p-2 rounded-lg text-sm sm:text-base">
-                                      <span className="text-green-300 mr-3 font-bold">•</span>
-                                      {ingredient}
+                                <ul className="text-white/90 space-y-2 sm:space-y-3">
+                                  {mealData.recipe.hozzávalók?.map((ingredient, index) => (
+                                    <li key={index} className="flex items-start bg-white/5 p-2 sm:p-3 rounded-lg">
+                                      <span className="text-green-400 mr-2 sm:mr-3 font-bold text-base sm:text-lg">•</span>
+                                      <span className="text-sm sm:text-lg break-words">{ingredient}</span>
                                     </li>
                                   ))}
                                 </ul>
@@ -583,7 +584,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                                   👨‍🍳 Elkészítés
                                 </h5>
                                 <div 
-                                  className="text-white/90 leading-relaxed text-sm sm:text-base"
+                                  className="text-white/90 leading-relaxed text-sm sm:text-lg break-words"
                                   dangerouslySetInnerHTML={{ 
                                     __html: mealData.recipe.elkészítés?.replace(/(\d+\.\s)/g, '<br><strong class="text-yellow-300">$1</strong>') || '' 
                                   }}

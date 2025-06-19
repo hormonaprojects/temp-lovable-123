@@ -46,6 +46,7 @@ export function MealSelectionCard({
   const [selectedCategory, setSelectedCategory] = useState("none");
   const [selectedIngredient, setSelectedIngredient] = useState("none");
 
+  // Szűrt alapanyagok használata (preferenciák alapján)
   const ingredients = selectedCategory && selectedCategory !== "none" ? getIngredientsByCategory(selectedCategory) : [];
 
   const handleCategoryChange = (category: string) => {

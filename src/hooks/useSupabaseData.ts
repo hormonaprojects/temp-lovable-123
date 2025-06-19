@@ -6,18 +6,39 @@ import { fetchCategories, fetchMealTypes, fetchRecipes, saveRecipeRating } from 
 import { processCategories, processMealTypes, createMealTypesDisplay } from '@/utils/dataProcessors';
 import { convertToStandardRecipe } from '@/utils/recipeConverter';
 import { getRecipesByMealType, getRecipesByCategory } from '@/services/recipeFilters';
+import { getUserPreferences, filterIngredientsByPreferences, UserPreference } from '@/services/preferenceFilters';
 
-export function useSupabaseData() {
+export function useSupabaseData(userId?: string) {
   const [categories, setCategories] = useState<Record<string, string[]>>({});
   const [mealTypes, setMealTypes] = useState<MealTypeData>({});
   const [recipes, setRecipes] = useState<SupabaseRecipe[]>([]);
   const [mealTypeRecipes, setMealTypeRecipes] = useState<Record<string, string[]>>({});
+  const [userPreferences, setUserPreferences] = useState<UserPreference[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (userId) {
+      loadUserPreferences();
+    }
+  }, [userId]);
+
+  const loadUserPreferences = async () => {
+    if (!userId) return;
+    
+    try {
+      console.log('🔄 Felhasználói preferenciák betöltése...', userId);
+      const preferences = await getUserPreferences(userId);
+      setUserPreferences(preferences);
+      console.log('✅ Preferenciák betöltve:', preferences.length, 'db');
+    } catch (error) {
+      console.error('❌ Preferenciák betöltési hiba:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -68,11 +89,18 @@ export function useSupabaseData() {
   };
 
   const getRecipesByMealTypeHandler = (mealType: string): SupabaseRecipe[] => {
-    return getRecipesByMealType(recipes, mealTypeRecipes, mealType);
+    return getRecipesByMealType(recipes, mealTypeRecipes, mealType, userPreferences);
   };
 
   const getRecipesByCategoryHandler = (category: string, ingredient?: string, mealType?: string): SupabaseRecipe[] => {
-    return getRecipesByCategory(recipes, mealTypeRecipes, categories, category, ingredient, mealType);
+    return getRecipesByCategory(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
+  };
+
+  const getFilteredIngredients = (category: string): string[] => {
+    const allIngredients = categories[category] || [];
+    if (userPreferences.length === 0) return allIngredients;
+    
+    return filterIngredientsByPreferences(allIngredients, category, userPreferences);
   };
 
   const getRandomRecipe = (): SupabaseRecipe | null => {
@@ -95,12 +123,15 @@ export function useSupabaseData() {
     categories,
     mealTypes,
     recipes,
+    userPreferences,
     loading,
     getRecipesByMealType: getRecipesByMealTypeHandler,
     getRecipesByCategory: getRecipesByCategoryHandler,
+    getFilteredIngredients,
     getRandomRecipe,
     convertToStandardRecipe,
     saveRating,
-    refetch: loadData
+    refetch: loadData,
+    refreshPreferences: loadUserPreferences
   };
 }

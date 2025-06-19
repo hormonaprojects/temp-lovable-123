@@ -33,7 +33,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     getRecipesByCategory,
     getRandomRecipe,
     convertToStandardRecipe
-  } = useSupabaseData();
+  } = useSupabaseData(user.id);
 
   const getRecipe = async (category: string, ingredient: string) => {
     if (!selectedMealType) return;
@@ -44,24 +44,24 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setLastSearchParams({ category, ingredient, mealType: selectedMealType });
 
     try {
-      console.log('🔍 SZIGORÚ recept keresése:', { selectedMealType, category, ingredient });
+      console.log('🔍 SZIGORÚ recept keresése preferenciákkal:', { selectedMealType, category, ingredient });
       
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
       
       let foundRecipes = [];
 
       if (category && ingredient) {
-        // STRICT: Both category and ingredient must match exactly
+        // STRICT: Both category and ingredient must match exactly (with preferences)
         foundRecipes = getRecipesByCategory(category, ingredient, selectedMealType);
-        console.log(`🎯 SZIGORÚ specifikus keresés eredménye: ${foundRecipes.length} recept`);
+        console.log(`🎯 SZIGORÚ specifikus keresés eredménye (preferenciákkal): ${foundRecipes.length} recept`);
       } else if (category) {
-        // STRICT: Category must match exactly
+        // STRICT: Category must match exactly (with preferences)
         foundRecipes = getRecipesByCategory(category, undefined, selectedMealType);
-        console.log(`🎯 SZIGORÚ kategória keresés eredménye: ${foundRecipes.length} recept`);
+        console.log(`🎯 SZIGORÚ kategória keresés eredménye (preferenciákkal): ${foundRecipes.length} recept`);
       } else {
-        // Random recipe for the meal type (no category/ingredient specified)
+        // Random recipe for the meal type (with preferences prioritization)
         foundRecipes = getRecipesByMealType(selectedMealType);
-        console.log(`🎯 Random étkezési típus keresés eredménye: ${foundRecipes.length} recept`);
+        console.log(`🎯 Random étkezési típus keresés eredménye (preferenciákkal prioritizálva): ${foundRecipes.length} recept`);
       }
 
       await minLoadingTime;
@@ -75,17 +75,17 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         
         toast({
           title: "Recept betöltve!",
-          description: `${standardRecipe.név} sikeresen betöltve az adatbázisból.`,
+          description: `${standardRecipe.név} sikeresen betöltve az adatbázisból (preferenciáiddal).`,
         });
       } else {
         // STRICT error messages based on search criteria
         let errorMessage = "";
         if (category && ingredient) {
-          errorMessage = `Nincs "${ingredient}" alapanyaggal recept "${selectedMealType}" étkezéshez a "${category}" kategóriában.`;
+          errorMessage = `Nincs "${ingredient}" alapanyaggal recept "${selectedMealType}" étkezéshez a "${category}" kategóriában (preferenciáid szerint).`;
         } else if (category) {
-          errorMessage = `Nincs recept "${selectedMealType}" étkezéshez a "${category}" kategóriában.`;
+          errorMessage = `Nincs recept "${selectedMealType}" étkezéshez a "${category}" kategóriában (preferenciáid szerint).`;
         } else {
-          errorMessage = `Nincs recept "${selectedMealType}" étkezéshez.`;
+          errorMessage = `Nincs recept "${selectedMealType}" étkezéshez (preferenciáid szerint).`;
         }
         
         toast({
@@ -115,18 +115,18 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       try {
         const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
         
-        console.log('🔄 SZIGORÚ újragenerálás ugyanazokkal a paraméterekkel:', lastSearchParams);
+        console.log('🔄 SZIGORÚ újragenerálás ugyanazokkal a paraméterekkel (preferenciákkal):', lastSearchParams);
         
         let foundRecipes = [];
         
         if (lastSearchParams.category && lastSearchParams.ingredient) {
-          // STRICT: Both category and ingredient must match exactly
+          // STRICT: Both category and ingredient must match exactly (with preferences)
           foundRecipes = getRecipesByCategory(lastSearchParams.category, lastSearchParams.ingredient, selectedMealType);
         } else if (lastSearchParams.category) {
-          // STRICT: Category must match exactly
+          // STRICT: Category must match exactly (with preferences)
           foundRecipes = getRecipesByCategory(lastSearchParams.category, undefined, selectedMealType);
         } else {
-          // Random recipe for the meal type
+          // Random recipe for the meal type (with preferences prioritization)
           foundRecipes = getRecipesByMealType(selectedMealType);
         }
 
@@ -141,17 +141,17 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
           
           toast({
             title: "Új recept betöltve!",
-            description: `${standardRecipe.név} sikeresen betöltve az adatbázisból.`,
+            description: `${standardRecipe.név} sikeresen betöltve az adatbázisból (preferenciáiddal).`,
           });
         } else {
           // STRICT error messages for regeneration
           let errorMessage = "";
           if (lastSearchParams.category && lastSearchParams.ingredient) {
-            errorMessage = `Nincs több "${lastSearchParams.ingredient}" alapanyaggal recept "${selectedMealType}" étkezéshez a "${lastSearchParams.category}" kategóriában.`;
+            errorMessage = `Nincs több "${lastSearchParams.ingredient}" alapanyaggal recept "${selectedMealType}" étkezéshez a "${lastSearchParams.category}" kategóriában (preferenciáid szerint).`;
           } else if (lastSearchParams.category) {
-            errorMessage = `Nincs több recept "${selectedMealType}" étkezéshez a "${lastSearchParams.category}" kategóriában.`;
+            errorMessage = `Nincs több recept "${selectedMealType}" étkezéshez a "${lastSearchParams.category}" kategóriában (preferenciáid szerint).`;
           } else {
-            errorMessage = `Nincs több recept "${selectedMealType}" étkezéshez.`;
+            errorMessage = `Nincs több recept "${selectedMealType}" étkezéshez (preferenciáid szerint).`;
           }
           
           toast({
@@ -194,7 +194,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     <div className="max-w-6xl mx-auto p-3 sm:p-6">
       <div className="text-center mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2 sm:mb-4">🍽️ Ételtervező</h1>
-        <p className="text-white/80 text-base sm:text-lg px-4">Válassz étkezést és készíts finom ételeket!</p>
+        <p className="text-white/80 text-base sm:text-lg px-4">Válassz étkezést és készíts finom ételeket (preferenciáiddal)!</p>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6 sm:mb-8 px-4">

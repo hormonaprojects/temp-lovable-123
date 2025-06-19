@@ -1,11 +1,13 @@
 
 import { SupabaseRecipe } from '@/types/supabase';
 import { normalizeText } from '@/utils/textNormalization';
+import { UserPreference, prioritizeRecipesByPreferences } from './preferenceFilters';
 
 export const getRecipesByMealType = (
   recipes: SupabaseRecipe[], 
   mealTypeRecipes: Record<string, string[]>, 
-  mealType: string
+  mealType: string,
+  userPreferences?: UserPreference[]
 ): SupabaseRecipe[] => {
   console.log(`🔍 getRecipesByMealType hívva: ${mealType}`);
   
@@ -38,7 +40,12 @@ export const getRecipesByMealType = (
   );
   
   console.log(`🔍 ${mealType} talált receptek:`, foundRecipes.length, 'db');
-  console.log(`🔍 ${mealType} receptek részletei:`, foundRecipes.map(r => r['Recept_Neve']));
+  
+  // Ha vannak preferenciák, prioritizáljuk a recepteket
+  if (userPreferences && userPreferences.length > 0) {
+    console.log('🎯 Preferenciák alapján prioritizáljuk a recepteket');
+    return prioritizeRecipesByPreferences(foundRecipes, userPreferences);
+  }
   
   return foundRecipes;
 };
@@ -49,7 +56,8 @@ export const getRecipesByCategory = (
   categories: Record<string, string[]>,
   category: string,
   ingredient?: string,
-  mealType?: string
+  mealType?: string,
+  userPreferences?: UserPreference[]
 ): SupabaseRecipe[] => {
   console.log(`🔍 SZIGORÚ szűrés - Kategória: ${category}, Alapanyag: ${ingredient}, Étkezési típus: ${mealType}`);
   
@@ -129,6 +137,13 @@ export const getRecipesByCategory = (
     });
 
     console.log(`✅ Végeredmény (kategória ${category}, ${mealType}):`, categoryFilteredRecipes.length, 'db');
+    
+    // Ha vannak preferenciák, prioritizáljuk a recepteket
+    if (userPreferences && userPreferences.length > 0) {
+      console.log('🎯 Preferenciák alapján prioritizáljuk a recepteket');
+      return prioritizeRecipesByPreferences(categoryFilteredRecipes, userPreferences);
+    }
+    
     return categoryFilteredRecipes;
   }
 
@@ -157,9 +172,12 @@ export const getRecipesByCategory = (
   });
 
   console.log(`✅ SZIGORÚ szűrés végeredménye (${ingredient} alapanyag, ${mealType}):`, finalFilteredRecipes.length, 'db');
-  finalFilteredRecipes.forEach(recipe => {
-    console.log(`✅ Talált recept: ${recipe['Recept_Neve']}`);
-  });
-
+  
+  // Ha vannak preferenciák, prioritizáljuk a recepteket
+  if (userPreferences && userPreferences.length > 0) {
+    console.log('🎯 Preferenciák alapján prioritizáljuk a recepteket');
+    return prioritizeRecipesByPreferences(finalFilteredRecipes, userPreferences);
+  }
+  
   return finalFilteredRecipes;
 };

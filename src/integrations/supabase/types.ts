@@ -270,39 +270,6 @@ export type Database = {
         }
         Relationships: []
       }
-      Preferencia: {
-        Row: {
-          "Gabonák és Tészták": string | null
-          Gyümölcsök: string | null
-          Halak: string | null
-          Húsfélék: string | null
-          ID: number
-          "Olajok és Magvak": string | null
-          Tejtermékek: string | null
-          "Zöldségek / Vegetáriánus": string | null
-        }
-        Insert: {
-          "Gabonák és Tészták"?: string | null
-          Gyümölcsök?: string | null
-          Halak?: string | null
-          Húsfélék?: string | null
-          ID: number
-          "Olajok és Magvak"?: string | null
-          Tejtermékek?: string | null
-          "Zöldségek / Vegetáriánus"?: string | null
-        }
-        Update: {
-          "Gabonák és Tészták"?: string | null
-          Gyümölcsök?: string | null
-          Halak?: string | null
-          Húsfélék?: string | null
-          ID?: number
-          "Olajok és Magvak"?: string | null
-          Tejtermékek?: string | null
-          "Zöldségek / Vegetáriánus"?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           activity_level: string | null
