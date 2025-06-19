@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const fetchCategories = async () => {
   const { data, error } = await supabase
-    .from('Ételkategóriák')
+    .from('Ételkategóriák_Új')
     .select('*');
 
   if (error) {

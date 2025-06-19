@@ -14,7 +14,7 @@ export const getRecipesByMealType = (
   // JAVÍTOTT mapping - pontosan az adatbázis oszlopneveket használjuk
   const mealTypeMapping: Record<string, string> = {
     'reggeli': 'Reggeli',
-    'tízórai': 'Tízórai',  // JAVÍTVA: pontos mapping
+    'tízórai': 'Tízórai',
     'ebéd': 'Ebéd',
     'leves': 'Leves',
     'uzsonna': 'Uzsonna',
@@ -69,7 +69,7 @@ export const getRecipesByCategory = (
   // JAVÍTOTT mapping - pontosan az adatbázis oszlopneveket használjuk
   const mealTypeMapping: Record<string, string> = {
     'reggeli': 'Reggeli',
-    'tízórai': 'Tízórai',  // JAVÍTVA: pontos mapping
+    'tízórai': 'Tízórai',
     'ebéd': 'Ebéd',
     'leves': 'Leves',
     'uzsonna': 'Uzsonna',
@@ -103,6 +103,38 @@ export const getRecipesByCategory = (
 
   console.log(`📋 Étkezési típus alapján szűrt receptek:`, mealTypeFilteredRecipes.length);
 
+  // MEGERŐSÍTETT alapanyag ellenőrzés
+  const getAllRecipeIngredients = (recipe: SupabaseRecipe): string[] => {
+    return [
+      recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
+      recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
+      recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
+      recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
+      recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
+      recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
+    ].filter(Boolean).map(ing => ing?.toString() || '');
+  };
+
+  // MEGERŐSÍTETT alapanyag egyezés ellenőrzés
+  const hasExactIngredientMatch = (recipeIngredients: string[], searchIngredient: string): boolean => {
+    const searchNormalized = normalizeText(searchIngredient);
+    
+    return recipeIngredients.some(recipeIng => {
+      const recipeIngNormalized = normalizeText(recipeIng);
+      
+      // Teljes egyezés vagy részleges egyezés mindkét irányban
+      const exactMatch = recipeIngNormalized === searchNormalized;
+      const partialMatch = recipeIngNormalized.includes(searchNormalized) || 
+                          searchNormalized.includes(recipeIngNormalized);
+      
+      if (exactMatch || partialMatch) {
+        console.log(`✅ Alapanyag egyezés: "${recipeIng}" tartalmazza "${searchIngredient}"-t`);
+        return true;
+      }
+      return false;
+    });
+  };
+
   // Ha konkrét alapanyag nincs megadva, csak kategória alapján szűrünk
   if (!ingredient) {
     // 3. LÉPÉS: Kategória alapú szűrés
@@ -115,22 +147,10 @@ export const getRecipesByCategory = (
     }
 
     const categoryFilteredRecipes = mealTypeFilteredRecipes.filter(recipe => {
-      const allIngredients = [
-        recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
-        recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
-        recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
-        recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
-        recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
-        recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
-      ].filter(Boolean);
-
+      const allIngredients = getAllRecipeIngredients(recipe);
+      
       const hasCategory = categoryIngredients.some(categoryIngredient =>
-        allIngredients.some(ing => 
-          ing && (
-            normalizeText(ing).includes(normalizeText(categoryIngredient)) ||
-            normalizeText(categoryIngredient).includes(normalizeText(ing))
-          )
-        )
+        hasExactIngredientMatch(allIngredients, categoryIngredient)
       );
 
       return hasCategory;
@@ -147,31 +167,21 @@ export const getRecipesByCategory = (
     return categoryFilteredRecipes;
   }
 
-  // 4. LÉPÉS: SZIGORÚ specifikus alapanyag szűrés
+  // 4. LÉPÉS: MEGERŐSÍTETT specifikus alapanyag szűrés
   const finalFilteredRecipes = mealTypeFilteredRecipes.filter(recipe => {
-    const allIngredients = [
-      recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
-      recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
-      recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
-      recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
-      recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
-      recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
-    ].filter(Boolean);
-
-    const hasSpecificIngredient = allIngredients.some(ing => {
-      if (!ing) return false;
-      
-      const ingredientNormalized = normalizeText(ing);
-      const searchIngredientNormalized = normalizeText(ingredient);
-      
-      return ingredientNormalized.includes(searchIngredientNormalized) || 
-             searchIngredientNormalized.includes(ingredientNormalized);
-    });
+    const allIngredients = getAllRecipeIngredients(recipe);
+    const hasSpecificIngredient = hasExactIngredientMatch(allIngredients, ingredient);
+    
+    if (hasSpecificIngredient) {
+      console.log(`✅ Recept TARTALMAZZA "${ingredient}" alapanyagot: ${recipe['Recept_Neve']}`);
+    } else {
+      console.log(`❌ Recept NEM tartalmazza "${ingredient}" alapanyagot: ${recipe['Recept_Neve']}`);
+    }
 
     return hasSpecificIngredient;
   });
 
-  console.log(`✅ SZIGORÚ szűrés végeredménye (${ingredient} alapanyag, ${mealType}):`, finalFilteredRecipes.length, 'db');
+  console.log(`✅ MEGERŐSÍTETT szűrés végeredménye (${ingredient} alapanyag, ${mealType}):`, finalFilteredRecipes.length, 'db');
   
   // Ha vannak preferenciák, prioritizáljuk a recepteket
   if (userPreferences && userPreferences.length > 0) {
