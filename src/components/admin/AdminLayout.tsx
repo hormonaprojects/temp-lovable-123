@@ -74,7 +74,11 @@ export function AdminLayout({
             Nincs admin jogosultságod ehhez a felülethez.
           </p>
           {showBackButton && (
-            <Button onClick={onBackToApp} variant="outline" className="text-white border-white/30 hover:bg-white/10">
+            <Button 
+              onClick={onBackToApp} 
+              variant="outline" 
+              className="text-white border-white/50 bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Vissza az alkalmazásba
             </Button>
@@ -95,7 +99,7 @@ export function AdminLayout({
                 onClick={onBackToApp}
                 variant="ghost"
                 size="sm"
-                className="text-white hover:bg-white/10"
+                className="text-white bg-blue-600/80 hover:bg-blue-700/80 border border-blue-500/50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Vissza
@@ -125,7 +129,7 @@ export function AdminLayout({
               onClick={onLogout}
               variant="outline"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10"
+              className="text-white border-red-400/50 bg-red-500/80 hover:bg-red-600/80"
             >
               Kijelentkezés
             </Button>
@@ -142,8 +146,8 @@ export function AdminLayout({
               variant={activeTab === 'users' ? 'secondary' : 'ghost'}
               className={`rounded-none border-b-2 ${
                 activeTab === 'users' 
-                  ? 'border-purple-400 bg-white/10 text-white' 
-                  : 'border-transparent text-white/70 hover:text-white hover:bg-white/5'
+                  ? 'border-purple-400 bg-purple-600/80 text-white hover:bg-purple-700/80' 
+                  : 'border-transparent text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
               <Users className="w-4 h-4 mr-2" />
@@ -154,8 +158,8 @@ export function AdminLayout({
               variant={activeTab === 'roles' ? 'secondary' : 'ghost'}
               className={`rounded-none border-b-2 ${
                 activeTab === 'roles' 
-                  ? 'border-purple-400 bg-white/10 text-white' 
-                  : 'border-transparent text-white/70 hover:text-white hover:bg-white/5'
+                  ? 'border-purple-400 bg-purple-600/80 text-white hover:bg-purple-700/80' 
+                  : 'border-transparent text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
               <UserCog className="w-4 h-4 mr-2" />

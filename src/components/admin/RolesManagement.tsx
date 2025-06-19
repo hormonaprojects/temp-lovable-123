@@ -188,7 +188,7 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
         
         <Dialog open={assignModalOpen} onOpenChange={setAssignModalOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white border border-purple-500">
               <UserPlus className="w-4 h-4 mr-2" />
               Admin kinevezése
             </Button>
@@ -218,14 +218,14 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
               <Button
                 variant="outline"
                 onClick={() => setAssignModalOpen(false)}
-                className="border-white/30 text-white hover:bg-white/10"
+                className="border-white/50 text-white bg-gray-600/80 hover:bg-gray-700/80"
               >
                 Mégse
               </Button>
               <Button
                 onClick={handleAssignAdmin}
                 disabled={assigning}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="bg-purple-600 hover:bg-purple-700 text-white border border-purple-500"
               >
                 {assigning ? 'Kiosztás...' : 'Admin kinevezése'}
               </Button>
