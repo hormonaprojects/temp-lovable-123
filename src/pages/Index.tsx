@@ -10,67 +10,121 @@ import type { User } from "@supabase/supabase-js";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      
-      if (currentUser) {
-        try {
-          const adminStatus = await checkIsAdmin(currentUser.id);
-          setIsAdmin(adminStatus);
-        } catch (error) {
-          console.error('Admin státusz ellenőrzési hiba:', error);
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session lekérési hiba:', error);
+          if (mounted) {
+            setLoading(false);
+            setAuthChecked(true);
+          }
+          return;
+        }
+
+        const currentUser = session?.user ?? null;
+        
+        if (mounted) {
+          setUser(currentUser);
+        }
+        
+        // Check admin status only if user exists
+        if (currentUser && mounted) {
+          try {
+            const adminStatus = await checkIsAdmin(currentUser.id);
+            if (mounted) {
+              setIsAdmin(adminStatus);
+            }
+          } catch (error) {
+            console.error('Admin státusz ellenőrzési hiba:', error);
+            if (mounted) {
+              setIsAdmin(false);
+            }
+          }
+        } else if (mounted) {
           setIsAdmin(false);
         }
+        
+        if (mounted) {
+          setLoading(false);
+          setAuthChecked(true);
+        }
+      } catch (error) {
+        console.error('Auth inicializálási hiba:', error);
+        if (mounted) {
+          setLoading(false);
+          setAuthChecked(true);
+        }
       }
-      
-      setLoading(false);
-    });
+    };
+
+    // Initialize auth
+    initializeAuth();
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
+      console.log('Auth állapot változás:', event, session?.user?.email);
+      
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       
       if (currentUser) {
         try {
           const adminStatus = await checkIsAdmin(currentUser.id);
-          setIsAdmin(adminStatus);
+          if (mounted) {
+            setIsAdmin(adminStatus);
+          }
         } catch (error) {
           console.error('Admin státusz ellenőrzési hiba:', error);
-          setIsAdmin(false);
+          if (mounted) {
+            setIsAdmin(false);
+          }
         }
       } else {
-        setIsAdmin(null);
+        if (mounted) {
+          setIsAdmin(false);
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {
     try {
+      console.log('Kijelentkezés indítása...');
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Kijelentkezési hiba:', error);
         throw error;
       }
+      console.log('Kijelentkezés sikeres');
       // A state automatikusan frissül az onAuthStateChange miatt
     } catch (error) {
       console.error('Kijelentkezési hiba:', error);
       // Force logout even if there's an error
       setUser(null);
-      setIsAdmin(null);
+      setIsAdmin(false);
     }
   };
 
-  if (loading) {
+  // Show loading only while checking auth status
+  if (loading || !authChecked) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
         <div className="text-center">
