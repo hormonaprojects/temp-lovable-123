@@ -19,10 +19,12 @@ export function UsersManagement() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [allIngredients, setAllIngredients] = useState<Array<{category: string, ingredient: string}>>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     loadUsers();
+    loadAllIngredients();
   }, []);
 
   useEffect(() => {
@@ -47,6 +49,49 @@ export function UsersManagement() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAllIngredients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('Ételkategóriák_Új')
+        .select('*');
+      
+      if (error) {
+        console.error('Ingrediensek betöltési hiba:', error);
+        return;
+      }
+
+      const categoryNames = [
+        'Húsfélék',
+        'Halak', 
+        'Zöldségek / Vegetáriánus',
+        'Tejtermékek',
+        'Gyümölcsök',
+        'Gabonák és Tészták',
+        'Olajok és Magvak'
+      ];
+
+      const ingredients: Array<{category: string, ingredient: string}> = [];
+      
+      categoryNames.forEach(categoryName => {
+        if (data) {
+          data.forEach(row => {
+            const categoryValue = row[categoryName];
+            if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
+              const ingredient = categoryValue.trim();
+              if (!ingredients.find(item => item.category === categoryName && item.ingredient === ingredient)) {
+                ingredients.push({ category: categoryName, ingredient });
+              }
+            }
+          });
+        }
+      });
+
+      setAllIngredients(ingredients);
+    } catch (error) {
+      console.error('Ingrediensek betöltési hiba:', error);
     }
   };
 
@@ -82,8 +127,23 @@ export function UsersManagement() {
         console.error('Preferenciák betöltési hiba:', preferencesError);
       }
 
+      // Összes lehetséges ingrediens kombinálása a felhasználó preferenciáival
+      const completePreferences = allIngredients.map(ingredient => {
+        const userPref = userPreferences?.find(
+          pref => pref.category === ingredient.category && pref.ingredient === ingredient.ingredient
+        );
+        
+        return {
+          id: userPref?.id || `${ingredient.category}-${ingredient.ingredient}`,
+          category: ingredient.category,
+          ingredient: ingredient.ingredient,
+          preference: userPref?.preference || 'neutral',
+          created_at: userPref?.created_at || null
+        };
+      });
+
       // Preferenciák átalakítása a megfelelő formátumra
-      const formattedPreferences = (userPreferences || []).map(pref => ({
+      const formattedPreferences = completePreferences.map(pref => ({
         ...pref,
         preference: pref.preference === 'like' ? 'szeretem' : 
                    pref.preference === 'dislike' ? 'nem_szeretem' : 'semleges'
@@ -95,8 +155,12 @@ export function UsersManagement() {
         preferences: formattedPreferences
       };
 
-      console.log('Betöltött preferenciák:', formattedPreferences.length, 'db');
-      console.log('Preferenciák részletei:', formattedPreferences.slice(0, 5));
+      console.log('Betöltött teljes preferenciák:', formattedPreferences.length, 'db');
+      console.log('Preferenciák megoszlása:', {
+        szeretem: formattedPreferences.filter(p => p.preference === 'szeretem').length,
+        nem_szeretem: formattedPreferences.filter(p => p.preference === 'nem_szeretem').length,
+        semleges: formattedPreferences.filter(p => p.preference === 'semleges').length
+      });
 
       setSelectedUser(userWithPreferences);
       setShowUserModal(true);
@@ -384,29 +448,54 @@ export function UsersManagement() {
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
                       <Settings2 className="w-5 h-5 text-green-400" />
-                      Étel preferenciák ({selectedUser.preferences.length})
+                      Étel preferenciák (összes: {selectedUser.preferences.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {selectedUser.preferences.map((preference: any) => (
-                        <div key={preference.id} className="flex justify-between items-center p-2 bg-white/5 rounded">
-                          <div className="text-white">
-                            <span className="font-medium">{preference.ingredient}</span>
-                            <span className="text-white/60 ml-2">({preference.category})</span>
-                          </div>
-                          <Badge 
-                            variant={preference.preference === 'szeretem' ? 'default' : preference.preference === 'nem_szeretem' ? 'destructive' : 'secondary'}
-                            className={
-                              preference.preference === 'szeretem' ? 'bg-green-600' :
-                              preference.preference === 'nem_szeretem' ? 'bg-red-600' : 'bg-gray-600'
-                            }
-                          >
-                            {preference.preference === 'szeretem' ? '❤️ Szeretem' : 
-                             preference.preference === 'nem_szeretem' ? '❌ Nem szeretem' : '😐 Semleges'}
-                          </Badge>
+                    <div className="space-y-4">
+                      {/* Preferenciák statisztikái */}
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        <div className="text-center p-3 bg-green-600/20 rounded">
+                          <p className="text-green-400 font-bold text-lg">
+                            {selectedUser.preferences.filter((p: any) => p.preference === 'szeretem').length}
+                          </p>
+                          <p className="text-white/70 text-sm">Szeretem</p>
                         </div>
-                      ))}
+                        <div className="text-center p-3 bg-red-600/20 rounded">
+                          <p className="text-red-400 font-bold text-lg">
+                            {selectedUser.preferences.filter((p: any) => p.preference === 'nem_szeretem').length}
+                          </p>
+                          <p className="text-white/70 text-sm">Nem szeretem</p>
+                        </div>
+                        <div className="text-center p-3 bg-gray-600/20 rounded">
+                          <p className="text-gray-400 font-bold text-lg">
+                            {selectedUser.preferences.filter((p: any) => p.preference === 'semleges').length}
+                          </p>
+                          <p className="text-white/70 text-sm">Semleges</p>
+                        </div>
+                      </div>
+                      
+                      {/* Preferenciák listája */}
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {selectedUser.preferences.map((preference: any, index: number) => (
+                          <div key={`${preference.category}-${preference.ingredient}-${index}`} className="flex justify-between items-center p-2 bg-white/5 rounded">
+                            <div className="text-white">
+                              <span className="font-medium">{preference.ingredient}</span>
+                              <span className="text-white/60 ml-2">({preference.category})</span>
+                            </div>
+                            <Badge 
+                              variant={preference.preference === 'szeretem' ? 'default' : preference.preference === 'nem_szeretem' ? 'destructive' : 'secondary'}
+                              className={
+                                preference.preference === 'szeretem' ? 'bg-green-600' :
+                                preference.preference === 'nem_szeretem' ? 'bg-red-600' : 'bg-gray-600'
+                              }
+                            >
+                              {preference.preference === 'szeretem' ? '❤️ Szeretem' : 
+                               preference.preference === 'nem_szeretem' ? '❌ Nem szeretem' : '😐 Semleges'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
