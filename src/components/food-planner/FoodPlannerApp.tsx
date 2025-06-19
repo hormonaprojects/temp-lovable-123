@@ -115,6 +115,41 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
     );
   }
 
+  const getPageTitle = () => {
+    switch (currentView) {
+      case 'favorites':
+        return {
+          icon: <Star className="w-6 h-6 text-yellow-400 fill-current" />,
+          title: "Kedvenc Receptek",
+          subtitle: `${userProfile?.favorites_count || 0} kedvenc recept`
+        };
+      case 'preferences':
+        return {
+          icon: <Settings className="w-6 h-6 text-green-400" />,
+          title: "Ételpreferenciáim",
+          subtitle: "Kezeld az ételpreferenciáidat",
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-purple-600 hover:bg-purple-700 text-white border border-purple-500"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Szerkesztés
+            </Button>
+          )
+        };
+      case 'profile':
+        return {
+          icon: <User className="w-6 h-6 text-purple-400" />,
+          title: "Profilom",
+          subtitle: "Személyes adatok és beállítások"
+        };
+      default:
+        return null;
+    }
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case 'single':
@@ -292,6 +327,20 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
               )}
             </div>
           </div>
+
+          {/* Page-specific header */}
+          {getPageTitle() && (
+            <div className="mt-6 flex justify-between items-center">
+              <div className="text-white flex items-center gap-2">
+                {getPageTitle()?.icon}
+                <div>
+                  <h2 className="text-xl font-bold">{getPageTitle()?.title}</h2>
+                  <p className="text-sm text-white/70">{getPageTitle()?.subtitle}</p>
+                </div>
+              </div>
+              {getPageTitle()?.action}
+            </div>
+          )}
         </div>
       </div>
 
