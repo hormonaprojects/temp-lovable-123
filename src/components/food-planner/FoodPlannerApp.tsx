@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -61,6 +62,24 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
 
     loadUserData();
   }, [user.id]);
+
+  useEffect(() => {
+    const handleNavigateToFavorites = () => {
+      setCurrentView('favorites');
+    };
+
+    const handleNavigateToPreferences = () => {
+      setCurrentView('preferences');
+    };
+
+    window.addEventListener('navigate-to-favorites', handleNavigateToFavorites);
+    window.addEventListener('navigate-to-preferences', handleNavigateToPreferences);
+
+    return () => {
+      window.removeEventListener('navigate-to-favorites', handleNavigateToFavorites);
+      window.removeEventListener('navigate-to-preferences', handleNavigateToPreferences);
+    };
+  }, []);
 
   const handlePreferenceSetupComplete = () => {
     setHasPreferences(true);
@@ -129,24 +148,6 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
       />
     );
   }
-
-  useEffect(() => {
-    const handleNavigateToFavorites = () => {
-      setCurrentView('favorites');
-    };
-
-    const handleNavigateToPreferences = () => {
-      setCurrentView('preferences');
-    };
-
-    window.addEventListener('navigate-to-favorites', handleNavigateToFavorites);
-    window.addEventListener('navigate-to-preferences', handleNavigateToPreferences);
-
-    return () => {
-      window.removeEventListener('navigate-to-favorites', handleNavigateToFavorites);
-      window.removeEventListener('navigate-to-preferences', handleNavigateToPreferences);
-    };
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
