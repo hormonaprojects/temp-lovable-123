@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Star, Heart } from "lucide-react";
@@ -84,9 +83,10 @@ export function FavoritesPage({ user, onClose }: FavoritesPageProps) {
               onClick={onClose}
               variant="outline"
               size="sm"
-              className="text-white border-white/30 hover:bg-white/10 bg-white/10"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Vissza</span>
             </Button>
             <div className="text-white">
               <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2">
