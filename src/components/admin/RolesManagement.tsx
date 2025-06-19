@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserPlus, Shield, ShieldCheck, Trash2, Mail } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { UserPlus, Shield, ShieldCheck, Trash2, Mail, UserCheck, UserX } from 'lucide-react';
 import { fetchAllUsers, assignAdminRole, removeAdminRole, AdminUserOverview } from '@/services/adminQueries';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,6 +28,7 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [emailToAssign, setEmailToAssign] = useState('');
   const [assigning, setAssigning] = useState(false);
+  const [togglingUsers, setTogglingUsers] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
       
       setEmailToAssign('');
       setAssignModalOpen(false);
-      await loadUsers(); // Frissítjük a listát
+      await loadUsers();
     } catch (error: any) {
       toast({
         title: "Hiba",
@@ -100,12 +102,54 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
         description: `Admin jogosultság sikeresen megvonva: ${userName}`,
       });
       
-      await loadUsers(); // Frissítjük a listát
+      await loadUsers();
     } catch (error) {
       toast({
         title: "Hiba",
         description: "Nem sikerült megvonni az admin jogosultságot.",
         variant: "destructive"
+      });
+    }
+  };
+
+  const handleToggleAdminRole = async (user: AdminUserOverview) => {
+    if (user.id === currentUser.id) {
+      toast({
+        title: "Hiba",
+        description: "Nem változtathatod meg a saját admin jogosultságodat.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setTogglingUsers(prev => new Set(prev).add(user.id));
+
+    try {
+      if (user.role === 'admin') {
+        await removeAdminRole(user.id);
+        toast({
+          title: "Siker",
+          description: `Admin jogosultság megvonva: ${user.full_name || user.email}`,
+        });
+      } else {
+        await assignAdminRole(user.email, currentUser.id);
+        toast({
+          title: "Siker",
+          description: `Admin jogosultság kiosztva: ${user.full_name || user.email}`,
+        });
+      }
+      await loadUsers();
+    } catch (error: any) {
+      toast({
+        title: "Hiba",
+        description: error.message || "Nem sikerült változtatni a jogosultságon.",
+        variant: "destructive"
+      });
+    } finally {
+      setTogglingUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(user.id);
+        return newSet;
       });
     }
   };
@@ -144,14 +188,14 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
         
         <Dialog open={assignModalOpen} onOpenChange={setAssignModalOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-purple-600 hover:bg-purple-700">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white">
               <UserPlus className="w-4 h-4 mr-2" />
               Admin kinevezése
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-slate-900 border-white/20 text-white">
             <DialogHeader>
-              <DialogTitle>Admin jogosultság kiosztása</DialogTitle>
+              <DialogTitle className="text-white">Admin jogosultság kiosztása</DialogTitle>
               <DialogDescription className="text-white/70">
                 Add meg annak a felhasználónak az email címét, akinek admin jogosultságot szeretnél adni.
               </DialogDescription>
@@ -181,7 +225,7 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
               <Button
                 onClick={handleAssignAdmin}
                 disabled={assigning}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
               >
                 {assigning ? 'Kiosztás...' : 'Admin kinevezése'}
               </Button>
@@ -197,7 +241,7 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-white/70">Összes felhasználó</p>
-                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-2xl font-bold text-white">{users.length}</p>
               </div>
               <Shield className="w-8 h-8 text-blue-400" />
             </div>
@@ -209,7 +253,7 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-white/70">Adminisztrátorok</p>
-                <p className="text-2xl font-bold">{adminUsers.length}</p>
+                <p className="text-2xl font-bold text-white">{adminUsers.length}</p>
               </div>
               <ShieldCheck className="w-8 h-8 text-purple-400" />
             </div>
@@ -221,7 +265,7 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-white/70">Sima felhasználók</p>
-                <p className="text-2xl font-bold">{regularUsers.length}</p>
+                <p className="text-2xl font-bold text-white">{regularUsers.length}</p>
               </div>
               <Shield className="w-8 h-8 text-gray-400" />
             </div>
@@ -229,28 +273,30 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
         </Card>
       </div>
 
-      {/* Admin felhasználók */}
+      {/* Összes felhasználó egy táblában */}
       <Card className="bg-white/10 border-white/20">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-purple-400" />
-            Adminisztrátorok ({adminUsers.length})
+            <Shield className="w-5 h-5 text-blue-400" />
+            Összes felhasználó ({users.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {adminUsers.length > 0 ? (
+          {users.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="border-white/20">
                     <TableHead className="text-white/70">Felhasználó</TableHead>
                     <TableHead className="text-white/70">Email</TableHead>
-                    <TableHead className="text-white/70">Admin lett</TableHead>
-                    <TableHead className="text-white/70">Műveletek</TableHead>
+                    <TableHead className="text-white/70">Szerepkör</TableHead>
+                    <TableHead className="text-white/70">Regisztráció</TableHead>
+                    <TableHead className="text-white/70">Aktivitás</TableHead>
+                    <TableHead className="text-white/70">Admin jogosultság</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {adminUsers.map((user) => (
+                  {users.map((user) => (
                     <TableRow key={user.id} className="border-white/20 hover:bg-white/5">
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -262,104 +308,57 @@ export function RolesManagement({ currentUser }: RolesManagementProps) {
                           </Avatar>
                           <div>
                             <p className="text-white font-medium">{user.full_name || 'Nincs név'}</p>
-                            <Badge className="bg-purple-600 text-white text-xs">
-                              Administrator
-                            </Badge>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-white/70">
                           <Mail className="w-4 h-4" />
-                          {user.email}
+                          <span className="text-white">{user.email}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-white/70">
-                        {formatDate(user.user_created_at)}
-                      </TableCell>
                       <TableCell>
-                        {user.id !== currentUser.id ? (
-                          <Button
-                            onClick={() => handleRemoveAdmin(user.id, user.full_name || user.email)}
-                            size="sm"
-                            variant="outline"
-                            className="text-red-400 border-red-400/30 hover:bg-red-400/10"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Jogosultság megvonása
-                          </Button>
+                        {user.role === 'admin' ? (
+                          <Badge className="bg-purple-600 text-white text-xs">
+                            <ShieldCheck className="w-3 h-3 mr-1" />
+                            Administrator
+                          </Badge>
                         ) : (
-                          <Badge variant="outline" className="border-green-400/30 text-green-400">
-                            Te vagy
+                          <Badge variant="secondary" className="bg-gray-600 text-white text-xs">
+                            <Shield className="w-3 h-3 mr-1" />
+                            Felhasználó
                           </Badge>
                         )}
                       </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-white/70">
-              Nincsenek admin felhasználók.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Sima felhasználók (első 10) */}
-      <Card className="bg-white/10 border-white/20">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Shield className="w-5 h-5 text-gray-400" />
-            Felhasználók (első 10 a {regularUsers.length}-ból)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {regularUsers.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-white/20">
-                    <TableHead className="text-white/70">Felhasználó</TableHead>
-                    <TableHead className="text-white/70">Email</TableHead>
-                    <TableHead className="text-white/70">Regisztráció</TableHead>
-                    <TableHead className="text-white/70">Aktivitás</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {regularUsers.slice(0, 10).map((user) => (
-                    <TableRow key={user.id} className="border-white/20 hover:bg-white/5">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8 border border-white/30">
-                            <AvatarImage src={user.avatar_url || undefined} alt="Avatar" />
-                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-bold">
-                              {getInitials(user.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-white font-medium">{user.full_name || 'Nincs név'}</p>
-                            <Badge variant="secondary" className="bg-gray-600 text-white text-xs">
-                              Felhasználó
-                            </Badge>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-white/70">
-                          <Mail className="w-4 h-4" />
-                          {user.email}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-white/70">
+                      <TableCell className="text-white">
                         {formatDate(user.user_created_at)}
                       </TableCell>
                       <TableCell>
-                        <div className="text-white/70 text-sm">
+                        <div className="text-white text-sm">
                           <p>🍽️ {user.preferences_count} preferencia</p>
                           <p>❤️ {user.favorites_count} kedvenc</p>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {user.id !== currentUser.id ? (
+                          <div className="flex items-center gap-3">
+                            <Switch
+                              checked={user.role === 'admin'}
+                              onCheckedChange={() => handleToggleAdminRole(user)}
+                              disabled={togglingUsers.has(user.id)}
+                              className="data-[state=checked]:bg-purple-600"
+                            />
+                            <span className="text-white/70 text-sm">
+                              {togglingUsers.has(user.id) ? 'Módosítás...' : 
+                               user.role === 'admin' ? 'Admin' : 'Felhasználó'}
+                            </span>
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="border-green-400/30 text-green-400">
+                            <UserCheck className="w-3 h-3 mr-1" />
+                            Te vagy
+                          </Badge>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
