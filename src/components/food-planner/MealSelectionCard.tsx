@@ -61,7 +61,7 @@ export function MealSelectionCard({
     <Card className={cn(
       "transition-all duration-300 border-2",
       isSelected 
-        ? "bg-gradient-to-br from-purple-600/70 to-violet-700/70 border-purple-400 shadow-lg" 
+        ? "bg-gradient-to-br from-violet-500 to-purple-600 border-violet-400 shadow-lg" 
         : "bg-white/10 border-white/20 hover:bg-white/15"
     )}>
       <CardHeader className="pb-3 px-4 py-3">
