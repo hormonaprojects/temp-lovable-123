@@ -11,70 +11,37 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
+    // Get initial session
+    const getInitialSession = async () => {
       try {
-        // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Session lekérési hiba:', error);
-          if (mounted) {
-            setLoading(false);
-            setAuthChecked(true);
-          }
-          return;
-        }
-
+        const { data: { session } } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
+        setUser(currentUser);
         
-        if (mounted) {
-          setUser(currentUser);
-        }
-        
-        // Check admin status only if user exists
-        if (currentUser && mounted) {
+        if (currentUser) {
           try {
             const adminStatus = await checkIsAdmin(currentUser.id);
-            if (mounted) {
-              setIsAdmin(adminStatus);
-            }
+            setIsAdmin(adminStatus);
           } catch (error) {
             console.error('Admin státusz ellenőrzési hiba:', error);
-            if (mounted) {
-              setIsAdmin(false);
-            }
+            setIsAdmin(false);
           }
-        } else if (mounted) {
-          setIsAdmin(false);
-        }
-        
-        if (mounted) {
-          setLoading(false);
-          setAuthChecked(true);
         }
       } catch (error) {
-        console.error('Auth inicializálási hiba:', error);
-        if (mounted) {
-          setLoading(false);
-          setAuthChecked(true);
-        }
+        console.error('Session lekérési hiba:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    // Initialize auth
-    initializeAuth();
+    getInitialSession();
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-      
       console.log('Auth állapot változás:', event, session?.user?.email);
       
       const currentUser = session?.user ?? null;
@@ -83,26 +50,17 @@ const Index = () => {
       if (currentUser) {
         try {
           const adminStatus = await checkIsAdmin(currentUser.id);
-          if (mounted) {
-            setIsAdmin(adminStatus);
-          }
+          setIsAdmin(adminStatus);
         } catch (error) {
           console.error('Admin státusz ellenőrzési hiba:', error);
-          if (mounted) {
-            setIsAdmin(false);
-          }
-        }
-      } else {
-        if (mounted) {
           setIsAdmin(false);
         }
+      } else {
+        setIsAdmin(false);
       }
     });
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
@@ -114,7 +72,6 @@ const Index = () => {
         throw error;
       }
       console.log('Kijelentkezés sikeres');
-      // A state automatikusan frissül az onAuthStateChange miatt
     } catch (error) {
       console.error('Kijelentkezési hiba:', error);
       // Force logout even if there's an error
@@ -123,8 +80,7 @@ const Index = () => {
     }
   };
 
-  // Show loading only while checking auth status
-  if (loading || !authChecked) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
         <div className="text-center">
