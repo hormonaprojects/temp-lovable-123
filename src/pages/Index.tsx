@@ -19,20 +19,25 @@ const Index = () => {
         const { data: { session } } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+        setLoading(false); // Set loading to false immediately after getting session
         
+        // Check admin status separately without blocking
         if (currentUser) {
-          try {
-            const adminStatus = await checkIsAdmin(currentUser.id);
-            setIsAdmin(adminStatus);
-          } catch (error) {
-            console.error('Admin státusz ellenőrzési hiba:', error);
-            setIsAdmin(false);
-          }
+          checkAdminStatus(currentUser.id);
         }
       } catch (error) {
         console.error('Session lekérési hiba:', error);
-      } finally {
-        setLoading(false);
+        setLoading(false); // Always set loading to false even on error
+      }
+    };
+
+    const checkAdminStatus = async (userId: string) => {
+      try {
+        const adminStatus = await checkIsAdmin(userId);
+        setIsAdmin(adminStatus);
+      } catch (error) {
+        console.error('Admin státusz ellenőrzési hiba:', error);
+        setIsAdmin(false);
       }
     };
 
@@ -48,13 +53,7 @@ const Index = () => {
       setUser(currentUser);
       
       if (currentUser) {
-        try {
-          const adminStatus = await checkIsAdmin(currentUser.id);
-          setIsAdmin(adminStatus);
-        } catch (error) {
-          console.error('Admin státusz ellenőrzési hiba:', error);
-          setIsAdmin(false);
-        }
+        checkAdminStatus(currentUser.id);
       } else {
         setIsAdmin(false);
       }
