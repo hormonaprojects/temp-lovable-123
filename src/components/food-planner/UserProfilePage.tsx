@@ -1,13 +1,15 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Edit, User, Heart, Utensils, LogOut, Settings, Star } from "lucide-react";
+import { ArrowLeft, Edit, User, Heart, Utensils, LogOut, Settings, Star, Save, X } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserPreferences, FoodPreference } from "@/services/foodPreferencesQueries";
+import { updateUserProfile } from "@/services/profileQueries";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
@@ -31,6 +33,7 @@ interface StarRating {
 
 export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProps) {
   const [profileData, setProfileData] = useState<any>(null);
+  const [editableProfile, setEditableProfile] = useState<any>(null);
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [preferencesData, setPreferencesData] = useState<FoodPreference[]>([]);
   const [totalIngredientsCount, setTotalIngredientsCount] = useState(0);
@@ -38,6 +41,8 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
   const [categoryStats, setCategoryStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showAllRatings, setShowAllRatings] = useState(false);
   const { toast } = useToast();
 
   const categoryNames = [
@@ -69,6 +74,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         console.error('Profil betöltési hiba:', profileError);
       } else {
         setProfileData(profile);
+        setEditableProfile(profile);
       }
 
       // Kedvencek számának betöltése
@@ -190,21 +196,58 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
 
   const handleEditProfile = () => {
     setIsEditing(true);
-    toast({
-      title: "Profil szerkesztés",
-      description: "A profil szerkesztő funkció hamarosan elérhető lesz!",
-    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditableProfile(profileData);
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsSaving(true);
+      
+      await updateUserProfile(user.id, {
+        full_name: editableProfile?.full_name || '',
+        age: editableProfile?.age || null,
+        weight: editableProfile?.weight || null,
+        height: editableProfile?.height || null,
+        activity_level: editableProfile?.activity_level || null
+      });
+
+      setProfileData(editableProfile);
+      setIsEditing(false);
+      
+      toast({
+        title: "Profil mentve! ✅",
+        description: "Az adatok sikeresen frissítve lettek.",
+      });
+    } catch (error) {
+      console.error('Profil mentési hiba:', error);
+      toast({
+        title: "Hiba történt",
+        description: "Nem sikerült menteni a profil adatokat.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setEditableProfile(prev => ({
+      ...prev,
+      [field]: value === '' ? null : value
+    }));
   };
 
   const handleShowFavorites = () => {
     onClose();
-    // Navigate to favorites - this will be handled by the parent component
     window.dispatchEvent(new CustomEvent('navigate-to-favorites'));
   };
 
   const handleShowPreferences = () => {
     onClose();
-    // Navigate to preferences - this will be handled by the parent component  
     window.dispatchEvent(new CustomEvent('navigate-to-preferences'));
   };
 
@@ -257,6 +300,8 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
     );
   }
 
+  const displayedRatings = showAllRatings ? starRatings : starRatings.slice(0, 9);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
       {/* Header */}
@@ -307,51 +352,157 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
               <Avatar className="w-20 h-20 border-4 border-white shadow-lg">
                 <AvatarImage src={profileData?.avatar_url || undefined} alt="Profil kép" />
                 <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white text-lg font-bold">
-                  {getInitials(user.fullName)}
+                  {getInitials(editableProfile?.full_name || user.fullName)}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-800 mb-1">{user.fullName}</h2>
-                <p className="text-gray-600 mb-4">{user.email}</p>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {profileData?.age && (
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Életkor</p>
-                      <p className="text-lg font-semibold text-blue-600">{profileData.age} év</p>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="fullName" className="text-sm font-medium text-gray-700 mb-1 block">
+                        Teljes név
+                      </Label>
+                      <Input
+                        id="fullName"
+                        value={editableProfile?.full_name || ''}
+                        onChange={(e) => handleInputChange('full_name', e.target.value)}
+                        className="max-w-sm"
+                      />
                     </div>
-                  )}
-                  {profileData?.weight && (
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Testsúly</p>
-                      <p className="text-lg font-semibold text-green-600">{profileData.weight} kg</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <Label htmlFor="age" className="text-sm font-medium text-gray-700 mb-1 block">
+                          Életkor (év)
+                        </Label>
+                        <Input
+                          id="age"
+                          type="number"
+                          value={editableProfile?.age || ''}
+                          onChange={(e) => handleInputChange('age', parseInt(e.target.value) || '')}
+                          placeholder="30"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="weight" className="text-sm font-medium text-gray-700 mb-1 block">
+                          Testsúly (kg)
+                        </Label>
+                        <Input
+                          id="weight"
+                          type="number"
+                          step="0.1"
+                          value={editableProfile?.weight || ''}
+                          onChange={(e) => handleInputChange('weight', parseFloat(e.target.value) || '')}
+                          placeholder="70"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="height" className="text-sm font-medium text-gray-700 mb-1 block">
+                          Magasság (cm)
+                        </Label>
+                        <Input
+                          id="height"
+                          type="number"
+                          value={editableProfile?.height || ''}
+                          onChange={(e) => handleInputChange('height', parseInt(e.target.value) || '')}
+                          placeholder="175"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="activity" className="text-sm font-medium text-gray-700 mb-1 block">
+                          Aktivitási szint
+                        </Label>
+                        <select
+                          id="activity"
+                          value={editableProfile?.activity_level || ''}
+                          onChange={(e) => handleInputChange('activity_level', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Válassz...</option>
+                          <option value="sedentary">Ülő munkás</option>
+                          <option value="lightly_active">Könnyű aktivitás</option>
+                          <option value="moderately_active">Közepes aktivitás</option>
+                          <option value="very_active">Nagyon aktív</option>
+                          <option value="extra_active">Rendkívül aktív</option>
+                        </select>
+                      </div>
                     </div>
-                  )}
-                  {profileData?.height && (
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Magasság</p>
-                      <p className="text-lg font-semibold text-purple-600">{profileData.height} cm</p>
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-1">{editableProfile?.full_name || user.fullName}</h2>
+                    <p className="text-gray-600 mb-4">{user.email}</p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {editableProfile?.age && (
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <p className="text-sm text-gray-600">Életkor</p>
+                          <p className="text-lg font-semibold text-blue-600">{editableProfile.age} év</p>
+                        </div>
+                      )}
+                      {editableProfile?.weight && (
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <p className="text-sm text-gray-600">Testsúly</p>
+                          <p className="text-lg font-semibold text-green-600">{editableProfile.weight} kg</p>
+                        </div>
+                      )}
+                      {editableProfile?.height && (
+                        <div className="text-center p-3 bg-purple-50 rounded-lg">
+                          <p className="text-sm text-gray-600">Magasság</p>
+                          <p className="text-lg font-semibold text-purple-600">{editableProfile.height} cm</p>
+                        </div>
+                      )}
+                      {editableProfile?.activity_level && (
+                        <div className="text-center p-3 bg-orange-50 rounded-lg">
+                          <p className="text-sm text-gray-600">Aktivitási szint</p>
+                          <p className="text-lg font-semibold text-orange-600">
+                            {editableProfile.activity_level === 'sedentary' && 'Ülő munkás'}
+                            {editableProfile.activity_level === 'lightly_active' && 'Könnyű aktivitás'}
+                            {editableProfile.activity_level === 'moderately_active' && 'Közepes aktivitás'}
+                            {editableProfile.activity_level === 'very_active' && 'Nagyon aktív'}
+                            {editableProfile.activity_level === 'extra_active' && 'Rendkívül aktív'}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {profileData?.activity_level && (
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Aktivitási szint</p>
-                      <p className="text-lg font-semibold text-orange-600">{profileData.activity_level}</p>
-                    </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
               
-              <Button
-                onClick={handleEditProfile}
-                variant="outline"
-                size="sm"
-                className="bg-blue-100 border-blue-400 text-blue-700 hover:bg-blue-200 flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                Szerkesztés
-              </Button>
+              <div className="flex flex-col gap-2">
+                {isEditing ? (
+                  <>
+                    <Button
+                      onClick={handleSaveProfile}
+                      disabled={isSaving}
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      {isSaving ? 'Mentés...' : 'Mentés'}
+                    </Button>
+                    <Button
+                      onClick={handleCancelEdit}
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-400 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Mégse
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={handleEditProfile}
+                    variant="outline"
+                    size="sm"
+                    className="bg-blue-100 border-blue-400 text-blue-700 hover:bg-blue-200 flex items-center gap-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Szerkesztés
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -476,7 +627,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
             {starRatings.length > 0 ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {starRatings.slice(0, 9).map((rating, index) => (
+                  {displayedRatings.map((rating, index) => (
                     <div key={index} className="p-4 bg-gray-50 rounded-lg">
                       <h4 className="font-medium text-gray-800 mb-2 truncate">{rating.recipe_name}</h4>
                       <div className="flex items-center gap-2 mb-1">
@@ -499,9 +650,25 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                 
                 {starRatings.length > 9 && (
                   <div className="text-center pt-4">
-                    <p className="text-gray-600">
-                      És még {starRatings.length - 9} értékelés...
-                    </p>
+                    {!showAllRatings ? (
+                      <Button
+                        onClick={() => setShowAllRatings(true)}
+                        variant="outline"
+                        size="sm"
+                        className="bg-blue-50 border-blue-400 text-blue-700 hover:bg-blue-100"
+                      >
+                        És még {starRatings.length - 9} értékelés...
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => setShowAllRatings(false)}
+                        variant="outline"
+                        size="sm"
+                        className="bg-gray-50 border-gray-400 text-gray-700 hover:bg-gray-100"
+                      >
+                        Kevesebb mutatása
+                      </Button>
+                    )}
                   </div>
                 )}
                 
