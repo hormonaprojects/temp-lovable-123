@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Heart, X, Save, Edit3 } from "lucide-react";
+import { ArrowLeft, Heart, X, Save, Edit3, User } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserPreferences, saveUserPreferences, FoodPreference } from "@/services/foodPreferencesQueries";
 
@@ -39,6 +38,11 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     'Gabonák és Tészták',
     'Olajok és Magvak'
   ];
+
+  const handleNavigateToProfile = () => {
+    const event = new CustomEvent('navigate-to-profile');
+    window.dispatchEvent(event);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -220,6 +224,17 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Vissza</span>
             </Button>
+            
+            <Button
+              onClick={handleNavigateToProfile}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Profil</span>
+            </Button>
+            
             <div className="text-white">
               <h1 className="text-xl font-bold">🍽️ Ételpreferenciáim</h1>
               <p className="text-sm opacity-80">Kezeld az ételpreferenciáidat</p>

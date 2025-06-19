@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -72,12 +71,18 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
       setCurrentView('preferences');
     };
 
+    const handleNavigateToProfile = () => {
+      setCurrentView('profile');
+    };
+
     window.addEventListener('navigate-to-favorites', handleNavigateToFavorites);
     window.addEventListener('navigate-to-preferences', handleNavigateToPreferences);
+    window.addEventListener('navigate-to-profile', handleNavigateToProfile);
 
     return () => {
       window.removeEventListener('navigate-to-favorites', handleNavigateToFavorites);
       window.removeEventListener('navigate-to-preferences', handleNavigateToPreferences);
+      window.removeEventListener('navigate-to-profile', handleNavigateToProfile);
     };
   }, []);
 

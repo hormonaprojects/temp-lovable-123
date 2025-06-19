@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Star, Heart } from "lucide-react";
+import { ArrowLeft, Star, Heart, User } from "lucide-react";
 import { getFavorites, removeFromFavorites } from "@/services/favoritesQueries";
 import { Recipe } from "@/types/recipe";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +35,11 @@ export function FavoritesPage({ user, onClose }: FavoritesPageProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNavigateToProfile = () => {
+    const event = new CustomEvent('navigate-to-profile');
+    window.dispatchEvent(event);
   };
 
   const handleRemoveFromFavorites = async (recipeName: string) => {
@@ -88,6 +93,17 @@ export function FavoritesPage({ user, onClose }: FavoritesPageProps) {
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Vissza</span>
             </Button>
+            
+            <Button
+              onClick={handleNavigateToProfile}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Profil</span>
+            </Button>
+            
             <div className="text-white">
               <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2">
                 <Star className="w-5 h-5 text-yellow-400 fill-current" />
