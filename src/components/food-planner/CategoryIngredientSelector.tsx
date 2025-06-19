@@ -29,12 +29,13 @@ export function CategoryIngredientSelector({ selectedMealType, foodData, onGetRe
 
   // Kategóriák lekérése az adatbázisból
   const categories = foodData?.categories ? Object.keys(foodData.categories) : [];
-  const ingredients = selectedCategory && foodData?.categories?.[selectedCategory] 
-    ? foodData.categories[selectedCategory] 
+  // MÓDOSÍTÁS: A getFilteredIngredients függvény használata a preferenciák alapján szűrt alapanyagokhoz
+  const ingredients = selectedCategory && foodData?.getFilteredIngredients 
+    ? foodData.getFilteredIngredients(selectedCategory)
     : [];
 
   console.log('📋 Elérhető kategóriák:', categories);
-  console.log('🥕 Kiválasztott kategória alapanyagai:', ingredients);
+  console.log('🥕 Kiválasztott kategória szűrt alapanyagai (preferenciák alapján):', ingredients);
   console.log('📊 FoodData categories teljes:', foodData?.categories);
 
   const handleCategoryChange = (category: string) => {
@@ -88,10 +89,10 @@ export function CategoryIngredientSelector({ selectedMealType, foodData, onGetRe
               <SelectContent className="bg-white border-gray-200">
                 {categories.map((category) => {
                   const displayName = categoryDisplayNames[category] || category;
-                  const ingredientCount = foodData?.categories?.[category]?.length || 0;
+                  const ingredientCount = foodData?.getFilteredIngredients ? foodData.getFilteredIngredients(category).length : 0;
                   return (
                     <SelectItem key={category} value={category} className="hover:bg-gray-100">
-                      {displayName} ({ingredientCount} alapanyag)
+                      {displayName} ({ingredientCount} kedvelt alapanyag)
                     </SelectItem>
                   );
                 })}
@@ -139,7 +140,8 @@ export function CategoryIngredientSelector({ selectedMealType, foodData, onGetRe
 
         {selectedCategory && ingredients.length === 0 && (
           <div className="mt-4 text-center text-white/70">
-            <p>⚠️ Ehhez a kategóriához nem találhatók alapanyagok</p>
+            <p>⚠️ Ehhez a kategóriához nem találhatók kedvelt alapanyagok</p>
+            <p className="text-sm mt-1">Állítsd be a preferenciáidat a beállításokban!</p>
           </div>
         )}
       </div>

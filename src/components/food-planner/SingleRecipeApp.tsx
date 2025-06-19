@@ -32,6 +32,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     getRecipesByMealType,
     getRecipesByCategory,
     getRandomRecipe,
+    getFilteredIngredients,
     convertToStandardRecipe
   } = useSupabaseData(user.id);
 
@@ -181,7 +182,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
 
   const foodData = {
     mealTypes: mealTypes,
-    categories: categories
+    categories: categories,
+    getFilteredIngredients: getFilteredIngredients
   };
 
   console.log('🗂️ FoodData átadva komponenseknek:', foodData);
