@@ -8,6 +8,7 @@ import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { StarRating } from "./StarRating";
 import { LoadingChef } from "@/components/ui/LoadingChef";
 import { MealSelectionCard } from "./MealSelectionCard";
+import { MealTypeCardSelector } from "./MealTypeCardSelector";
 import { FavoriteButton } from "./FavoriteButton";
 
 interface User {
@@ -78,6 +79,11 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
   const getIngredientsByCategory = (category: string): string[] => {
     return getFilteredIngredients(category);
+  };
+
+  const getRecipeCount = (mealType: string): number => {
+    const recipes = getRecipesByMealType(mealType);
+    return recipes ? recipes.length : 0;
   };
 
   const handleMealToggle = (mealKey: string) => {
@@ -404,34 +410,49 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
         </div>
 
         <div className="space-y-6 sm:space-y-8">
-          {/* Meal Selection Cards */}
+          {/* Meal Type Selection Cards */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-2xl">
             <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
               <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
                 <Target className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                <CardTitle className="text-xl sm:text-2xl font-bold text-white">Válaszd ki és szabd személyre az étkezéseket</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-bold text-white">Válaszd ki az étkezéseket</CardTitle>
               </div>
-              <p className="text-white/70 text-sm sm:text-base">Jelöld be az étkezéseket és válassz kategóriát vagy alapanyagot személyre szabáshoz (csak kedvelt alapanyagok jelennek meg)</p>
+              <p className="text-white/70 text-sm sm:text-base">Jelöld be az étkezéseket, majd személyre szabhatod őket kategória és alapanyag alapján</p>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {mealOptions.map((meal) => (
-                  <MealSelectionCard
-                    key={meal.key}
-                    mealType={meal.key}
-                    mealLabel={meal.label.replace(/^[^\s]+\s/, '')}
-                    emoji={meal.emoji}
-                    isSelected={selectedMeals.includes(meal.key)}
-                    onToggle={handleMealToggle}
-                    categories={availableCategories}
-                    getIngredientsByCategory={getIngredientsByCategory}
-                    onGetRecipe={regenerateSpecificMeal}
-                    onSelectionChange={handleMealSelectionUpdate}
-                    isGenerating={regeneratingMeal === meal.key}
-                    showRecipeButton={dailyPlan[meal.key]?.recipe !== undefined}
-                  />
-                ))}
-              </div>
+              <MealTypeCardSelector
+                selectedMeals={selectedMeals}
+                onMealToggle={handleMealToggle}
+                getRecipeCount={getRecipeCount}
+              />
+
+              {/* Additional meal customization options for selected meals */}
+              {selectedMeals.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-bold text-white text-center mb-4">
+                    ⚙️ Személyre szabás (opcionális)
+                  </h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {selectedMeals.map((meal) => (
+                      <MealSelectionCard
+                        key={meal}
+                        mealType={meal}
+                        mealLabel={mealOptions.find(m => m.key === meal)?.label.replace(/^[^\s]+\s/, '') || meal}
+                        emoji={mealOptions.find(m => m.key === meal)?.emoji || '🍽️'}
+                        isSelected={true}
+                        onToggle={() => {}}
+                        categories={availableCategories}
+                        getIngredientsByCategory={getIngredientsByCategory}
+                        onGetRecipe={regenerateSpecificMeal}
+                        onSelectionChange={handleMealSelectionUpdate}
+                        isGenerating={regeneratingMeal === meal}
+                        showRecipeButton={dailyPlan[meal]?.recipe !== undefined}
+                        hideToggle={true}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-center pt-4">
                 <Button

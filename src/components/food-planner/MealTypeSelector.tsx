@@ -27,7 +27,7 @@ const mealTypeIcons: { [key: string]: string } = {
 };
 
 export function MealTypeSelector({ selectedMealType, onSelectMealType, foodData }: MealTypeSelectorProps) {
-  // Csak azokat az étkezési típusokat jelenítjük meg, amelyekhez van adat
+  // Az elérhető étkezési típusok a mealTypes objektumból
   const availableMealTypes = foodData?.mealTypes ? Object.keys(foodData.mealTypes) : [];
   
   console.log('🍽️ Elérhető étkezési típusok:', availableMealTypes);
@@ -56,7 +56,17 @@ export function MealTypeSelector({ selectedMealType, onSelectMealType, foodData 
         {availableMealTypes.map((mealType) => {
           const displayName = mealTypeNames[mealType] || mealType;
           const icon = mealTypeIcons[mealType] || '🍽️';
-          const recipeCount = foodData.mealTypes[mealType]?.length || 0;
+          
+          // A receptek számának helyes kiszámítása
+          // Ha van getRecipesByMealType funkció a foodData-ban, használjuk azt
+          let recipeCount = 0;
+          if (foodData.getRecipesByMealType) {
+            const recipes = foodData.getRecipesByMealType(mealType);
+            recipeCount = recipes ? recipes.length : 0;
+          } else {
+            // Fallback: próbáljuk meg a mealTypes struktúrából kinyerni
+            recipeCount = foodData.mealTypes[mealType]?.length || 0;
+          }
           
           console.log(`🍽️ ${mealType} receptek száma:`, recipeCount);
           

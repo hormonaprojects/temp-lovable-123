@@ -190,7 +190,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const foodData = {
     mealTypes: transformedMealTypes,
     categories: categories,
-    getFilteredIngredients: getFilteredIngredients
+    getFilteredIngredients: getFilteredIngredients,
+    getRecipesByMealType: getRecipesByMealType  // Ezt adjuk hozzá!
   };
 
   console.log('🗂️ FoodData átadva komponenseknek:', foodData);
