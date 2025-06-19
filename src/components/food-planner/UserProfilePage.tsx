@@ -380,7 +380,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                   </AvatarFallback>
                 </Avatar>
                 
-                {/* Profilkép változtatása gomb */}
+                {/* Profilkép változtatása gomb - csak ha NEM szerkesztünk */}
                 {!isEditing && (
                   <AvatarUpload
                     currentAvatarUrl={profileData?.avatar_url}
