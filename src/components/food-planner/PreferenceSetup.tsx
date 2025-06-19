@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -124,24 +123,16 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     return preferences[key] || 'neutral';
   };
 
-  const getIngredientImage = (ingredient: string): string => {
-    // Ékezetek eltávolítása és normalizálás
-    const normalizedIngredient = ingredient
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // ékezetek eltávolítása
-      .replace(/\s+/g, '') // szóközök eltávolítása
-      .replace(/[^\w]/g, '') // speciális karakterek eltávolítása
-      .replace(/\./g, ''); // pontok eltávolítása
+  const getIngredientImage = (ingredient: string): string | null => {
+    // Csak a Csirkemáj esetében adjunk vissza képet
+    if (ingredient === 'Csirkemáj') {
+      const { data } = supabase.storage.from('alapanyag').getPublicUrl('Csirkemaj.jpg');
+      console.log('🔗 Csirkemáj kép URL:', data.publicUrl);
+      return data.publicUrl;
+    }
     
-    console.log('🖼️ Kép keresés:', ingredient, '->', normalizedIngredient);
-    
-    // Supabase storage URL
-    const { data } = supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.jpg`);
-    
-    console.log('🔗 Generált kép URL:', data.publicUrl);
-    
-    return data.publicUrl;
+    // Minden más alapanyagnál null-t adunk vissza (nincs kép)
+    return null;
   };
 
   const handleNext = () => {
@@ -261,6 +252,8 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
             {currentIngredients.map((ingredient, index) => {
               const preference = getPreferenceForIngredient(ingredient);
+              const imageUrl = getIngredientImage(ingredient);
+              
               return (
                 <Card
                   key={ingredient}
@@ -275,21 +268,26 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                   }}
                 >
                   <div className="p-4">
-                    {/* Ingredient Image */}
-                    <div className="w-full h-20 mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
-                      <img
-                        src={getIngredientImage(ingredient)}
-                        alt={ingredient}
-                        className="w-full h-full object-cover rounded-xl"
-                        onError={(e) => {
-                          console.log('❌ Kép betöltési hiba:', ingredient);
-                          (e.target as HTMLImageElement).src = 'https://hhjucbkqyamutshfspyf.supabase.co/storage/v1/object/public/alapanyag/placeholder.jpg';
-                        }}
-                        onLoad={() => {
-                          console.log('✅ Kép sikeresen betöltve:', ingredient);
-                        }}
-                      />
-                    </div>
+                    {/* Ingredient Image - csak akkor jelenítjük meg, ha van imageUrl */}
+                    {imageUrl ? (
+                      <div className="w-full h-20 mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
+                        <img
+                          src={imageUrl}
+                          alt={ingredient}
+                          className="w-full h-full object-cover rounded-xl"
+                          onError={(e) => {
+                            console.log('❌ Kép betöltési hiba:', ingredient);
+                            // Ha hiba van, elrejtjük a képet
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log('✅ Kép sikeresen betöltve:', ingredient);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-20 mb-3"></div>
+                    )}
                     
                     {/* Ingredient Name */}
                     <h3 className="text-sm font-semibold text-gray-800 text-center mb-3 truncate min-h-[1.25rem]">
