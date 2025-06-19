@@ -28,7 +28,6 @@ interface FoodPlannerAppProps {
 
 export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
   const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'preferences' | 'admin'>('single');
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -201,9 +200,9 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
               </Button>
             )}
 
-            {/* Profil gomb profilképpel */}
+            {/* Profil gomb profilképpel - közvetlenül a profil oldalra */}
             <Button
-              onClick={() => setShowProfileModal(true)}
+              onClick={() => setCurrentView('profile')}
               variant="outline"
               size="sm"
               className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2 pl-2"
@@ -243,17 +242,6 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
           />
         )}
       </div>
-
-      {/* Profil Modal */}
-      <UserProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        user={user}
-        onOpenFullProfile={() => {
-          setShowProfileModal(false);
-          setCurrentView('profile');
-        }}
-      />
     </div>
   );
 }
