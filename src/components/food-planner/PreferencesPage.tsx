@@ -67,15 +67,30 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         const userPreferences = await fetchUserPreferences(user.id);
         
         // Preferenciák átalakítása objektummá
+        // Minden alapanyag alapértelmezetten 'neutral', kivéve azokat, amelyeknek van tárolt preferenciája
         const prefsObj: PreferenceState = {};
+        
+        // Először minden alapanyagot 'neutral'-ra állítunk
+        categoryNames.forEach(categoryName => {
+          const ingredients = getCategoryIngredients(categoryName, preferencesDataResult || []);
+          ingredients.forEach(ingredient => {
+            const key = `${categoryName}-${ingredient}`;
+            prefsObj[key] = 'neutral';
+          });
+        });
+        
+        // Aztán felülírjuk a tárolt preferenciákkal
         userPreferences.forEach((pref: FoodPreference) => {
           const key = `${pref.category}-${pref.ingredient}`;
           prefsObj[key] = pref.preference;
         });
+        
         setPreferences(prefsObj);
         
+        console.log('🎯 Preferenciák betöltve:', Object.keys(prefsObj).length, 'alapanyag');
+        
       } catch (error) {
-        console.error('Adatok betöltési hiba:', error);
+        console.error('❌ Adatok betöltési hiba:', error);
         toast({
           title: "Hiba történt",
           description: "Nem sikerült betölteni az adatokat.",
@@ -89,13 +104,13 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     loadData();
   }, [user.id, toast]);
 
-  const getCategoryIngredients = (categoryName: string) => {
+  const getCategoryIngredients = (categoryName: string, data: any[] = preferencesData) => {
     const ingredients: string[] = [];
     
     console.log('🔍 Kategória keresése:', categoryName);
     
     // Végigmegyünk az összes soron
-    preferencesData.forEach((row, rowIndex) => {
+    data.forEach((row, rowIndex) => {
       console.log(`🔍 Sor ${rowIndex + 1} feldolgozása:`, row);
       
       // Megkeressük a kategória oszlopot
@@ -122,6 +137,8 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       ...prev,
       [key]: preference
     }));
+    
+    console.log(`🔄 Preferencia változott: ${ingredient} (${category}) -> ${preference}`);
   };
 
   const getPreferenceForIngredient = (category: string, ingredient: string): 'like' | 'dislike' | 'neutral' => {
@@ -141,6 +158,8 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         };
       });
 
+      console.log('💾 Mentendő preferenciák:', preferencesToSave.length, 'db');
+      
       await saveUserPreferences(user.id, preferencesToSave);
       
       toast({
@@ -150,7 +169,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       
       setIsEditing(false);
     } catch (error) {
-      console.error('Preferenciák mentési hiba:', error);
+      console.error('❌ Preferenciák mentési hiba:', error);
       toast({
         title: "Hiba történt",
         description: "Nem sikerült menteni a preferenciákat.",
@@ -230,15 +249,6 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
               </>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Debug Panel */}
-      <div className="max-w-6xl mx-auto px-4 py-4">
-        <div className="bg-blue-100 rounded-lg p-4 mb-4">
-          <h3 className="font-bold text-blue-800">Debug információk:</h3>
-          <p className="text-blue-600">Betöltött sorok száma: {preferencesData.length}</p>
-          <p className="text-blue-600">Használt tábla: Ételkategóriák_Új</p>
         </div>
       </div>
 

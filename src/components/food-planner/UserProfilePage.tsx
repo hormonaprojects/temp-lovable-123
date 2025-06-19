@@ -1,15 +1,13 @@
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, User, Activity, Heart, AlertTriangle } from 'lucide-react';
-import { fetchUserProfile, updateUserProfile, UserProfile } from '@/services/profileQueries';
-import { AvatarUpload } from './AvatarUpload';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Edit, User, Heart, Utensils, LogOut, Settings } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { fetchUserPreferences, FoodPreference } from "@/services/foodPreferencesQueries";
 
 interface User {
   id: string;
@@ -20,46 +18,55 @@ interface User {
 interface UserProfilePageProps {
   user: User;
   onClose: () => void;
+  onLogout: () => void;
 }
 
-const activityLevels = [
-  { value: 'sedentary', label: 'Ülő életmód', description: 'Kevés vagy semmi sport' },
-  { value: 'lightly_active', label: 'Enyhén aktív', description: 'Könnyű sport 1-3 nap/hét' },
-  { value: 'moderately_active', label: 'Mérsékelten aktív', description: 'Közepes sport 3-5 nap/hét' },
-  { value: 'very_active', label: 'Nagyon aktív', description: 'Intenzív sport 6-7 nap/hét' },
-  { value: 'extra_active', label: 'Rendkívül aktív', description: 'Napi 2x edzés vagy fizikai munka' }
-];
-
-const commonDietaryPreferences = [
-  'Vegetáriánus', 'Vegán', 'Gluténmentes', 'Laktózmentes', 'Keto', 'Paleo', 'Mediterrán'
-];
-
-const commonAllergies = [
-  'Dió', 'Mogyoró', 'Tej', 'Tojás', 'Szója', 'Búza', 'Tengeri herkentyűk', 'Hal'
-];
-
-export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProps) {
+  const [profileData, setProfileData] = useState<any>(null);
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  const [preferencesData, setPreferencesData] = useState<FoodPreference[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [selectedDietaryPrefs, setSelectedDietaryPrefs] = useState<string[]>([]);
-  const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadProfile();
+    loadProfileData();
   }, [user.id]);
 
-  const loadProfile = async () => {
+  const loadProfileData = async () => {
     try {
-      const profileData = await fetchUserProfile(user.id);
-      if (profileData) {
-        setProfile(profileData);
-        setSelectedDietaryPrefs(profileData.dietary_preferences || []);
-        setSelectedAllergies(profileData.allergies || []);
+      setLoading(true);
+      
+      // Profil adatok betöltése
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Profil betöltési hiba:', profileError);
+      } else {
+        setProfileData(profile);
       }
+
+      // Kedvencek számának betöltése
+      const { data: favorites, error: favoritesError } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (favoritesError) {
+        console.error('Kedvencek betöltési hiba:', favoritesError);
+      } else {
+        setFavoritesCount(favorites?.length || 0);
+      }
+
+      // Preferenciák betöltése
+      const preferences = await fetchUserPreferences(user.id);
+      setPreferencesData(preferences);
+      
     } catch (error) {
-      console.error('Profil betöltési hiba:', error);
+      console.error('Adatok betöltési hiba:', error);
       toast({
         title: "Hiba történt",
         description: "Nem sikerült betölteni a profil adatokat.",
@@ -70,340 +77,228 @@ export function UserProfilePage({ user, onClose }: UserProfilePageProps) {
     }
   };
 
-  const handleSave = async () => {
-    if (!profile) return;
-
-    setSaving(true);
-    try {
-      await updateUserProfile(user.id, {
-        ...profile,
-        dietary_preferences: selectedDietaryPrefs,
-        allergies: selectedAllergies
-      });
-
-      toast({
-        title: "Profil mentve! ✅",
-        description: "Az adatok sikeresen frissítve lettek.",
-      });
-    } catch (error) {
-      console.error('Profil mentési hiba:', error);
-      toast({
-        title: "Hiba történt",
-        description: "Nem sikerült menteni a profil adatokat.",
-        variant: "destructive"
-      });
-    } finally {
-      setSaving(false);
-    }
+  const getPreferenceStats = () => {
+    const liked = preferencesData.filter(p => p.preference === 'like').length;
+    const disliked = preferencesData.filter(p => p.preference === 'dislike').length;
+    const neutral = preferencesData.filter(p => p.preference === 'neutral').length;
+    
+    return { liked, disliked, neutral, total: preferencesData.length };
   };
 
-  const handleAvatarUpdate = async (newAvatarUrl: string) => {
-    if (profile) {
-      const updatedProfile = { ...profile, avatar_url: newAvatarUrl };
-      setProfile(updatedProfile);
-      
-      try {
-        await updateUserProfile(user.id, { avatar_url: newAvatarUrl });
-      } catch (error) {
-        console.error('Avatar URL mentési hiba:', error);
-      }
-    }
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const toggleDietaryPref = (pref: string) => {
-    setSelectedDietaryPrefs(prev => 
-      prev.includes(pref) 
-        ? prev.filter(p => p !== pref)
-        : [...prev, pref]
-    );
-  };
-
-  const toggleAllergy = (allergy: string) => {
-    setSelectedAllergies(prev => 
-      prev.includes(allergy) 
-        ? prev.filter(a => a !== allergy)
-        : [...prev, allergy]
-    );
-  };
+  const preferenceStats = getPreferenceStats();
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Profil betöltése...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-lg">Betöltés...</p>
         </div>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <p className="text-gray-600 mb-4">Nem sikerült betölteni a profil adatokat.</p>
-            <Button onClick={onClose} variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Vissza
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      {/* Header - mobil optimalizált */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
-          {/* Mobil header */}
-          <div className="flex items-center justify-between mb-2 sm:mb-0">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
+      {/* Header */}
+      <div className="bg-black/20 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-4">
             <Button
               onClick={onClose}
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="flex items-center gap-2 p-2"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Vissza</span>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Vissza
             </Button>
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              size="sm"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <Save className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">{saving ? 'Mentés...' : 'Mentés'}</span>
-            </Button>
+            <div className="text-white">
+              <h1 className="text-xl font-bold">👤 Profilom</h1>
+              <p className="text-sm opacity-80">Személyes adatok és beállítások</p>
+            </div>
           </div>
           
-          {/* Cím és email */}
-          <div className="text-center sm:text-left">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Felhasználói Profil</h1>
-            <p className="text-xs sm:text-sm text-gray-600 truncate">{user.email}</p>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={onLogout}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Kijelentkezés
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Content - mobil optimalizált padding */}
-      <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
-        {/* Profile Header Card - mobil optimalizált */}
-        <Card className="mb-6 sm:mb-8">
-          <CardContent className="pt-4 sm:pt-6">
-            <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
-              <AvatarUpload
-                currentAvatarUrl={profile.avatar_url}
-                userId={user.id}
-                onAvatarUpdate={handleAvatarUpdate}
-                userName={profile.full_name || user.fullName}
-              />
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {profile.full_name || user.fullName}
-                </h2>
-                <p className="text-gray-600 text-sm sm:text-base truncate max-w-xs sm:max-w-none">{user.email}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Kártyák grid - mobil optimalizált */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-          {/* Alapadatok */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                Alapadatok
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Személyes információk és fizikai adatok
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-sm">Teljes név</Label>
-                <Input
-                  id="fullName"
-                  value={profile.full_name || ''}
-                  onChange={(e) => setProfile({...profile, full_name: e.target.value})}
-                  placeholder="Teljes név"
-                  className="text-sm sm:text-base"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age" className="text-sm">Kor (év)</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    value={profile.age || ''}
-                    onChange={(e) => setProfile({...profile, age: parseInt(e.target.value) || null})}
-                    placeholder="25"
-                    className="text-sm sm:text-base"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weight" className="text-sm">Súly (kg)</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    step="0.1"
-                    value={profile.weight || ''}
-                    onChange={(e) => setProfile({...profile, weight: parseFloat(e.target.value) || null})}
-                    placeholder="70"
-                    className="text-sm sm:text-base"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="height" className="text-sm">Magasság (cm)</Label>
-                <Input
-                  id="height"
-                  type="number"
-                  value={profile.height || ''}
-                  onChange={(e) => setProfile({...profile, height: parseFloat(e.target.value) || null})}
-                  placeholder="175"
-                  className="text-sm sm:text-base"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Aktivitási szint */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                Aktivitási szint
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Napi fizikai aktivitás mértéke
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Select
-                value={profile.activity_level || ''}
-                onValueChange={(value) => setProfile({...profile, activity_level: value})}
-              >
-                <SelectTrigger className="text-sm sm:text-base">
-                  <SelectValue placeholder="Válassz aktivitási szintet" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activityLevels.map((level) => (
-                    <SelectItem key={level.value} value={level.value}>
-                      <div>
-                        <div className="font-medium text-sm">{level.label}</div>
-                        <div className="text-xs text-gray-500">{level.description}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          {/* Étkezési preferenciák */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
-                Étkezési preferenciák
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Speciális étrendek és preferenciák
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {commonDietaryPreferences.map((pref) => (
-                  <Badge
-                    key={pref}
-                    variant={selectedDietaryPrefs.includes(pref) ? "default" : "outline"}
-                    className="cursor-pointer text-xs sm:text-sm py-1 px-2 sm:px-3"
-                    onClick={() => toggleDietaryPref(pref)}
-                  >
-                    {pref}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Allergiák */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-                Allergiák és intoleranciák
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Kerülendő összetevők és allergiák
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {commonAllergies.map((allergy) => (
-                  <Badge
-                    key={allergy}
-                    variant={selectedAllergies.includes(allergy) ? "destructive" : "outline"}
-                    className="cursor-pointer text-xs sm:text-sm py-1 px-2 sm:px-3"
-                    onClick={() => toggleAllergy(allergy)}
-                  >
-                    {allergy}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Fiók információk */}
-        <Card className="mt-6 sm:mt-8">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg sm:text-xl">Fiók információk</CardTitle>
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* Profil áttekintés */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-2xl text-gray-800 flex items-center gap-2">
+              <User className="w-6 h-6 text-blue-600" />
+              Profil áttekintés
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-2 sm:gap-4 text-sm">
-              <div className="flex flex-col sm:flex-row sm:justify-between">
-                <span className="font-medium text-gray-700 mb-1 sm:mb-0">Email cím:</span>
-                <span className="text-gray-600 break-all sm:break-normal">{user.email}</span>
+            <div className="flex items-start gap-6">
+              <Avatar className="w-20 h-20 border-4 border-white shadow-lg">
+                <AvatarImage src={profileData?.avatar_url || undefined} alt="Profil kép" />
+                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white text-lg font-bold">
+                  {getInitials(user.fullName)}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-800 mb-1">{user.fullName}</h2>
+                <p className="text-gray-600 mb-4">{user.email}</p>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {profileData?.age && (
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-gray-600">Életkor</p>
+                      <p className="text-lg font-semibold text-blue-600">{profileData.age} év</p>
+                    </div>
+                  )}
+                  {profileData?.weight && (
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <p className="text-sm text-gray-600">Testsúly</p>
+                      <p className="text-lg font-semibold text-green-600">{profileData.weight} kg</p>
+                    </div>
+                  )}
+                  {profileData?.height && (
+                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                      <p className="text-sm text-gray-600">Magasság</p>
+                      <p className="text-lg font-semibold text-purple-600">{profileData.height} cm</p>
+                    </div>
+                  )}
+                  {profileData?.activity_level && (
+                    <div className="text-center p-3 bg-orange-50 rounded-lg">
+                      <p className="text-sm text-gray-600">Aktivitási szint</p>
+                      <p className="text-lg font-semibold text-orange-600">{profileData.activity_level}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between">
-                <span className="font-medium text-gray-700 mb-1 sm:mb-0">Profil létrehozva:</span>
-                <span className="text-gray-600">
-                  {new Date(profile.created_at).toLocaleDateString('hu-HU')}
-                </span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between">
-                <span className="font-medium text-gray-700 mb-1 sm:mb-0">Utolsó frissítés:</span>
-                <span className="text-gray-600">
-                  {new Date(profile.updated_at).toLocaleDateString('hu-HU')}
-                </span>
-              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white/10 border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Szerkesztés
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Mobil mentés gomb alul - csak mobilon látható */}
-        <div className="mt-6 sm:hidden">
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Mentés...' : 'Mentés'}
-          </Button>
+        {/* Statisztikák */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Kedvenc receptek */}
+          <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
+                <Heart className="w-5 h-5 text-red-500" />
+                Kedvenc receptek
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center p-6">
+                <div className="text-4xl font-bold text-red-500 mb-2">{favoritesCount}</div>
+                <p className="text-gray-600">mentett recept</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 bg-white/10 border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Részletek
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Ételpreferenciák */}
+          <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
+                <Utensils className="w-5 h-5 text-green-500" />
+                Ételpreferenciák
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="text-center mb-4">
+                  <div className="text-4xl font-bold text-green-500 mb-2">{preferenceStats.total}</div>
+                  <p className="text-gray-600">beállított preferencia</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Kedvelem</span>
+                    <Badge className="bg-green-100 text-green-800">
+                      {preferenceStats.liked} db
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Nem szeretem</span>
+                    <Badge className="bg-red-100 text-red-800">
+                      {preferenceStats.disliked} db
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Semleges</span>
+                    <Badge className="bg-gray-100 text-gray-800">
+                      {preferenceStats.neutral} db
+                    </Badge>
+                  </div>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-4 bg-white/10 border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Részletek
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Extra padding alul mobil navigációnak */}
-        <div className="h-6 sm:h-0"></div>
+        {/* Debug információk (fejlesztés során) */}
+        {process.env.NODE_ENV === 'development' && (
+          <Card className="bg-yellow-50 border-yellow-200">
+            <CardHeader>
+              <CardTitle className="text-yellow-800">Debug - Preferenciák</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-yellow-700">
+                <p>Összes preferencia: {preferencesData.length}</p>
+                <p>Kedvelem: {preferenceStats.liked}</p>
+                <p>Nem szeretem: {preferenceStats.disliked}</p>
+                <p>Semleges: {preferenceStats.neutral}</p>
+                {preferencesData.length > 0 && (
+                  <details className="mt-2">
+                    <summary>Preferenciák részletei</summary>
+                    <pre className="text-xs mt-2 bg-yellow-100 p-2 rounded overflow-auto max-h-40">
+                      {JSON.stringify(preferencesData.slice(0, 5), null, 2)}
+                    </pre>
+                  </details>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

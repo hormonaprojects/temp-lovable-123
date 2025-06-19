@@ -12,21 +12,36 @@ export interface FoodPreference {
 }
 
 export const fetchUserPreferences = async (userId: string): Promise<FoodPreference[]> => {
+  console.log('🔍 Preferenciák lekérdezése felhasználóhoz:', userId);
+  
   const { data, error } = await supabase
     .from('Ételpreferenciák')
     .select('*')
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Preferenciák betöltési hiba:', error);
+    console.error('❌ Preferenciák betöltési hiba:', error);
     throw error;
   }
 
+  console.log('✅ Betöltött preferenciák:', data?.length || 0, 'db');
+  console.log('📊 Preferenciák részletei:', data?.slice(0, 3));
+
   // Type assertion to ensure the preference field matches our type
-  return (data || []).map(item => ({
+  const preferences = (data || []).map(item => ({
     ...item,
     preference: item.preference as 'like' | 'dislike' | 'neutral'
   }));
+
+  // Debug: statisztikák
+  const stats = {
+    like: preferences.filter(p => p.preference === 'like').length,
+    dislike: preferences.filter(p => p.preference === 'dislike').length,
+    neutral: preferences.filter(p => p.preference === 'neutral').length
+  };
+  console.log('📈 Preferencia statisztikák:', stats);
+
+  return preferences;
 };
 
 export const saveUserPreferences = async (userId: string, preferences: Array<{
@@ -34,6 +49,8 @@ export const saveUserPreferences = async (userId: string, preferences: Array<{
   ingredient: string;
   preference: 'like' | 'dislike' | 'neutral';
 }>): Promise<void> => {
+  console.log('💾 Preferenciák mentése:', userId, preferences.length, 'db');
+  
   // Töröljük a meglévő preferenciákat
   const { error: deleteError } = await supabase
     .from('Ételpreferenciák')
@@ -41,26 +58,35 @@ export const saveUserPreferences = async (userId: string, preferences: Array<{
     .eq('user_id', userId);
 
   if (deleteError) {
-    console.error('Korábbi preferenciák törlési hiba:', deleteError);
+    console.error('❌ Korábbi preferenciák törlési hiba:', deleteError);
     throw deleteError;
   }
 
-  // Beszúrjuk az új preferenciákat
-  const preferencesToInsert = preferences.map(pref => ({
-    user_id: userId,
-    category: pref.category,
-    ingredient: pref.ingredient,
-    preference: pref.preference
-  }));
+  // Csak azokat a preferenciákat mentjük, amelyek nem 'neutral' státuszúak
+  // A 'neutral' alapértelmezett, így nem kell tárolni az adatbázisban
+  const preferencesToInsert = preferences
+    .filter(pref => pref.preference !== 'neutral')
+    .map(pref => ({
+      user_id: userId,
+      category: pref.category,
+      ingredient: pref.ingredient,
+      preference: pref.preference
+    }));
 
-  const { error: insertError } = await supabase
-    .from('Ételpreferenciák')
-    .insert(preferencesToInsert);
+  console.log('💾 Ténylegesen mentendő preferenciák (nem semleges):', preferencesToInsert.length, 'db');
 
-  if (insertError) {
-    console.error('Preferenciák mentési hiba:', insertError);
-    throw insertError;
+  if (preferencesToInsert.length > 0) {
+    const { error: insertError } = await supabase
+      .from('Ételpreferenciák')
+      .insert(preferencesToInsert);
+
+    if (insertError) {
+      console.error('❌ Preferenciák mentési hiba:', insertError);
+      throw insertError;
+    }
   }
+
+  console.log('✅ Preferenciák sikeresen mentve');
 };
 
 export const checkUserHasPreferences = async (userId: string): Promise<boolean> => {
@@ -71,7 +97,7 @@ export const checkUserHasPreferences = async (userId: string): Promise<boolean> 
     .limit(1);
 
   if (error) {
-    console.error('Preferenciák ellenőrzési hiba:', error);
+    console.error('❌ Preferenciák ellenőrzési hiba:', error);
     return false;
   }
 
