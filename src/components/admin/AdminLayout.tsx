@@ -18,9 +18,18 @@ interface AdminLayoutProps {
   children: React.ReactNode;
   activeTab: 'users' | 'roles';
   onTabChange: (tab: 'users' | 'roles') => void;
+  showBackButton?: boolean;
 }
 
-export function AdminLayout({ user, onLogout, onBackToApp, children, activeTab, onTabChange }: AdminLayoutProps) {
+export function AdminLayout({ 
+  user, 
+  onLogout, 
+  onBackToApp, 
+  children, 
+  activeTab, 
+  onTabChange,
+  showBackButton = true 
+}: AdminLayoutProps) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -64,10 +73,12 @@ export function AdminLayout({ user, onLogout, onBackToApp, children, activeTab, 
           <p className="text-gray-300 mb-6">
             Nincs admin jogosultságod ehhez a felülethez.
           </p>
-          <Button onClick={onBackToApp} variant="outline" className="text-white border-white/30 hover:bg-white/10">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Vissza az alkalmazásba
-          </Button>
+          {showBackButton && (
+            <Button onClick={onBackToApp} variant="outline" className="text-white border-white/30 hover:bg-white/10">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Vissza az alkalmazásba
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -79,15 +90,17 @@ export function AdminLayout({ user, onLogout, onBackToApp, children, activeTab, 
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Button
-              onClick={onBackToApp}
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-white/10"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Vissza
-            </Button>
+            {showBackButton && (
+              <Button
+                onClick={onBackToApp}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Vissza
+              </Button>
+            )}
             <div className="text-white">
               <h1 className="text-xl font-bold flex items-center gap-2">
                 <Shield className="w-6 h-6 text-purple-400" />

@@ -26,6 +26,7 @@ export function AdminDashboard({ user, onLogout, onBackToApp }: AdminDashboardPr
       onBackToApp={onBackToApp}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      showBackButton={false} // Adminoknak nincs vissza gomb
     >
       {activeTab === 'users' && <UsersManagement />}
       {activeTab === 'roles' && <RolesManagement currentUser={user} />}

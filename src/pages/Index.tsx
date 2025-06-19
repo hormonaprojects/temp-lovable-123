@@ -2,32 +2,72 @@
 import { useState, useEffect } from "react";
 import { FoodPlannerApp } from "@/components/food-planner/FoodPlannerApp";
 import { ModernAuthForm } from "@/components/auth/ModernAuthForm";
+import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
+import { checkIsAdmin } from "@/services/adminQueries";
 import type { User } from "@supabase/supabase-js";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        try {
+          const adminStatus = await checkIsAdmin(currentUser.id);
+          setIsAdmin(adminStatus);
+        } catch (error) {
+          console.error('Admin státusz ellenőrzési hiba:', error);
+          setIsAdmin(false);
+        }
+      }
+      
       setLoading(false);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        try {
+          const adminStatus = await checkIsAdmin(currentUser.id);
+          setIsAdmin(adminStatus);
+        } catch (error) {
+          console.error('Admin státusz ellenőrzési hiba:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Kijelentkezési hiba:', error);
+        throw error;
+      }
+      // A state automatikusan frissül az onAuthStateChange miatt
+    } catch (error) {
+      console.error('Kijelentkezési hiba:', error);
+      // Force logout even if there's an error
+      setUser(null);
+      setIsAdmin(null);
+    }
   };
 
   if (loading) {
@@ -51,6 +91,18 @@ const Index = () => {
     fullName: user.user_metadata?.full_name || user.email || 'Felhasználó'
   };
 
+  // Ha admin, csak az admin felületet mutassuk
+  if (isAdmin) {
+    return (
+      <AdminDashboard
+        user={userProfile}
+        onLogout={handleLogout}
+        onBackToApp={() => {}} // Adminoknak nincs "vissza" opció
+      />
+    );
+  }
+
+  // Ha normál user, az ételtervező alkalmazást mutassuk
   return (
     <FoodPlannerApp
       user={userProfile}
