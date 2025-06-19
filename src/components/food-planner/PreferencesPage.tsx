@@ -11,8 +11,6 @@ import {
 } from "@/services/foodPreferencesQueries";
 import { PreferencesCategorySelector } from "./PreferencesCategorySelector";
 import { supabase } from '@/integrations/supabase/client';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 
 interface User {
   id: string;
@@ -183,34 +181,6 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     };
   };
 
-  const getChartData = () => {
-    return categories.map(category => {
-      const stats = getStatsForCategory(category);
-      const availableIngredients = categoryIngredients[category] || [];
-      const totalIngredients = availableIngredients.length;
-      const noPreference = totalIngredients - stats.liked - stats.disliked;
-      
-      return {
-        category: category.replace(' / ', '/'),
-        Kedveltem: stats.liked,
-        'Nem szeretem': stats.disliked,
-        'Semleges': noPreference
-      };
-    });
-  };
-
-  const chartConfig = {
-    Kedveltem: {
-      color: "#22c55e",
-    },
-    'Nem szeretem': {
-      color: "#ef4444",
-    },
-    'Semleges': {
-      color: "#6b7280",
-    },
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -256,34 +226,6 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
             </CardContent>
           </Card>
         </div>
-
-        {/* Chart */}
-        <Card className="bg-white/10 border-white/20 mb-8">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              🍽️ Ételpreferenciák kategóriánként
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="min-h-[400px] w-full">
-              <BarChart data={getChartData()}>
-                <XAxis 
-                  dataKey="category" 
-                  tick={{ fill: 'white', fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis tick={{ fill: 'white', fontSize: 12 }} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <ChartLegend content={<ChartLegendContent />} />
-                <Bar dataKey="Kedveltem" fill="var(--color-Kedveltem)" />
-                <Bar dataKey="Nem szeretem" fill="var(--color-Nem szeretem)" />
-                <Bar dataKey="Semleges" fill="var(--color-Semleges)" />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
 
         {/* Category Selection */}
         <Card className="bg-white/10 border-white/20 mb-8">

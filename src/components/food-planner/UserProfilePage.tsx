@@ -690,9 +690,10 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                           textAnchor="end"
                           height={100}
                           fontSize={12}
-                          stroke="#ffffff60"
+                          stroke="#ffffff"
+                          tick={{ fill: '#ffffff' }}
                         />
-                        <YAxis stroke="#ffffff60" />
+                        <YAxis stroke="#ffffff" tick={{ fill: '#ffffff' }} />
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Bar dataKey="Kedvelem" fill="#10B981" />
                         <Bar dataKey="Nem szeretem" fill="#EF4444" />
@@ -740,9 +741,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                           <span className="text-sm text-white/60">({rating.rating}/5)</span>
                         </div>
                         <p className="text-xs text-white/50">{rating.date}</p>
-                        {rating.recipe_data && (
-                          <p className="text-xs text-blue-400 mt-1">Kattints a részletekhez</p>
-                        )}
+                        <p className="text-xs text-blue-400 mt-1">Kattints a részletekhez</p>
                       </div>
                     ))}
                   </div>
