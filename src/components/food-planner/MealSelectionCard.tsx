@@ -90,7 +90,7 @@ export function MealSelectionCard({
                   <SelectValue placeholder="Válassz kategóriát..." />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-600">
-                  <SelectItem value="" className="text-white hover:bg-gray-700">
+                  <SelectItem value="no-category" className="text-white hover:bg-gray-700">
                     Nincs megadva (random)
                   </SelectItem>
                   {categories.map((category) => (
@@ -106,7 +106,7 @@ export function MealSelectionCard({
               </Select>
             </div>
 
-            {selectedCategory && (
+            {selectedCategory && selectedCategory !== "no-category" && (
               <div>
                 <label className="text-white/90 text-sm font-medium mb-2 block">
                   Alapanyag (opcionális)
@@ -116,7 +116,7 @@ export function MealSelectionCard({
                     <SelectValue placeholder="Válassz alapanyagot..." />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-600">
-                    <SelectItem value="" className="text-white hover:bg-gray-700">
+                    <SelectItem value="no-ingredient" className="text-white hover:bg-gray-700">
                       Nincs megadva (random kategóriában)
                     </SelectItem>
                     {availableIngredients.map((ingredient) => (

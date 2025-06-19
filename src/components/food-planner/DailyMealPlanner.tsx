@@ -95,9 +95,13 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
   };
 
   const handleMealSelectionUpdate = (mealType: string, category: string, ingredient: string) => {
+    // Convert placeholder values back to empty strings for internal logic
+    const actualCategory = category === "no-category" ? "" : category;
+    const actualIngredient = ingredient === "no-ingredient" ? "" : ingredient;
+    
     setMealSelections(prev => ({
       ...prev,
-      [mealType]: { category, ingredient }
+      [mealType]: { category: actualCategory, ingredient: actualIngredient }
     }));
   };
 
@@ -267,10 +271,14 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
     try {
       console.log(`🔄 ${mealType} újragenerálása preferenciákkal...`, { category, ingredient });
       
+      // Convert placeholder values back to empty strings for internal logic
+      const actualCategory = category === "no-category" ? "" : category;
+      const actualIngredient = ingredient === "no-ingredient" ? "" : ingredient;
+      
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
       
-      const recipe = generateRecipeForMeal(mealType, category, ingredient);
-      const isSpecific = !!(category || ingredient);
+      const recipe = generateRecipeForMeal(mealType, actualCategory, actualIngredient);
+      const isSpecific = !!(actualCategory || actualIngredient);
 
       await minLoadingTime;
 
@@ -286,7 +294,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
         setMealSelections(prev => ({
           ...prev,
-          [mealType]: { category: category || '', ingredient: ingredient || '' }
+          [mealType]: { category: actualCategory, ingredient: actualIngredient }
         }));
 
         toast({
@@ -295,10 +303,10 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
         });
       } else {
         let errorMessage = "";
-        if (category && ingredient) {
-          errorMessage = `Nincs "${ingredient}" alapanyaggal recept "${mealType}" étkezéshez a "${category}" kategóriában.`;
-        } else if (category) {
-          errorMessage = `Nincs recept "${mealType}" étkezéshez a "${category}" kategóriában.`;
+        if (actualCategory && actualIngredient) {
+          errorMessage = `Nincs "${actualIngredient}" alapanyaggal recept "${mealType}" étkezéshez a "${actualCategory}" kategóriában.`;
+        } else if (actualCategory) {
+          errorMessage = `Nincs recept "${mealType}" étkezéshez a "${actualCategory}" kategóriában.`;
         } else {
           errorMessage = `Nincs recept "${mealType}" étkezéshez.`;
         }
