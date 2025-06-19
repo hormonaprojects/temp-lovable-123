@@ -232,7 +232,7 @@ export function UsersManagement() {
                         onClick={() => viewUserDetails(user.id)}
                         size="sm"
                         variant="outline"
-                        className="text-white border-white/30 hover:bg-white/10"
+                        className="bg-purple-600 hover:bg-purple-700 text-white border border-purple-500"
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Részletek
