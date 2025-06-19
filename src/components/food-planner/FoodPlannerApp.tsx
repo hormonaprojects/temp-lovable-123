@@ -15,6 +15,7 @@ import { fetchUserProfile } from "@/services/profileQueries";
 import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
 import { checkIsAdmin } from "@/services/adminQueries";
 import { Star } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface User {
   id: string;
@@ -34,15 +35,24 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
   const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
+        console.log('🔍 Felhasználó adatok betöltése...', { userId: user.id });
+        
         const [profile, preferencesExist, adminStatus] = await Promise.all([
           fetchUserProfile(user.id),
           checkUserHasPreferences(user.id),
           checkIsAdmin(user.id)
         ]);
+        
+        console.log('📊 Betöltött adatok:', { 
+          profile: !!profile, 
+          preferencesExist, 
+          adminStatus 
+        });
         
         setUserProfile(profile);
         setHasPreferences(preferencesExist);
@@ -55,13 +65,32 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
         
       } catch (error) {
         console.error('Felhasználó adatok betöltési hiba:', error);
+        toast({
+          title: "Hiba",
+          description: "Nem sikerült betölteni a felhasználói adatokat.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     };
 
     loadUserData();
-  }, [user.id]);
+  }, [user.id, toast]);
+
+  const handleLogout = async () => {
+    try {
+      console.log('🚪 Kijelentkezés...');
+      await onLogout();
+    } catch (error) {
+      console.error('Kijelentkezési hiba:', error);
+      toast({
+        title: "Hiba",
+        description: "Nem sikerült kijelentkezni.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handlePreferenceSetupComplete = () => {
     setHasPreferences(true);
@@ -97,7 +126,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
     return (
       <AdminDashboard
         user={user}
-        onLogout={onLogout}
+        onLogout={handleLogout}
         onBackToApp={() => setCurrentView('single')}
       />
     );
@@ -195,7 +224,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
             
             {/* Kijelentkezés gomb */}
             <Button
-              onClick={onLogout}
+              onClick={handleLogout}
               variant="outline"
               className="text-white border-white/30 hover:bg-white/10 bg-white/10 text-sm px-4 py-2"
             >
