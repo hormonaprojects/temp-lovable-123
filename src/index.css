@@ -70,6 +70,35 @@
     @apply bg-background text-foreground;
     font-family: "Inter", sans-serif;
   }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 640px) {
+    .recipe-result {
+      @apply mx-2 p-3;
+    }
+    
+    .recipe-result h2 {
+      @apply text-lg leading-tight;
+    }
+    
+    .recipe-result h3 {
+      @apply text-sm leading-tight;
+    }
+    
+    .recipe-result button {
+      @apply text-xs px-3 py-2;
+    }
+    
+    /* Improve touch targets for mobile */
+    button, a, [role="button"] {
+      @apply min-h-[44px];
+    }
+    
+    /* Prevent zoom on input focus on iOS */
+    input, select, textarea {
+      font-size: 16px;
+    }
+  }
 }
 
 @keyframes fadeInUp {

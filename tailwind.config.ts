@@ -13,8 +13,12 @@ export default {
 	theme: {
 		container: {
 			center: true,
-			padding: '2rem',
+			padding: '1rem',
 			screens: {
+				'sm': '640px',
+				'md': '768px',
+				'lg': '1024px',
+				'xl': '1280px',
 				'2xl': '1400px'
 			}
 		},
@@ -64,6 +68,12 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			spacing: {
+				'safe-top': 'env(safe-area-inset-top)',
+				'safe-bottom': 'env(safe-area-inset-bottom)',
+				'safe-left': 'env(safe-area-inset-left)',
+				'safe-right': 'env(safe-area-inset-right)',
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
@@ -108,11 +118,16 @@ export default {
 				'gentle-stir': 'gentle-stir 3s ease-in-out infinite'
 			},
 			maxWidth: {
-				'90vw': '90vw'
+				'90vw': '90vw',
+				'95vw': '95vw'
 			},
 			maxHeight: {
 				'80vh': '80vh',
-				'90vh': '90vh'
+				'90vh': '90vh',
+				'95vh': '95vh'
+			},
+			minHeight: {
+				'touch': '44px'
 			}
 		}
 	},
