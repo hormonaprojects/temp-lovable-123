@@ -124,12 +124,10 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   };
 
   const getIngredientImage = (ingredient: string): string | null => {
-    // Ékezetek eltávolítása és normalizálás
+    // Csak az ékezetek eltávolítása, szóközök megtartása
     const normalizedIngredient = ingredient
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // ékezetek eltávolítása
-      .replace(/\s+/g, '') // szóközök eltávolítása
-      .replace(/[^\w]/g, '') // speciális karakterek eltávolítása
       .replace(/\./g, ''); // pontok eltávolítása
     
     console.log('🖼️ Kép keresés:', ingredient, '->', normalizedIngredient);
