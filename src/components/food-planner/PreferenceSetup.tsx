@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, X, ChevronRight, ChevronLeft } from "lucide-react";
+import { Heart, X, ChevronRight, ChevronLeft, ChefHat } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { saveUserPreferences } from "@/services/foodPreferencesQueries";
 
@@ -125,7 +125,22 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   };
 
   const getIngredientImage = (ingredient: string): string => {
-    return '/placeholder.svg';
+    // Ékezetek eltávolítása és normalizálás
+    const normalizedIngredient = ingredient
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // ékezetek eltávolítása
+      .replace(/\s+/g, '') // szóközök eltávolítása
+      .replace(/[^\w]/g, ''); // speciális karakterek eltávolítása
+    
+    // Supabase storage URL
+    const bucketUrl = `${supabase.storage.from('alapanyag').getPublicUrl('').data.publicUrl}`;
+    
+    // Különböző fájlkiterjesztések próbálása
+    const extensions = ['jpg', 'jpeg', 'png', 'webp'];
+    
+    // Visszaadjuk az első lehetséges URL-t (a böngésző fogja kezelni, ha nem létezik)
+    return `${bucketUrl}${normalizedIngredient}.jpg`;
   };
 
   const handleNext = () => {
@@ -174,7 +189,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-lg">Betöltés...</p>
@@ -191,65 +206,51 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   console.log('🍽️ Aktuális alapanyagok:', currentIngredients);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
-      {/* Header */}
-      <div className="bg-black/20 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
+      {/* Modern Header */}
+      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
           <div className="text-center text-white">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">🍽️ Ételpreferenciák Beállítása</h1>
-            <p className="text-sm sm:text-base opacity-90">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <ChefHat className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Ételpreferenciák Beállítása</h1>
+            </div>
+            <p className="text-sm sm:text-base text-white/80">
               Állítsd be az ételpreferenciáidat a személyre szabott receptajánlásokhoz!
             </p>
           </div>
           
           {/* Progress Bar */}
-          <div className="mt-6 bg-white/20 rounded-full h-2 overflow-hidden">
+          <div className="mt-6 bg-white/10 rounded-full h-3 overflow-hidden">
             <div 
-              className="bg-white h-full transition-all duration-500 ease-out"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 h-full transition-all duration-500 ease-out rounded-full"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="text-center text-white/80 text-sm mt-2">
+          <div className="text-center text-white/80 text-sm mt-2 font-medium">
             {currentCategoryIndex + 1} / {categoryNames.length} kategória
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-6 sm:p-8">
           {/* Category Title */}
           <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               {categoryNames[currentCategoryIndex]}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-lg">
               Jelöld meg, hogy mely alapanyagokat szereted!
             </p>
           </div>
 
-          {/* Debug Info */}
-          <div className="text-center mb-8 p-4 bg-blue-100 rounded-lg">
-            <p className="text-blue-800 font-medium">
-              Debug információk:
-            </p>
-            <p className="text-sm text-blue-600 mt-2">
-              Összes betöltött sor: {preferencesData.length}
-            </p>
-            <p className="text-sm text-blue-600">
-              Aktuális kategória: {categoryNames[currentCategoryIndex]}
-            </p>
-            <p className="text-sm text-blue-600">
-              Talált alapanyagok: {currentIngredients.length}
-            </p>
-            <p className="text-sm text-blue-600">
-              Használt tábla: Ételkategóriák_Új
-            </p>
-          </div>
-
           {currentIngredients.length === 0 && (
-            <div className="text-center mb-8 p-4 bg-yellow-100 rounded-lg">
-              <p className="text-yellow-800">
+            <div className="text-center mb-8 p-6 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <p className="text-yellow-800 font-medium">
                 Nincsenek alapanyagok betöltve ehhez a kategóriához: {categoryNames[currentCategoryIndex]}
               </p>
             </div>
@@ -263,10 +264,10 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                 <Card
                   key={ingredient}
                   className={`
-                    relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fadeInUp
-                    ${preference === 'like' ? 'bg-green-100 border-green-300 scale-110 shadow-lg' : ''}
-                    ${preference === 'dislike' ? 'bg-red-100 border-red-300 scale-90 opacity-70' : ''}
-                    ${preference === 'neutral' ? 'bg-white border-gray-200 hover:shadow-md' : ''}
+                    relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fadeInUp border-2
+                    ${preference === 'like' ? 'bg-green-50 border-green-300 scale-110 shadow-lg ring-2 ring-green-200' : ''}
+                    ${preference === 'dislike' ? 'bg-red-50 border-red-300 scale-90 opacity-70 ring-2 ring-red-200' : ''}
+                    ${preference === 'neutral' ? 'bg-white border-gray-200 hover:shadow-md hover:border-purple-300' : ''}
                   `}
                   style={{
                     animationDelay: `${index * 0.1}s`
@@ -274,11 +275,11 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                 >
                   <div className="p-4">
                     {/* Ingredient Image */}
-                    <div className="w-full h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    <div className="w-full h-20 mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
                       <img
                         src={getIngredientImage(ingredient)}
                         alt={ingredient}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-xl"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/placeholder.svg';
                         }}
@@ -286,7 +287,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                     </div>
                     
                     {/* Ingredient Name */}
-                    <h3 className="text-sm font-medium text-gray-800 text-center mb-3 truncate">
+                    <h3 className="text-sm font-semibold text-gray-800 text-center mb-3 truncate min-h-[1.25rem]">
                       {ingredient}
                     </h3>
                     
@@ -297,10 +298,10 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                         variant={preference === 'like' ? 'default' : 'outline'}
                         size="sm"
                         className={`
-                          w-8 h-8 p-0 transition-all duration-200
+                          w-8 h-8 p-0 transition-all duration-200 rounded-full
                           ${preference === 'like' 
-                            ? 'bg-green-500 hover:bg-green-600 text-white' 
-                            : 'hover:bg-green-50 hover:border-green-300'
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg' 
+                            : 'hover:bg-green-50 hover:border-green-300 hover:text-green-600'
                           }
                         `}
                       >
@@ -312,10 +313,10 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                         variant={preference === 'dislike' ? 'default' : 'outline'}
                         size="sm"
                         className={`
-                          w-8 h-8 p-0 transition-all duration-200
+                          w-8 h-8 p-0 transition-all duration-200 rounded-full
                           ${preference === 'dislike' 
-                            ? 'bg-red-500 hover:bg-red-600 text-white' 
-                            : 'hover:bg-red-50 hover:border-red-300'
+                            ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg' 
+                            : 'hover:bg-red-50 hover:border-red-300 hover:text-red-600'
                           }
                         `}
                       >
@@ -334,7 +335,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
               onClick={handlePrev}
               disabled={currentCategoryIndex === 0}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 px-6 py-3 bg-white/80 backdrop-blur-sm border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all duration-200 disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4" />
               Előző
@@ -344,19 +345,48 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
               <Button
                 onClick={handleFinish}
                 disabled={saving}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50"
               >
-                {saving ? 'Mentés...' : 'Befejezés'} ✅
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Mentés...
+                  </>
+                ) : (
+                  <>
+                    Befejezés ✅
+                  </>
+                )}
               </Button>
             ) : (
               <Button
                 onClick={handleNext}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 Következő
                 <ChevronRight className="w-4 h-4" />
               </Button>
             )}
+          </div>
+
+          {/* Progress Indicator */}
+          <div className="mt-6 flex justify-center">
+            <div className="flex gap-2">
+              {categoryNames.map((_, index) => (
+                <div
+                  key={index}
+                  className={`
+                    w-3 h-3 rounded-full transition-all duration-300
+                    ${index === currentCategoryIndex 
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 scale-125' 
+                      : index < currentCategoryIndex 
+                        ? 'bg-green-400' 
+                        : 'bg-gray-300'
+                    }
+                  `}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
