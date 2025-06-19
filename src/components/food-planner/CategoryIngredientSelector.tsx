@@ -1,191 +1,156 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, ThumbsDown, Minus } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
-import { FoodPreference } from "@/services/foodPreferencesQueries";
+import { Utensils, Search } from "lucide-react";
+
+interface MealTypeData {
+  [key: string]: {
+    categories: {
+      [key: string]: string[];
+    };
+  };
+}
+
+interface FoodData {
+  mealTypes: MealTypeData;
+  categories: Record<string, string[]>;
+  getFilteredIngredients: (category: string) => string[];
+}
 
 interface CategoryIngredientSelectorProps {
-  selectedCategory: string;
-  userPreferences: FoodPreference[];
-  onPreferenceUpdate: (ingredient: string, category: string, preference: 'like' | 'dislike' | 'neutral') => Promise<void>;
+  selectedMealType: string;
+  foodData: FoodData;
+  onGetRecipe: (category: string, ingredient: string) => Promise<void>;
 }
 
 export function CategoryIngredientSelector({ 
-  selectedCategory, 
-  userPreferences, 
-  onPreferenceUpdate 
+  selectedMealType, 
+  foodData, 
+  onGetRecipe 
 }: CategoryIngredientSelectorProps) {
-  const [ingredients, setIngredients] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedIngredient, setSelectedIngredient] = useState("");
 
-  useEffect(() => {
-    loadCategoryIngredients();
-  }, [selectedCategory]);
-
-  const loadCategoryIngredients = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: categoriesData, error } = await supabase
-        .from('Ételkategóriák_Új')
-        .select('*');
-
-      if (error || !categoriesData) {
-        console.error('Kategória adatok betöltési hiba:', error);
-        return;
-      }
-
-      const categoryIngredients: string[] = [];
-      categoriesData.forEach(row => {
-        const categoryValue = row[selectedCategory];
-        if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
-          categoryIngredients.push(categoryValue.trim());
-        }
-      });
-
-      // Remove duplicates and sort
-      const uniqueIngredients = [...new Set(categoryIngredients)].sort();
-      setIngredients(uniqueIngredients);
-      
-    } catch (error) {
-      console.error('Alapanyagok betöltési hiba:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+    setSelectedIngredient("");
   };
 
-  const getPreferenceForIngredient = (ingredient: string): 'like' | 'dislike' | 'neutral' => {
-    const preference = userPreferences.find(p => 
-      p.ingredient === ingredient && p.category === selectedCategory
-    );
-    return preference?.preference || 'neutral';
+  const handleIngredientSelect = (ingredient: string) => {
+    setSelectedIngredient(ingredient);
   };
 
-  const handlePreferenceClick = async (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => {
-    await onPreferenceUpdate(ingredient, selectedCategory, preference);
+  const handleGetRecipe = () => {
+    onGetRecipe(selectedCategory, selectedIngredient);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">Alapanyagok betöltése...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (ingredients.length === 0) {
-    return (
-      <Card className="bg-white/10 border-white/20 text-white">
-        <CardContent className="p-8 text-center">
-          <p className="text-white/70">Nem találhatók alapanyagok ebben a kategóriában.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const stats = {
-    liked: ingredients.filter(ing => getPreferenceForIngredient(ing) === 'like').length,
-    disliked: ingredients.filter(ing => getPreferenceForIngredient(ing) === 'dislike').length,
-    neutral: ingredients.filter(ing => getPreferenceForIngredient(ing) === 'neutral').length
+  const getRandomRecipe = () => {
+    onGetRecipe("", "");
   };
+
+  // Get categories for selected meal type
+  const availableCategories = selectedMealType && foodData.mealTypes[selectedMealType] 
+    ? Object.keys(foodData.mealTypes[selectedMealType].categories) 
+    : [];
+
+  // Get ingredients for selected category
+  const availableIngredients = selectedCategory 
+    ? foodData.getFilteredIngredients(selectedCategory)
+    : [];
 
   return (
-    <div className="space-y-6">
-      {/* Statisztikák */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="bg-green-600/20 border-green-400/50 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-400">{stats.liked}</div>
-            <div className="text-sm text-white/70">Kedvelem</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-red-600/20 border-red-400/50 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-400">{stats.disliked}</div>
-            <div className="text-sm text-white/70">Nem szeretem</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gray-600/20 border-gray-400/50 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-gray-400">{stats.neutral}</div>
-            <div className="text-sm text-white/70">Semleges</div>
-          </CardContent>
-        </Card>
+    <div className="space-y-6 sm:space-y-8">
+      {/* Random Recipe Button */}
+      <div className="text-center">
+        <Button
+          onClick={getRandomRecipe}
+          className="bg-gradient-to-r from-yellow-500/80 to-orange-600/80 hover:from-yellow-600/90 hover:to-orange-700/90 backdrop-blur-sm border border-yellow-300/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 text-sm sm:text-base"
+        >
+          🎲 Véletlenszerű recept ({selectedMealType})
+        </Button>
       </div>
 
-      {/* Alapanyagok listája */}
-      <Card className="bg-white/10 border-white/20">
-        <CardHeader>
-          <CardTitle className="text-white">
-            Alapanyagok ({ingredients.length} db)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {ingredients.map((ingredient) => {
-              const preference = getPreferenceForIngredient(ingredient);
-              return (
-                <div
-                  key={ingredient}
-                  className={`p-3 rounded-lg border transition-all duration-200 ${
-                    preference === 'like' 
-                      ? 'bg-green-600/20 border-green-400/50' 
-                      : preference === 'dislike'
-                      ? 'bg-red-600/20 border-red-400/50'
-                      : 'bg-white/5 border-white/20'
+      {/* Category Selection */}
+      {availableCategories.length > 0 && (
+        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+          <CardHeader>
+            <CardTitle className="text-white text-xl sm:text-2xl font-bold flex items-center gap-3">
+              <Utensils className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" />
+              Válassz kategóriát
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {availableCategories.map((category) => (
+                <Button
+                  key={category}
+                  onClick={() => handleCategorySelect(category)}
+                  variant="outline"
+                  className={`h-auto p-4 sm:p-6 transition-all duration-300 ${
+                    selectedCategory === category
+                      ? 'bg-green-600/30 border-green-400/50 text-white shadow-lg transform scale-105'
+                      : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40 hover:transform hover:scale-102'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-white text-sm font-medium">{ingredient}</span>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handlePreferenceClick(ingredient, preference === 'like' ? 'neutral' : 'like')}
-                        className={`w-8 h-8 p-0 ${
-                          preference === 'like'
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'text-white/60 hover:text-green-400 hover:bg-green-600/20'
-                        }`}
-                      >
-                        <ThumbsUp className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handlePreferenceClick(ingredient, preference === 'dislike' ? 'neutral' : 'dislike')}
-                        className={`w-8 h-8 p-0 ${
-                          preference === 'dislike'
-                            ? 'bg-red-600 text-white hover:bg-red-700'
-                            : 'text-white/60 hover:text-red-400 hover:bg-red-600/20'
-                        }`}
-                      >
-                        <ThumbsDown className="w-3 h-3" />
-                      </Button>
-                      {preference !== 'neutral' && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handlePreferenceClick(ingredient, 'neutral')}
-                          className="w-8 h-8 p-0 text-white/60 hover:text-gray-400 hover:bg-gray-600/20"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                      )}
-                    </div>
+                  <div className="text-center">
+                    <div className="font-semibold text-sm sm:text-base mb-2">{category}</div>
+                    <Badge variant="secondary" className="bg-white/20 text-white/90">
+                      {foodData.getFilteredIngredients(category).length} alapanyag
+                    </Badge>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ingredient Selection */}
+      {selectedCategory && availableIngredients.length > 0 && (
+        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+          <CardHeader>
+            <CardTitle className="text-white text-xl sm:text-2xl font-bold flex items-center gap-3">
+              <Search className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
+              Válassz alapanyagot ({selectedCategory})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+              {availableIngredients.map((ingredient) => (
+                <Button
+                  key={ingredient}
+                  onClick={() => handleIngredientSelect(ingredient)}
+                  variant="outline"
+                  size="sm"
+                  className={`p-2 sm:p-3 h-auto transition-all duration-200 text-xs sm:text-sm ${
+                    selectedIngredient === ingredient
+                      ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-md transform scale-105'
+                      : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
+                  }`}
+                >
+                  {ingredient}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Generate Recipe Button */}
+      {(selectedCategory || selectedIngredient) && (
+        <div className="text-center">
+          <Button
+            onClick={handleGetRecipe}
+            className="bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-700/90 hover:to-pink-700/90 backdrop-blur-sm border border-purple-300/20 text-white px-8 sm:px-12 py-4 sm:py-6 rounded-2xl font-bold text-base sm:text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
+          >
+            🍽️ Recept generálása
+            {selectedCategory && ` (${selectedCategory})`}
+            {selectedIngredient && ` - ${selectedIngredient}`}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

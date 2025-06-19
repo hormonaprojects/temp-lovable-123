@@ -207,8 +207,12 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
             const rawData = favorite.recipe_data;
             if (typeof rawData === 'string') {
               recipeData = JSON.parse(rawData) as Recipe;
-            } else if (typeof rawData === 'object' && rawData !== null) {
-              recipeData = rawData as Recipe;
+            } else if (typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)) {
+              // Convert Json object to Recipe safely
+              const jsonObj = rawData as { [key: string]: any };
+              if (jsonObj.név && jsonObj.hozzávalók && jsonObj.elkészítés) {
+                recipeData = jsonObj as Recipe;
+              }
             }
           } catch (e) {
             console.error('Recipe data parsing error:', e);
@@ -374,51 +378,6 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Header */}
-        <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={onClose}
-                variant="ghost"
-                size="sm"
-                className="text-white bg-blue-600/80 hover:bg-blue-700/80 border border-blue-500/50"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Vissza
-              </Button>
-              <div className="text-white">
-                <h1 className="text-xl font-bold flex items-center gap-2">
-                  <User className="w-6 h-6 text-purple-400" />
-                  Profilom
-                </h1>
-                <p className="text-sm opacity-80">Személyes adatok és beállítások</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="text-white text-right">
-                <p className="text-sm font-medium">{profileData?.full_name || user.fullName}</p>
-                <p className="text-xs opacity-70">Felhasználó</p>
-              </div>
-              <Avatar className="w-8 h-8 border border-white/30">
-                <AvatarImage src={profileData?.avatar_url || undefined} alt="Profil" />
-                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white text-sm font-bold">
-                  {getInitials(profileData?.full_name || user.fullName)}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                onClick={onLogout}
-                variant="outline"
-                size="sm"
-                className="text-white border-red-400/50 bg-red-500/80 hover:bg-red-600/80"
-              >
-                Kijelentkezés
-              </Button>
-            </div>
-          </div>
-        </div>
-
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
           {/* Statisztikák */}

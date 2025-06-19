@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,9 +19,10 @@ interface User {
 
 interface PreferencesPageProps {
   user: User;
+  onClose: () => void;
 }
 
-export function PreferencesPage({ user }: PreferencesPageProps) {
+export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [userPreferences, setUserPreferences] = useState<FoodPreference[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +83,7 @@ export function PreferencesPage({ user }: PreferencesPageProps) {
         } else {
           // Add or update the preference
           const newPreference: FoodPreference = {
-            id: existingIndex >= 0 ? prev[existingIndex].id : '',
+            id: existingIndex >= 0 ? prev[existingIndex].id : crypto.randomUUID(),
             user_id: user.id,
             ingredient,
             category,
