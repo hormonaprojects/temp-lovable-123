@@ -12,6 +12,7 @@ import { fetchUserPreferences, FoodPreference } from "@/services/foodPreferences
 import { updateUserProfile } from "@/services/profileQueries";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { AvatarUpload } from "./AvatarUpload";
 
 interface User {
   id: string;
@@ -241,6 +242,28 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
     }));
   };
 
+  const handleAvatarUpdate = async (newAvatarUrl: string) => {
+    try {
+      await updateUserProfile(user.id, { avatar_url: newAvatarUrl });
+      
+      const updatedProfile = { ...profileData, avatar_url: newAvatarUrl };
+      setProfileData(updatedProfile);
+      setEditableProfile(updatedProfile);
+      
+      toast({
+        title: "Profilkép frissítve! ✅",
+        description: "A profilkép sikeresen megváltozott.",
+      });
+    } catch (error) {
+      console.error('Profilkép frissítési hiba:', error);
+      toast({
+        title: "Hiba történt",
+        description: "Nem sikerült frissíteni a profilképet.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleShowFavorites = () => {
     onClose();
     window.dispatchEvent(new CustomEvent('navigate-to-favorites'));
@@ -349,16 +372,41 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
           </CardHeader>
           <CardContent>
             <div className="flex items-start gap-6">
-              <Avatar className="w-20 h-20 border-4 border-white shadow-lg">
-                <AvatarImage src={profileData?.avatar_url || undefined} alt="Profil kép" />
-                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white text-lg font-bold">
-                  {getInitials(editableProfile?.full_name || user.fullName)}
-                </AvatarFallback>
-              </Avatar>
+              <div className="flex flex-col items-center gap-4">
+                <Avatar className="w-20 h-20 border-4 border-white shadow-lg">
+                  <AvatarImage src={profileData?.avatar_url || undefined} alt="Profil kép" />
+                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white text-lg font-bold">
+                    {getInitials(editableProfile?.full_name || user.fullName)}
+                  </AvatarFallback>
+                </Avatar>
+                
+                {/* Profilkép változtatása gomb */}
+                {!isEditing && (
+                  <AvatarUpload
+                    currentAvatarUrl={profileData?.avatar_url}
+                    userId={user.id}
+                    onAvatarUpdate={handleAvatarUpdate}
+                    userName={profileData?.full_name || user.fullName}
+                  />
+                )}
+              </div>
               
               <div className="flex-1">
                 {isEditing ? (
                   <div className="space-y-4">
+                    {/* Profilkép változtatása szerkesztés közben */}
+                    <div className="mb-6">
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Profilkép
+                      </Label>
+                      <AvatarUpload
+                        currentAvatarUrl={profileData?.avatar_url}
+                        userId={user.id}
+                        onAvatarUpdate={handleAvatarUpdate}
+                        userName={editableProfile?.full_name || user.fullName}
+                      />
+                    </div>
+                    
                     <div>
                       <Label htmlFor="fullName" className="text-sm font-medium text-gray-700 mb-1 block">
                         Teljes név
