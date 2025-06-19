@@ -132,12 +132,24 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     
     console.log('🖼️ Kép keresés:', ingredient, '->', normalizedIngredient);
     
-    // Supabase storage URL
-    const { data } = supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.jpg`);
+    // Először JPG-t próbáljuk, majd PNG-t
+    const jpgUrl = supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.jpg`).data.publicUrl;
+    const pngUrl = supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.png`).data.publicUrl;
     
-    console.log('🔗 Generált kép URL:', data.publicUrl);
+    console.log('🔗 Generált JPG URL:', jpgUrl);
+    console.log('🔗 Generált PNG URL:', pngUrl);
     
-    return data.publicUrl;
+    // Visszaadjuk mindkét URL-t, először a JPG-t próbáljuk
+    return jpgUrl;
+  };
+
+  const getPngImageUrl = (ingredient: string): string => {
+    const normalizedIngredient = ingredient
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // ékezetek eltávolítása
+      .replace(/\./g, ''); // pontok eltávolítása
+    
+    return supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.png`).data.publicUrl;
   };
 
   const handleNext = () => {
@@ -257,7 +269,8 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
             {currentIngredients.map((ingredient, index) => {
               const preference = getPreferenceForIngredient(ingredient);
-              const imageUrl = getIngredientImage(ingredient);
+              const jpgImageUrl = getIngredientImage(ingredient);
+              const pngImageUrl = getPngImageUrl(ingredient);
               
               return (
                 <Card
@@ -276,13 +289,18 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                     {/* Ingredient Image */}
                     <div className="w-full h-20 mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
                       <img
-                        src={imageUrl}
+                        src={jpgImageUrl}
                         alt={ingredient}
                         className="w-full h-full object-cover rounded-xl"
                         onError={(e) => {
-                          console.log('❌ Kép betöltési hiba:', ingredient);
-                          // Ha hiba van, elrejtjük a képet és helyette a hátteret mutatjuk
-                          (e.target as HTMLImageElement).style.display = 'none';
+                          console.log('❌ JPG kép betöltési hiba, próbálkozás PNG-vel:', ingredient);
+                          // Ha JPG hiba van, próbáljuk meg a PNG-t
+                          (e.target as HTMLImageElement).src = pngImageUrl;
+                          (e.target as HTMLImageElement).onerror = () => {
+                            console.log('❌ PNG kép is hibás:', ingredient);
+                            // Ha mindkettő hibás, elrejtjük a képet
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          };
                         }}
                         onLoad={() => {
                           console.log('✅ Kép sikeresen betöltve:', ingredient);
