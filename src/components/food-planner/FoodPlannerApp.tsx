@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { ModernAuthForm } from '../auth/ModernAuthForm';
 import { AdminDashboard } from '../admin/AdminDashboard';
 import { fetchUserProfile } from '@/services/profileQueries';
-import { checkUserHasPreferences } from '@/services/foodPreferencesQueries';
 import { checkIsAdmin } from '@/services/adminQueries';
 
 interface User {
@@ -16,12 +15,73 @@ interface User {
 export function FoodPlannerApp() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [currentPage, setCurrentPage] = useState<'auth' | 'preferences' | 'main' | 'admin'>('auth');
+  const [currentPage, setCurrentPage] = useState<'auth' | 'main' | 'admin'>('auth');
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+
+    const processUserSession = async (authUser: any) => {
+      try {
+        console.log('👤 Felhasználó feldolgozása:', { email: authUser.email, id: authUser.id });
+        
+        // Alapértelmezett user adatok
+        const userData = {
+          id: authUser.id,
+          email: authUser.email || '',
+          fullName: authUser.email || 'Ismeretlen felhasználó'
+        };
+
+        // Profil betöltése (opcionális)
+        try {
+          const userProfile = await fetchUserProfile(authUser.id);
+          if (userProfile?.full_name) {
+            userData.fullName = userProfile.full_name;
+          }
+        } catch (error) {
+          console.log('⚠️ Profil betöltési hiba (folytatjuk alapértelmezett adatokkal):', error);
+        }
+
+        if (!mounted) return;
+
+        // Admin ellenőrzés
+        try {
+          const adminStatus = await checkIsAdmin(authUser.id);
+          console.log('🔍 Admin státusz:', { userId: authUser.id, isAdmin: adminStatus });
+          
+          if (!mounted) return;
+          
+          setUser(userData);
+          setIsAdmin(adminStatus);
+          setCurrentPage(adminStatus ? 'admin' : 'main');
+        } catch (error) {
+          console.error('Admin státusz ellenőrzési hiba:', error);
+          if (mounted) {
+            setUser(userData);
+            setIsAdmin(false);
+            setCurrentPage('main');
+          }
+        }
+      } catch (error) {
+        console.error('Felhasználó session feldolgozási hiba:', error);
+        if (mounted) {
+          // Hiba esetén is beállítjuk a felhasználót
+          setUser({
+            id: authUser.id,
+            email: authUser.email || '',
+            fullName: authUser.email || 'Ismeretlen felhasználó'
+          });
+          setIsAdmin(false);
+          setCurrentPage('main');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
+      }
+    };
 
     const initializeAuth = async () => {
       try {
@@ -45,75 +105,17 @@ export function FoodPlannerApp() {
             setIsAdmin(false);
             setCurrentPage('auth');
             setLoading(false);
-            setAuthChecked(true);
+            setInitialized(true);
           }
         }
       } catch (error) {
         console.error('Auth inicializálási hiba:', error);
         if (mounted) {
+          setUser(null);
+          setIsAdmin(false);
+          setCurrentPage('auth');
           setLoading(false);
-          setAuthChecked(true);
-        }
-      }
-    };
-
-    const processUserSession = async (authUser: any) => {
-      try {
-        const userProfile = await fetchUserProfile(authUser.id);
-        
-        if (!mounted) return;
-        
-        if (userProfile) {
-          const userData = {
-            id: authUser.id,
-            email: authUser.email || '',
-            fullName: userProfile.full_name || authUser.email || 'Ismeretlen felhasználó'
-          };
-          
-          // Admin ellenőrzés
-          try {
-            const adminStatus = await checkIsAdmin(authUser.id);
-            console.log('🔍 Admin státusz:', { userId: authUser.id, isAdmin: adminStatus });
-            
-            if (!mounted) return;
-            
-            if (adminStatus) {
-              console.log('👑 Admin felhasználó - admin felületre irányítás');
-              setUser(userData);
-              setIsAdmin(true);
-              setCurrentPage('admin');
-              setLoading(false);
-              setAuthChecked(true);
-              return;
-            }
-          } catch (error) {
-            console.error('Admin státusz ellenőrzési hiba:', error);
-          }
-          
-          // Normál felhasználó esetén
-          console.log('👤 Normál felhasználó - fő alkalmazásra irányítás');
-          if (mounted) {
-            setUser(userData);
-            setIsAdmin(false);
-            setCurrentPage('main');
-            setLoading(false);
-            setAuthChecked(true);
-          }
-        } else {
-          console.log('❌ Nincs felhasználói profil - kijelentkeztetés');
-          await supabase.auth.signOut();
-          if (mounted) {
-            setUser(null);
-            setCurrentPage('auth');
-            setLoading(false);
-            setAuthChecked(true);
-          }
-        }
-      } catch (error) {
-        console.error('Felhasználó session feldolgozási hiba:', error);
-        if (mounted) {
-          setLoading(false);
-          setAuthChecked(true);
+          setInitialized(true);
         }
       }
     };
@@ -130,7 +132,7 @@ export function FoodPlannerApp() {
         setIsAdmin(false);
         setCurrentPage('auth');
         setLoading(false);
-        setAuthChecked(true);
+        setInitialized(true);
       } else if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ Felhasználó bejelentkezett:', { 
           email: session.user.email, 
@@ -141,21 +143,18 @@ export function FoodPlannerApp() {
       }
     });
 
-    // Inicializálás
-    if (!authChecked) {
-      initializeAuth();
-    }
+    // Inicializálás indítása
+    initializeAuth();
 
     return () => {
       mounted = false;
       subscription?.unsubscribe();
     };
-  }, [authChecked]);
+  }, []);
 
   const handleLogin = async () => {
     console.log('🔑 Új bejelentkezés érzékelve');
-    setLoading(true);
-    setAuthChecked(false);
+    // Az onAuthStateChange automatikusan kezeli
   };
 
   const handleLogout = async () => {
@@ -186,7 +185,8 @@ export function FoodPlannerApp() {
     setCurrentPage('main');
   };
 
-  if (loading) {
+  // Ha még nem inicializálódott, betöltő képernyő
+  if (!initialized || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
@@ -200,21 +200,6 @@ export function FoodPlannerApp() {
   switch (currentPage) {
     case 'auth':
       return <ModernAuthForm onSuccess={handleLogin} />;
-    case 'preferences':
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 p-4">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Preferenciák beállítása</h2>
-            <p className="mb-4">Kérjük állítsd be az étkezési preferenciáidat a folytatáshoz.</p>
-            <button 
-              onClick={() => setCurrentPage('main')}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-            >
-              Folytatás beállítások nélkül
-            </button>
-          </div>
-        </div>
-      );
     case 'main':
       return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 p-4">
