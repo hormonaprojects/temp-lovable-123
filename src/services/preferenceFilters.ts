@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseRecipe } from '@/types/supabase';
 import { normalizeText } from '@/utils/textNormalization';
@@ -22,7 +21,11 @@ export const getUserPreferences = async (userId: string): Promise<UserPreference
     return [];
   }
 
-  return data || [];
+  // Type casting to ensure the preference field matches our interface
+  return (data || []).map(item => ({
+    ...item,
+    preference: item.preference as 'like' | 'dislike' | 'neutral'
+  }));
 };
 
 export const filterIngredientsByPreferences = (
