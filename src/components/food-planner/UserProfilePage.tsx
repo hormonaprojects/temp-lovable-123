@@ -14,6 +14,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { AvatarUpload } from "./AvatarUpload";
 import { Recipe } from "@/types/recipe";
+import { convertToStandardRecipe } from "@/utils/recipeConverter";
 
 interface User {
   id: string;
@@ -195,9 +196,9 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         console.error('Kedvencek betöltési hiba:', favoritesError);
       }
 
-      // Receptek betöltése az Új_Receptek táblából
+      // Receptek betöltése az Adatbázis táblából
       const { data: allRecipes, error: recipesError } = await supabase
-        .from('Új_Receptek')
+        .from('Adatbázis')
         .select('*');
 
       if (recipesError) {
@@ -228,20 +229,11 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
           }
         }
 
-        // Ha nincs a kedvencekben, keresünk az Új_Receptek táblában
+        // Ha nincs a kedvencekben, keresünk az Adatbázis táblában
         if (!recipeData && allRecipes) {
-          const foundRecipe = allRecipes.find(recipe => recipe.név === recipeName);
+          const foundRecipe = allRecipes.find(recipe => recipe.Recept_Neve === recipeName);
           if (foundRecipe) {
-            recipeData = {
-              név: foundRecipe.név,
-              hozzávalók: foundRecipe.hozzávalók || [],
-              elkészítés: foundRecipe.elkészítés || '',
-              képUrl: foundRecipe.képUrl,
-              elkészítésiIdő: foundRecipe.elkészítésiIdő,
-              fehérje: foundRecipe.fehérje,
-              szénhidrát: foundRecipe.szénhidrát,
-              zsír: foundRecipe.zsír
-            };
+            recipeData = convertToStandardRecipe(foundRecipe);
           }
         }
         
