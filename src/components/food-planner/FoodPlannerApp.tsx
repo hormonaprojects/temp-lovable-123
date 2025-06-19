@@ -9,12 +9,11 @@ import { FavoritesPage } from "./FavoritesPage";
 import { PreferenceSetup } from "./PreferenceSetup";
 import { PreferencesPage } from "./PreferencesPage";
 import { AdminDashboard } from "../admin/AdminDashboard";
-import { User, Settings, Shield } from "lucide-react";
+import { User, Settings, Shield, Star, ChefHat, Calendar } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchUserProfile } from "@/services/profileQueries";
 import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
 import { checkIsAdmin } from "@/services/adminQueries";
-import { Star } from "lucide-react";
 
 interface User {
   id: string;
@@ -156,78 +155,116 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
-      {/* Modern Header */}
+      {/* Modern Header with Admin-style Design */}
       <div className="bg-black/20 backdrop-blur-lg border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
-          <div className="text-white text-center sm:text-left">
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              🍽️ Ételtervező
-            </h1>
-            <p className="text-sm sm:text-base text-white/70">Üdv, {user.fullName}!</p>
-          </div>
-          
-          {/* Modern Menu Buttons */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Kedvencek */}
-            <Button
-              onClick={() => setCurrentView('favorites')}
-              variant="ghost"
-              size="sm"
-              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
-            >
-              <Star className="w-4 h-4 text-yellow-400 fill-current" />
-              <span className="hidden sm:inline">Kedvencek</span>
-            </Button>
-
-            {/* Preferenciák */}
-            <Button
-              onClick={() => setCurrentView('preferences')}
-              variant="ghost"
-              size="sm"
-              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Preferenciák</span>
-            </Button>
-
-            {/* Admin - csak adminoknak */}
-            {isAdmin && (
-              <Button
-                onClick={() => setCurrentView('admin')}
-                variant="ghost"
-                size="sm"
-                className="bg-purple-500/20 backdrop-blur-sm border border-purple-400/30 text-purple-200 hover:bg-purple-500/30 hover:text-white transition-all duration-200 flex items-center gap-2 px-3 py-2"
-              >
-                <Shield className="w-4 h-4" />
-                <span className="hidden sm:inline">Admin</span>
-              </Button>
-            )}
-
-            {/* Profil */}
-            <Button
-              onClick={() => setCurrentView('profile')}
-              variant="ghost"
-              size="sm"
-              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-2 px-2 py-2"
-            >
-              <Avatar className="w-6 h-6 border border-white/30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+          {/* Top Row - Brand and User Info */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="text-white">
+              <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                🍽️ Ételtervező
+              </h1>
+              <p className="text-sm sm:text-base text-white/70">Felhasználók és jogosultságok kezelése</p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="text-right text-white/90">
+                <div className="font-medium">{user.fullName}</div>
+                <div className="text-sm text-white/60">Felhasználó</div>
+              </div>
+              
+              <Avatar className="w-10 h-10 border-2 border-white/30">
                 <AvatarImage src={userProfile?.avatar_url || undefined} alt="Profilkép" />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
                   {getInitials(userProfile?.full_name || user.fullName)}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden sm:inline">Profil</span>
-            </Button>
-            
-            {/* Kijelentkezés */}
-            <Button
-              onClick={onLogout}
-              variant="ghost"
-              size="sm"
-              className="bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 hover:bg-red-500/30 hover:text-white transition-all duration-200 px-3 py-2"
+              
+              <Button
+                onClick={onLogout}
+                variant="ghost"
+                size="sm"
+                className="bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 hover:bg-red-500/30 hover:text-white transition-all duration-200 px-3 py-2"
+              >
+                Kijelentkezés
+              </Button>
+            </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setCurrentView('single')}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
+                ${currentView === 'single' || currentView === 'daily'
+                  ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
+                  : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
+                }
+              `}
             >
-              Kijelentkezés
-            </Button>
+              <ChefHat className="w-4 h-4" />
+              Receptgenerátor
+            </button>
+
+            <button
+              onClick={() => setCurrentView('favorites')}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
+                ${currentView === 'favorites'
+                  ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
+                  : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
+                }
+              `}
+            >
+              <Star className="w-4 h-4" />
+              Kedvencek
+            </button>
+
+            <button
+              onClick={() => setCurrentView('preferences')}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
+                ${currentView === 'preferences'
+                  ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
+                  : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
+                }
+              `}
+            >
+              <Settings className="w-4 h-4" />
+              Preferenciák
+            </button>
+
+            <button
+              onClick={() => setCurrentView('profile')}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
+                ${currentView === 'profile'
+                  ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
+                  : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
+                }
+              `}
+            >
+              <User className="w-4 h-4" />
+              Profil
+            </button>
+
+            {/* Admin - csak adminoknak */}
+            {isAdmin && (
+              <button
+                onClick={() => setCurrentView('admin')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
+                  ${currentView === 'admin'
+                    ? 'bg-purple-600/80 text-white border border-purple-500/50 shadow-lg' 
+                    : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
+                  }
+                `}
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </button>
+            )}
           </div>
         </div>
       </div>
