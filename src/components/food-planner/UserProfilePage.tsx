@@ -373,40 +373,18 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
           <CardContent>
             <div className="flex items-start gap-6">
               <div className="flex flex-col items-center gap-4">
-                <Avatar className="w-20 h-20 border-4 border-white shadow-lg">
-                  <AvatarImage src={profileData?.avatar_url || undefined} alt="Profil kép" />
-                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white text-lg font-bold">
-                    {getInitials(editableProfile?.full_name || user.fullName)}
-                  </AvatarFallback>
-                </Avatar>
-                
-                {/* Profilkép változtatása gomb - csak ha NEM szerkesztünk */}
-                {!isEditing && (
-                  <AvatarUpload
-                    currentAvatarUrl={profileData?.avatar_url}
-                    userId={user.id}
-                    onAvatarUpdate={handleAvatarUpdate}
-                    userName={profileData?.full_name || user.fullName}
-                  />
-                )}
+                {/* Profilkép változtatása gomb - mindig megjelenik */}
+                <AvatarUpload
+                  currentAvatarUrl={profileData?.avatar_url}
+                  userId={user.id}
+                  onAvatarUpdate={handleAvatarUpdate}
+                  userName={profileData?.full_name || user.fullName}
+                />
               </div>
               
               <div className="flex-1">
                 {isEditing ? (
                   <div className="space-y-4">
-                    {/* Profilkép változtatása szerkesztés közben */}
-                    <div className="mb-6">
-                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Profilkép
-                      </Label>
-                      <AvatarUpload
-                        currentAvatarUrl={profileData?.avatar_url}
-                        userId={user.id}
-                        onAvatarUpdate={handleAvatarUpdate}
-                        userName={editableProfile?.full_name || user.fullName}
-                      />
-                    </div>
-                    
                     <div>
                       <Label htmlFor="fullName" className="text-sm font-medium text-gray-700 mb-1 block">
                         Teljes név
