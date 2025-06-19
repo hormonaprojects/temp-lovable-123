@@ -1,174 +1,254 @@
 
-import React, { useState, useEffect } from 'react';
-import { CalendarIcon } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { SingleRecipeApp } from "./SingleRecipeApp";
+import { DailyMealPlanner } from "./DailyMealPlanner";
+import { UserProfilePage } from "./UserProfilePage";
+import { UserProfileModal } from "./UserProfileModal";
+import { FavoritesPage } from "./FavoritesPage";
+import { PreferenceSetup } from "./PreferenceSetup";
+import { PreferencesPage } from "./PreferencesPage";
+import { AdminDashboard } from "../admin/AdminDashboard";
+import { User, Settings, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Settings } from "lucide-react";
-import { UserProfilePage } from "@/components/food-planner/UserProfilePage";
-import { fetchDailyMeals } from "@/services/dailyMealQueries";
-import { fetchAllRecipes } from "@/services/recipeQueries";
-import { DailyMeal, Recipe } from "@/types";
-import { DayPicker } from 'react-day-picker';
-import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { fetchUserProfile } from "@/services/profileQueries";
+import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
+import { checkIsAdmin } from "@/services/adminQueries";
+import { Star } from "lucide-react";
+
+interface User {
+  id: string;
+  email: string;
+  fullName: string;
+}
 
 interface FoodPlannerAppProps {
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-  };
+  user: User;
   onLogout: () => void;
 }
 
 export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [dailyMeals, setDailyMeals] = useState<DailyMeal[]>([]);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'preferences' | 'admin'>('single');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const { toast } = useToast();
-
-  const formattedDate = format(selectedDate, 'yyyy-MM-dd', { locale: hu });
-  const displayDate = format(selectedDate, 'yyyy. MMMM dd.', { locale: hu });
-
-  const handleShowProfile = () => {
-    setShowUserProfile(true);
-  };
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
+    const loadUserData = async () => {
       try {
-        // Fetch daily meals for the selected date
-        const meals = await fetchDailyMeals(user.id, formattedDate);
-        setDailyMeals(meals);
-
-        // Fetch all recipes
-        const allRecipes = await fetchAllRecipes();
-        setRecipes(allRecipes);
-      } catch (e: any) {
-        console.error("Error loading data:", e);
-        setError(e.message || "Failed to load data");
-        toast({
-          title: "Hiba történt",
-          description: "Nem sikerült betölteni az adatokat.",
-          variant: "destructive"
-        });
+        const [profile, preferencesExist, adminStatus] = await Promise.all([
+          fetchUserProfile(user.id),
+          checkUserHasPreferences(user.id),
+          checkIsAdmin(user.id)
+        ]);
+        
+        setUserProfile(profile);
+        setHasPreferences(preferencesExist);
+        setIsAdmin(adminStatus);
+        
+        // Ha nincs preferencia beállítva, mutassuk a setup oldalt
+        if (!preferencesExist) {
+          setCurrentView('preference-setup');
+        }
+        
+      } catch (error) {
+        console.error('Felhasználó adatok betöltési hiba:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
-  }, [selectedDate, user.id, toast, formattedDate]);
+    loadUserData();
+  }, [user.id]);
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(date);
-      setIsDatePickerOpen(false);
-    }
+  useEffect(() => {
+    const handleNavigateToFavorites = () => {
+      setCurrentView('favorites');
+    };
+
+    const handleNavigateToPreferences = () => {
+      setCurrentView('preferences');
+    };
+
+    window.addEventListener('navigate-to-favorites', handleNavigateToFavorites);
+    window.addEventListener('navigate-to-preferences', handleNavigateToPreferences);
+
+    return () => {
+      window.removeEventListener('navigate-to-favorites', handleNavigateToFavorites);
+      window.removeEventListener('navigate-to-preferences', handleNavigateToPreferences);
+    };
+  }, []);
+
+  const handlePreferenceSetupComplete = () => {
+    setHasPreferences(true);
+    setCurrentView('single');
   };
 
-  // Profile page view
-  if (showUserProfile) {
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-lg">Betöltés...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Ha nincs preferencia beállítva, mutassuk a setup oldalt
+  if (hasPreferences === false && currentView === 'preference-setup') {
+    return (
+      <PreferenceSetup
+        user={user}
+        onComplete={handlePreferenceSetupComplete}
+      />
+    );
+  }
+
+  if (currentView === 'admin') {
+    return (
+      <AdminDashboard
+        user={user}
+        onLogout={onLogout}
+        onBackToApp={() => setCurrentView('single')}
+      />
+    );
+  }
+
+  if (currentView === 'profile') {
     return (
       <UserProfilePage
         user={user}
-        onClose={() => setShowUserProfile(false)}
+        onClose={() => setCurrentView('single')}
         onLogout={onLogout}
       />
     );
   }
-  
+
+  if (currentView === 'favorites') {
+    return (
+      <FavoritesPage
+        user={user}
+        onClose={() => setCurrentView('single')}
+      />
+    );
+  }
+
+  if (currentView === 'preferences') {
+    return (
+      <PreferencesPage
+        user={user}
+        onClose={() => setCurrentView('single')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
       {/* Header */}
       <div className="bg-black/20 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src="" alt="Profilkép" />
-              <AvatarFallback>{user.fullName.substring(0, 2)}</AvatarFallback>
-            </Avatar>
-            <div className="text-white">
-              <h1 className="text-xl font-bold">{user.fullName}</h1>
-              <p className="text-sm opacity-80">{user.email}</p>
-            </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
+          <div className="text-white text-center sm:text-left">
+            <h1 className="text-lg sm:text-xl font-bold">🍽️ Ételtervező</h1>
+            <p className="text-xs sm:text-sm opacity-80">Üdv, {user.fullName}!</p>
           </div>
+          
+          {/* Jobb oldali gombok */}
           <div className="flex items-center gap-3">
-            <Button onClick={handleShowProfile} variant="outline" size="sm" className="text-white border-white/50 bg-white/20 hover:bg-white/30 backdrop-blur-sm">
-              <Settings className="w-4 h-4 mr-2" />
-              Profil
+            {/* Kedvencek gomb */}
+            <Button
+              onClick={() => setCurrentView('favorites')}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+              <span className="hidden sm:inline">Kedvencek</span>
             </Button>
-            <Button onClick={onLogout} variant="outline" size="sm" className="text-white border-white/50 bg-red-500/80 hover:bg-red-600/80 backdrop-blur-sm">Kijelentkezés</Button>
+
+            {/* Preferenciák gomb */}
+            <Button
+              onClick={() => setCurrentView('preferences')}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Preferenciák</span>
+            </Button>
+
+            {/* Admin gomb - csak adminoknak */}
+            {isAdmin && (
+              <Button
+                onClick={() => setCurrentView('admin')}
+                variant="outline"
+                size="sm"
+                className="text-white border-purple-400/50 hover:bg-purple-500/20 bg-purple-500/10 flex items-center gap-2"
+              >
+                <Shield className="w-4 h-4 text-purple-400" />
+                <span className="hidden sm:inline">Admin</span>
+              </Button>
+            )}
+
+            {/* Profil gomb profilképpel */}
+            <Button
+              onClick={() => setShowProfileModal(true)}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2 pl-2"
+            >
+              <Avatar className="w-6 h-6 border border-white/30">
+                <AvatarImage src={userProfile?.avatar_url || undefined} alt="Profilkép" />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-bold">
+                  {getInitials(userProfile?.full_name || user.fullName)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden sm:inline">Profil</span>
+            </Button>
+            
+            {/* Kijelentkezés gomb */}
+            <Button
+              onClick={onLogout}
+              variant="outline"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 text-sm px-4 py-2"
+            >
+              Kijelentkezés
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Date Picker */}
-      <div className="max-w-4xl mx-auto px-4 py-4">
-        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={
-                "w-[300px] justify-start text-left font-normal bg-white/80 backdrop-blur-sm text-black hover:bg-white/90" +
-                (isDatePickerOpen ? " ring-2 ring-purple-500" : "")
-              }
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              <span>{displayDate}</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 mt-2" align="start" side="bottom">
-            <DayPicker
-              mode="single"
-              locale={hu}
-              selected={selectedDate}
-              onSelect={handleDateSelect}
-              defaultMonth={selectedDate}
-              className="border rounded-md shadow-sm"
-            />
-          </PopoverContent>
-        </Popover>
+      {/* Main Content */}
+      <div className="py-4 sm:py-8">
+        {currentView === 'single' ? (
+          <SingleRecipeApp
+            user={user}
+            onToggleDailyPlanner={() => setCurrentView('daily')}
+          />
+        ) : (
+          <DailyMealPlanner
+            user={user}
+            onBackToSingle={() => setCurrentView('single')}
+          />
+        )}
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-          <CardHeader>
-            <CardTitle>Napi étrend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p>Betöltés...</p>
-            ) : error ? (
-              <p>Hiba: {error}</p>
-            ) : (
-              <div>
-                {dailyMeals.length === 0 ? (
-                  <p>Nincs étel ehhez a naphoz.</p>
-                ) : (
-                  <ul>
-                    {dailyMeals.map((meal) => (
-                      <li key={meal.id}>
-                        {meal.recipe_name} - {meal.meal_type}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Profil Modal */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+        onOpenFullProfile={() => {
+          setShowProfileModal(false);
+          setCurrentView('profile');
+        }}
+      />
     </div>
   );
 }
