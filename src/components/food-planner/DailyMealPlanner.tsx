@@ -466,7 +466,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                 <Button
                   onClick={generateMealPlan}
                   disabled={isGenerating || selectedMeals.length === 0}
-                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50"
+                  className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50"
                 >
                   {isGenerating ? (
                     <>
@@ -504,7 +504,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
                   const isOpen = openMeals[mealType] || false;
                   
                   const cardGradient = mealData.isSpecific 
-                    ? "bg-gradient-to-r from-green-500/90 to-emerald-600/90" 
+                    ? "bg-gradient-to-r from-purple-500/90 to-violet-600/90" 
                     : "bg-gradient-to-r from-indigo-500/90 to-purple-600/90";
                   
                   return (
