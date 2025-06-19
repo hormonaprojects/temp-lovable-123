@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -7,10 +8,12 @@ import { UserProfileModal } from "./UserProfileModal";
 import { FavoritesPage } from "./FavoritesPage";
 import { PreferenceSetup } from "./PreferenceSetup";
 import { PreferencesPage } from "./PreferencesPage";
-import { User, Settings } from "lucide-react";
+import { AdminDashboard } from "../admin/AdminDashboard";
+import { User, Settings, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchUserProfile } from "@/services/profileQueries";
 import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
+import { checkIsAdmin } from "@/services/adminQueries";
 import { Star } from "lucide-react";
 
 interface User {
@@ -25,22 +28,25 @@ interface FoodPlannerAppProps {
 }
 
 export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
-  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'preferences'>('single');
+  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'preferences' | 'admin'>('single');
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const [profile, preferencesExist] = await Promise.all([
+        const [profile, preferencesExist, adminStatus] = await Promise.all([
           fetchUserProfile(user.id),
-          checkUserHasPreferences(user.id)
+          checkUserHasPreferences(user.id),
+          checkIsAdmin(user.id)
         ]);
         
         setUserProfile(profile);
         setHasPreferences(preferencesExist);
+        setIsAdmin(adminStatus);
         
         // Ha nincs preferencia beállítva, mutassuk a setup oldalt
         if (!preferencesExist) {
@@ -83,6 +89,16 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
       <PreferenceSetup
         user={user}
         onComplete={handlePreferenceSetupComplete}
+      />
+    );
+  }
+
+  if (currentView === 'admin') {
+    return (
+      <AdminDashboard
+        user={user}
+        onLogout={onLogout}
+        onBackToApp={() => setCurrentView('single')}
       />
     );
   }
@@ -147,6 +163,19 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Preferenciák</span>
             </Button>
+
+            {/* Admin gomb - csak adminoknak */}
+            {isAdmin && (
+              <Button
+                onClick={() => setCurrentView('admin')}
+                variant="outline"
+                size="sm"
+                className="text-white border-purple-400/50 hover:bg-purple-500/20 bg-purple-500/10 flex items-center gap-2"
+              >
+                <Shield className="w-4 h-4 text-purple-400" />
+                <span className="hidden sm:inline">Admin</span>
+              </Button>
+            )}
 
             {/* Profil gomb profilképpel */}
             <Button
