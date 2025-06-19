@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import {
   FoodPreference 
 } from "@/services/foodPreferencesQueries";
 import { PreferencesCategorySelector } from "./PreferencesCategorySelector";
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -25,6 +27,7 @@ interface PreferencesPageProps {
 export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [userPreferences, setUserPreferences] = useState<FoodPreference[]>([]);
+  const [categoryIngredients, setCategoryIngredients] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -40,20 +43,53 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   ];
 
   useEffect(() => {
-    loadUserPreferences();
+    loadData();
   }, [user.id]);
 
-  const loadUserPreferences = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Preferenciák betöltése...');
+      console.log('🔄 Preferenciák és kategória adatok betöltése...');
       
-      const preferences = await fetchUserPreferences(user.id);
+      // Preferenciák és kategória adatok egyidejű betöltése
+      const [preferences, categoriesData] = await Promise.all([
+        fetchUserPreferences(user.id),
+        supabase.from('Ételkategóriák_Új').select('*')
+      ]);
+
+      if (categoriesData.error) {
+        throw categoriesData.error;
+      }
+
+      // Kategória alapanyagok feldolgozása
+      const categoryIngredientsMap: Record<string, string[]> = {};
+      
+      categories.forEach(category => {
+        const ingredients: string[] = [];
+        
+        categoriesData.data?.forEach(row => {
+          const categoryValue = row[category];
+          if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
+            const ingredient = categoryValue.trim();
+            if (!ingredients.includes(ingredient)) {
+              ingredients.push(ingredient);
+            }
+          }
+        });
+        
+        categoryIngredientsMap[category] = ingredients.sort();
+      });
+
       setUserPreferences(preferences);
+      setCategoryIngredients(categoryIngredientsMap);
       
-      console.log('✅ Preferenciák betöltve:', preferences.length, 'db');
+      console.log('✅ Adatok betöltve:', {
+        preferences: preferences.length,
+        categories: Object.keys(categoryIngredientsMap).length
+      });
+      
     } catch (error) {
-      console.error('❌ Preferenciák betöltési hiba:', error);
+      console.error('❌ Adatok betöltési hiba:', error);
       toast({
         title: "Hiba történt",
         description: "Nem sikerült betölteni a preferenciákat.",
@@ -116,7 +152,12 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   };
 
   const getStatsForCategory = (category: string) => {
-    const categoryPrefs = userPreferences.filter(p => p.category === category);
+    // Csak azokat a preferenciákat számoljuk, amelyek létező alapanyagokra vonatkoznak
+    const availableIngredients = categoryIngredients[category] || [];
+    const categoryPrefs = userPreferences.filter(p => 
+      p.category === category && availableIngredients.includes(p.ingredient)
+    );
+    
     return {
       liked: categoryPrefs.filter(p => p.preference === 'like').length,
       disliked: categoryPrefs.filter(p => p.preference === 'dislike').length
@@ -124,10 +165,20 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   };
 
   const getTotalStats = () => {
+    // Összesített statisztikák csak a létező alapanyagokra
+    let totalLiked = 0;
+    let totalDisliked = 0;
+    
+    categories.forEach(category => {
+      const stats = getStatsForCategory(category);
+      totalLiked += stats.liked;
+      totalDisliked += stats.disliked;
+    });
+    
     return {
-      liked: userPreferences.filter(p => p.preference === 'like').length,
-      disliked: userPreferences.filter(p => p.preference === 'dislike').length,
-      total: userPreferences.length
+      liked: totalLiked,
+      disliked: totalDisliked,
+      total: totalLiked + totalDisliked
     };
   };
 
