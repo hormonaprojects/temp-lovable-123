@@ -1,10 +1,20 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { ModernAuthForm } from '../auth/ModernAuthForm';
-import { AdminDashboard } from '../admin/AdminDashboard';
-import { fetchUserProfile } from '@/services/profileQueries';
-import { checkIsAdmin } from '@/services/adminQueries';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { SingleRecipeApp } from "./SingleRecipeApp";
+import { DailyMealPlanner } from "./DailyMealPlanner";
+import { UserProfilePage } from "./UserProfilePage";
+import { UserProfileModal } from "./UserProfileModal";
+import { FavoritesPage } from "./FavoritesPage";
+import { PreferenceSetup } from "./PreferenceSetup";
+import { PreferencesPage } from "./PreferencesPage";
+import { AdminDashboard } from "../admin/AdminDashboard";
+import { User, Settings, Shield } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { fetchUserProfile } from "@/services/profileQueries";
+import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
+import { checkIsAdmin } from "@/services/adminQueries";
+import { Star } from "lucide-react";
 
 interface User {
   id: string;
@@ -12,212 +22,214 @@ interface User {
   fullName: string;
 }
 
-export function FoodPlannerApp() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [currentPage, setCurrentPage] = useState<'auth' | 'main' | 'admin'>('auth');
+interface FoodPlannerAppProps {
+  user: User;
+  onLogout: () => void;
+}
+
+export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
+  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'preferences' | 'admin'>('single');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    const processUserSession = async (authUser: any) => {
+    const loadUserData = async () => {
       try {
-        console.log('👤 Felhasználó feldolgozása:', { email: authUser.email, id: authUser.id });
+        const [profile, preferencesExist, adminStatus] = await Promise.all([
+          fetchUserProfile(user.id),
+          checkUserHasPreferences(user.id),
+          checkIsAdmin(user.id)
+        ]);
         
-        // Alapértelmezett user adatok
-        const userData = {
-          id: authUser.id,
-          email: authUser.email || '',
-          fullName: authUser.email || 'Ismeretlen felhasználó'
-        };
-
-        // Profil betöltése (opcionális)
-        try {
-          const userProfile = await fetchUserProfile(authUser.id);
-          if (userProfile?.full_name) {
-            userData.fullName = userProfile.full_name;
-          }
-        } catch (error) {
-          console.log('⚠️ Profil betöltési hiba (folytatjuk alapértelmezett adatokkal):', error);
+        setUserProfile(profile);
+        setHasPreferences(preferencesExist);
+        setIsAdmin(adminStatus);
+        
+        // Ha nincs preferencia beállítva, mutassuk a setup oldalt
+        if (!preferencesExist) {
+          setCurrentView('preference-setup');
         }
-
-        if (!mounted) return;
-
-        // Admin ellenőrzés
-        try {
-          const adminStatus = await checkIsAdmin(authUser.id);
-          console.log('🔍 Admin státusz:', { userId: authUser.id, isAdmin: adminStatus });
-          
-          if (!mounted) return;
-          
-          setUser(userData);
-          setIsAdmin(adminStatus);
-          setCurrentPage(adminStatus ? 'admin' : 'main');
-        } catch (error) {
-          console.error('Admin státusz ellenőrzési hiba:', error);
-          if (mounted) {
-            setUser(userData);
-            setIsAdmin(false);
-            setCurrentPage('main');
-          }
-        }
+        
       } catch (error) {
-        console.error('Felhasználó session feldolgozási hiba:', error);
-        if (mounted) {
-          // Hiba esetén is beállítjuk a felhasználót
-          setUser({
-            id: authUser.id,
-            email: authUser.email || '',
-            fullName: authUser.email || 'Ismeretlen felhasználó'
-          });
-          setIsAdmin(false);
-          setCurrentPage('main');
-        }
+        console.error('Felhasználó adatok betöltési hiba:', error);
       } finally {
-        if (mounted) {
-          setLoading(false);
-          setInitialized(true);
-        }
-      }
-    };
-
-    const initializeAuth = async () => {
-      try {
-        console.log('🔄 Auth inicializálása...');
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-        
-        if (session?.user) {
-          console.log('✅ Session található:', { 
-            email: session.user.email, 
-            userId: session.user.id 
-          });
-          
-          await processUserSession(session.user);
-        } else {
-          console.log('❌ Nincs aktív session');
-          if (mounted) {
-            setUser(null);
-            setIsAdmin(false);
-            setCurrentPage('auth');
-            setLoading(false);
-            setInitialized(true);
-          }
-        }
-      } catch (error) {
-        console.error('Auth inicializálási hiba:', error);
-        if (mounted) {
-          setUser(null);
-          setIsAdmin(false);
-          setCurrentPage('auth');
-          setLoading(false);
-          setInitialized(true);
-        }
-      }
-    };
-
-    // Auth listener beállítása
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth státusz változás:', { event, userId: session?.user?.id });
-      
-      if (!mounted) return;
-      
-      if (event === 'SIGNED_OUT') {
-        console.log('👋 Felhasználó kijelentkezve');
-        setUser(null);
-        setIsAdmin(false);
-        setCurrentPage('auth');
         setLoading(false);
-        setInitialized(true);
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ Felhasználó bejelentkezett:', { 
-          email: session.user.email, 
-          userId: session.user.id 
-        });
-        setLoading(true);
-        await processUserSession(session.user);
       }
-    });
-
-    // Inicializálás indítása
-    initializeAuth();
-
-    return () => {
-      mounted = false;
-      subscription?.unsubscribe();
     };
-  }, []);
 
-  const handleLogin = async () => {
-    console.log('🔑 Új bejelentkezés érzékelve');
-    // Az onAuthStateChange automatikusan kezeli
+    loadUserData();
+  }, [user.id]);
+
+  const handlePreferenceSetupComplete = () => {
+    setHasPreferences(true);
+    setCurrentView('single');
   };
 
-  const handleLogout = async () => {
-    try {
-      console.log('🚪 Kijelentkezés...');
-      setLoading(true);
-      
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('❌ Kijelentkezési hiba:', error);
-        throw error;
-      }
-      
-      console.log('✅ Sikeres kijelentkezés');
-    } catch (error) {
-      console.error('Kijelentkezési hiba:', error);
-      // Még hiba esetén is próbáljuk visszaállítani az állapotot
-      setUser(null);
-      setIsAdmin(false);
-      setCurrentPage('auth');
-      setLoading(false);
-    }
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const handleBackToApp = () => {
-    console.log('📱 Vissza az alkalmazásba...');
-    setCurrentPage('main');
-  };
-
-  // Ha még nem inicializálódott, betöltő képernyő
-  if (!initialized || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Betöltés...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-lg">Betöltés...</p>
         </div>
       </div>
     );
   }
 
-  switch (currentPage) {
-    case 'auth':
-      return <ModernAuthForm onSuccess={handleLogin} />;
-    case 'main':
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 p-4">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Fő alkalmazás</h2>
-            <p className="mb-4">Üdvözlünk, {user?.fullName}!</p>
-            <button 
-              onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+  // Ha nincs preferencia beállítva, mutassuk a setup oldalt
+  if (hasPreferences === false && currentView === 'preference-setup') {
+    return (
+      <PreferenceSetup
+        user={user}
+        onComplete={handlePreferenceSetupComplete}
+      />
+    );
+  }
+
+  if (currentView === 'admin') {
+    return (
+      <AdminDashboard
+        user={user}
+        onLogout={onLogout}
+        onBackToApp={() => setCurrentView('single')}
+      />
+    );
+  }
+
+  if (currentView === 'profile') {
+    return (
+      <UserProfilePage
+        user={user}
+        onClose={() => setCurrentView('single')}
+      />
+    );
+  }
+
+  if (currentView === 'favorites') {
+    return (
+      <FavoritesPage
+        user={user}
+        onClose={() => setCurrentView('single')}
+      />
+    );
+  }
+
+  if (currentView === 'preferences') {
+    return (
+      <PreferencesPage
+        user={user}
+        onClose={() => setCurrentView('single')}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500">
+      {/* Header */}
+      <div className="bg-black/20 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
+          <div className="text-white text-center sm:text-left">
+            <h1 className="text-lg sm:text-xl font-bold">🍽️ Ételtervező</h1>
+            <p className="text-xs sm:text-sm opacity-80">Üdv, {user.fullName}!</p>
+          </div>
+          
+          {/* Jobb oldali gombok */}
+          <div className="flex items-center gap-3">
+            {/* Kedvencek gomb */}
+            <Button
+              onClick={() => setCurrentView('favorites')}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+              <span className="hidden sm:inline">Kedvencek</span>
+            </Button>
+
+            {/* Preferenciák gomb */}
+            <Button
+              onClick={() => setCurrentView('preferences')}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Preferenciák</span>
+            </Button>
+
+            {/* Admin gomb - csak adminoknak */}
+            {isAdmin && (
+              <Button
+                onClick={() => setCurrentView('admin')}
+                variant="outline"
+                size="sm"
+                className="text-white border-purple-400/50 hover:bg-purple-500/20 bg-purple-500/10 flex items-center gap-2"
+              >
+                <Shield className="w-4 h-4 text-purple-400" />
+                <span className="hidden sm:inline">Admin</span>
+              </Button>
+            )}
+
+            {/* Profil gomb profilképpel */}
+            <Button
+              onClick={() => setShowProfileModal(true)}
+              variant="outline"
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 flex items-center gap-2 pl-2"
+            >
+              <Avatar className="w-6 h-6 border border-white/30">
+                <AvatarImage src={userProfile?.avatar_url || undefined} alt="Profilkép" />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-bold">
+                  {getInitials(userProfile?.full_name || user.fullName)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden sm:inline">Profil</span>
+            </Button>
+            
+            {/* Kijelentkezés gomb */}
+            <Button
+              onClick={onLogout}
+              variant="outline"
+              className="text-white border-white/30 hover:bg-white/10 bg-white/10 text-sm px-4 py-2"
             >
               Kijelentkezés
-            </button>
+            </Button>
           </div>
         </div>
-      );
-    case 'admin':
-      return <AdminDashboard user={user!} onLogout={handleLogout} onBackToApp={handleBackToApp} />;
-    default:
-      return <div>Ismeretlen állapot.</div>;
-  }
+      </div>
+
+      {/* Main Content */}
+      <div className="py-4 sm:py-8">
+        {currentView === 'single' ? (
+          <SingleRecipeApp
+            user={user}
+            onToggleDailyPlanner={() => setCurrentView('daily')}
+          />
+        ) : (
+          <DailyMealPlanner
+            user={user}
+            onBackToSingle={() => setCurrentView('single')}
+          />
+        )}
+      </div>
+
+      {/* Profil Modal */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+        onOpenFullProfile={() => {
+          setShowProfileModal(false);
+          setCurrentView('profile');
+        }}
+      />
+    </div>
+  );
 }

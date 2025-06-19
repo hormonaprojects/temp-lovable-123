@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, UserCog, ArrowLeft, Shield } from 'lucide-react';
 import { checkIsAdmin } from '@/services/adminQueries';
-import { useToast } from '@/hooks/use-toast';
 
 interface User {
   id: string;
@@ -24,43 +23,22 @@ interface AdminLayoutProps {
 export function AdminLayout({ user, onLogout, onBackToApp, children, activeTab, onTabChange }: AdminLayoutProps) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        console.log('🔍 Admin státusz ellenőrzése:', { userId: user.id });
         const adminStatus = await checkIsAdmin(user.id);
-        console.log('✅ Admin státusz eredmény:', { adminStatus });
         setIsAdmin(adminStatus);
       } catch (error) {
         console.error('Admin státusz ellenőrzési hiba:', error);
         setIsAdmin(false);
-        toast({
-          title: "Hiba",
-          description: "Nem sikerült ellenőrizni az admin jogosultságokat.",
-          variant: "destructive"
-        });
       } finally {
         setLoading(false);
       }
     };
 
     checkAdminStatus();
-  }, [user.id, toast]);
-
-  const handleLogout = async () => {
-    try {
-      await onLogout();
-    } catch (error) {
-      console.error('Kijelentkezési hiba az admin felületen:', error);
-      toast({
-        title: "Hiba",
-        description: "Nem sikerült kijelentkezni.",
-        variant: "destructive"
-      });
-    }
-  };
+  }, [user.id]);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -131,7 +109,7 @@ export function AdminLayout({ user, onLogout, onBackToApp, children, activeTab, 
               </AvatarFallback>
             </Avatar>
             <Button
-              onClick={handleLogout}
+              onClick={onLogout}
               variant="outline"
               size="sm"
               className="text-white border-white/30 hover:bg-white/10"
