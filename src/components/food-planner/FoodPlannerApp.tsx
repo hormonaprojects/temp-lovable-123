@@ -1,8 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import Auth from '../auth/Auth';
-import FoodPreferencesPage from './FoodPreferencesPage';
-import MainPage from './MainPage';
+import { ModernAuthForm } from '../auth/ModernAuthForm';
 import { AdminDashboard } from '../admin/AdminDashboard';
 import { fetchUserProfile } from '@/services/profileQueries';
 import { checkUserHasPreferences } from '@/services/foodPreferencesQueries';
@@ -117,7 +116,16 @@ export function FoodPlannerApp() {
   const handleLogout = async () => {
     try {
       console.log('🚪 Kijelentkezés...');
-      await supabase.auth.signOut();
+      setLoading(true);
+      
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Kijelentkezési hiba:', error);
+        throw error;
+      }
+      
+      console.log('✅ Sikeres kijelentkezés');
       setUser(null);
       setIsAdmin(false);
       setCurrentPage('auth');
@@ -143,11 +151,37 @@ export function FoodPlannerApp() {
 
   switch (currentPage) {
     case 'auth':
-      return <Auth onLogin={handleLogin} />;
+      return <ModernAuthForm onSuccess={handleLogin} />;
     case 'preferences':
-      return <FoodPreferencesPage onPreferencesSaved={() => setCurrentPage('main')} userId={user!.id} />;
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 p-4">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Preferenciák beállítása</h2>
+            <p className="mb-4">Kérjük állítsd be az étkezési preferenciáidat a folytatáshoz.</p>
+            <button 
+              onClick={() => setCurrentPage('main')}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Folytatás beállítások nélkül
+            </button>
+          </div>
+        </div>
+      );
     case 'main':
-      return <MainPage user={user!} onLogout={handleLogout} />;
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 p-4">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Fő alkalmazás</h2>
+            <p className="mb-4">Üdvözlünk, {user?.fullName}!</p>
+            <button 
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            >
+              Kijelentkezés
+            </button>
+          </div>
+        </div>
+      );
     case 'admin':
       return <AdminDashboard user={user!} onLogout={handleLogout} onBackToApp={handleBackToApp} />;
     default:
