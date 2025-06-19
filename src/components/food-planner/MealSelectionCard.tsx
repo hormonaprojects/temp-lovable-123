@@ -61,7 +61,7 @@ export function MealSelectionCard({
     <Card className={cn(
       "transition-all duration-300 border-2",
       isSelected 
-        ? "bg-gradient-to-br from-green-500/20 to-emerald-600/20 border-green-400/50 shadow-lg" 
+        ? "bg-gradient-to-br from-purple-500/20 to-violet-600/20 border-purple-400/50 shadow-lg" 
         : "bg-white/10 border-white/20 hover:bg-white/15"
     )}>
       <CardHeader className="pb-3 px-4 py-3">
@@ -70,7 +70,7 @@ export function MealSelectionCard({
             <Checkbox
               checked={isSelected}
               onCheckedChange={() => onToggle(mealType)}
-              className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+              className="data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
             />
           )}
           <div className="text-2xl">{emoji}</div>
