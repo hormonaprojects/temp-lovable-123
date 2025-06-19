@@ -199,11 +199,27 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         const recipeName = rating['Recept neve'] || 'Ismeretlen recept';
         const favorite = favorites?.find(fav => fav.recipe_name === recipeName);
         
+        // Safe type conversion for recipe_data
+        let recipeData: Recipe | undefined = undefined;
+        if (favorite?.recipe_data) {
+          try {
+            // If recipe_data is already an object, use it directly, otherwise parse it
+            const rawData = favorite.recipe_data;
+            if (typeof rawData === 'string') {
+              recipeData = JSON.parse(rawData) as Recipe;
+            } else if (typeof rawData === 'object' && rawData !== null) {
+              recipeData = rawData as Recipe;
+            }
+          } catch (e) {
+            console.error('Recipe data parsing error:', e);
+          }
+        }
+        
         return {
           recipe_name: recipeName,
           rating: parseInt(rating['Értékelés']) || 0,
           date: new Date(rating['Dátum']).toLocaleDateString('hu-HU') || 'Ismeretlen dátum',
-          recipe_data: favorite?.recipe_data ? favorite.recipe_data as Recipe : undefined
+          recipe_data: recipeData
         };
       }).filter(rating => rating.rating > 0);
 

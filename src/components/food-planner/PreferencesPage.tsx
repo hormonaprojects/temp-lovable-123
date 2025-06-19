@@ -3,15 +3,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Utensils, Heart, X, Plus, Minus } from "lucide-react";
-import { CategoryIngredientSelector } from "./CategoryIngredientSelector";
+import { useToast } from "@/hooks/use-toast";
+import { Settings, Save, Utensils } from "lucide-react";
 import { 
   fetchUserPreferences, 
-  updateUserPreference, 
+  updateUserPreference,
   FoodPreference 
 } from "@/services/foodPreferencesQueries";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from '@/integrations/supabase/client';
+import { PreferencesCategorySelector } from "./PreferencesCategorySelector";
 
 interface User {
   id: string;
@@ -21,27 +20,18 @@ interface User {
 
 interface PreferencesPageProps {
   user: User;
-  onClose: () => void;
 }
 
-interface CategorySummary {
-  category: string;
-  liked: number;
-  disliked: number;
-  total: number;
-}
-
-export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
-  const [preferences, setPreferences] = useState<FoodPreference[]>([]);
-  const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+export function PreferencesPage({ user }: PreferencesPageProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [userPreferences, setUserPreferences] = useState<FoodPreference[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  const categoryNames = [
+  const categories = [
     'Húsfélék',
-    'Halak', 
+    'Halak',
     'Zöldségek / Vegetáriánus',
     'Tejtermékek',
     'Gyümölcsök',
@@ -50,24 +40,22 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   ];
 
   useEffect(() => {
-    loadPreferences();
+    loadUserPreferences();
   }, [user.id]);
 
-  const loadPreferences = async () => {
+  const loadUserPreferences = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Preferenciák betöltése...');
       
-      // Preferenciák betöltése
-      const userPrefs = await fetchUserPreferences(user.id);
-      setPreferences(userPrefs);
-
-      // Kategóriás összesítések számítása
-      await calculateCategorySummaries(userPrefs);
+      const preferences = await fetchUserPreferences(user.id);
+      setUserPreferences(preferences);
       
+      console.log('✅ Preferenciák betöltve:', preferences.length, 'db');
     } catch (error) {
-      console.error('Preferenciák betöltési hiba:', error);
+      console.error('❌ Preferenciák betöltési hiba:', error);
       toast({
-        title: "Hiba",
+        title: "Hiba történt",
         description: "Nem sikerült betölteni a preferenciákat.",
         variant: "destructive"
       });
@@ -76,258 +64,168 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     }
   };
 
-  const calculateCategorySummaries = async (userPrefs: FoodPreference[]) => {
-    try {
-      const { data: categoriesData, error } = await supabase
-        .from('Ételkategóriák_Új')
-        .select('*');
-
-      if (error || !categoriesData) return;
-
-      const summaries = categoryNames.map(categoryName => {
-        // Kategóriához tartozó összes alapanyag
-        const categoryIngredients: string[] = [];
-        categoriesData.forEach(row => {
-          const categoryValue = row[categoryName];
-          if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
-            categoryIngredients.push(categoryValue.trim());
-          }
-        });
-
-        // Preferenciák számolása erre a kategóriára
-        const categoryPrefs = userPrefs.filter(p => p.category === categoryName);
-        const liked = categoryPrefs.filter(p => p.preference === 'like').length;
-        const disliked = categoryPrefs.filter(p => p.preference === 'dislike').length;
-
-        return {
-          category: categoryName,
-          liked,
-          disliked,
-          total: categoryIngredients.length
-        };
-      });
-
-      setCategorySummaries(summaries);
-    } catch (error) {
-      console.error('Kategória összesítések számítási hiba:', error);
-    }
-  };
-
   const handlePreferenceUpdate = async (ingredient: string, category: string, preference: 'like' | 'dislike' | 'neutral') => {
     try {
+      console.log('🔄 Preferencia frissítése:', { ingredient, category, preference });
+      
+      // Update in database
       await updateUserPreference(user.id, ingredient, category, preference);
       
-      // Frissítjük a helyi állapotot
-      setPreferences(prev => {
-        const filtered = prev.filter(p => !(p.ingredient === ingredient && p.category === category));
-        if (preference !== 'neutral') {
+      // Update local state
+      setUserPreferences(prev => {
+        const existingIndex = prev.findIndex(p => 
+          p.ingredient === ingredient && p.category === category
+        );
+        
+        if (preference === 'neutral') {
+          // Remove the preference if it exists
+          return prev.filter(p => !(p.ingredient === ingredient && p.category === category));
+        } else {
+          // Add or update the preference
           const newPreference: FoodPreference = {
-            id: `temp_${Date.now()}`,
+            id: existingIndex >= 0 ? prev[existingIndex].id : '',
             user_id: user.id,
             ingredient,
             category,
             preference,
-            created_at: new Date().toISOString(),
+            created_at: existingIndex >= 0 ? prev[existingIndex].created_at : new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
-          return [...filtered, newPreference];
+          
+          if (existingIndex >= 0) {
+            // Update existing
+            const updated = [...prev];
+            updated[existingIndex] = newPreference;
+            return updated;
+          } else {
+            // Add new
+            return [...prev, newPreference];
+          }
         }
-        return filtered;
       });
-
-      // Újraszámoljuk a kategória összesítéseket
-      const updatedPrefs = preferences.filter(p => !(p.ingredient === ingredient && p.category === category));
-      if (preference !== 'neutral') {
-        const newPreference: FoodPreference = {
-          id: `temp_${Date.now()}`,
-          user_id: user.id,
-          ingredient,
-          category,
-          preference,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        updatedPrefs.push(newPreference);
-      }
-      await calculateCategorySummaries(updatedPrefs);
-
+      
+      console.log('✅ Preferencia sikeresen frissítve');
     } catch (error) {
-      console.error('Preferencia frissítési hiba:', error);
+      console.error('❌ Preferencia frissítési hiba:', error);
       toast({
-        title: "Hiba",
+        title: "Hiba történt",
         description: "Nem sikerült frissíteni a preferenciát.",
         variant: "destructive"
       });
     }
   };
 
+  const getStatsForCategory = (category: string) => {
+    const categoryPrefs = userPreferences.filter(p => p.category === category);
+    return {
+      liked: categoryPrefs.filter(p => p.preference === 'like').length,
+      disliked: categoryPrefs.filter(p => p.preference === 'dislike').length
+    };
+  };
+
   const getTotalStats = () => {
-    const totalLiked = categorySummaries.reduce((sum, cat) => sum + cat.liked, 0);
-    const totalDisliked = categorySummaries.reduce((sum, cat) => sum + cat.disliked, 0);
-    const totalIngredients = categorySummaries.reduce((sum, cat) => sum + cat.total, 0);
-    const totalNeutral = totalIngredients - totalLiked - totalDisliked;
-    
-    return { totalLiked, totalDisliked, totalNeutral, totalIngredients };
+    return {
+      liked: userPreferences.filter(p => p.preference === 'like').length,
+      disliked: userPreferences.filter(p => p.preference === 'dislike').length,
+      total: userPreferences.length
+    };
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="text-center">
+        <div className="text-center text-white">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg">Preferenciák betöltése...</p>
+          <p className="text-lg">Preferenciák betöltése...</p>
         </div>
       </div>
     );
   }
 
-  const stats = getTotalStats();
-
-  if (selectedCategory) {
-    return (
-      <div>
-        <div className="mb-6">
-          <Button
-            onClick={() => setSelectedCategory(null)}
-            variant="ghost"
-            size="sm"
-            className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200 mb-4"
-          >
-            ← Vissza a kategóriákhoz
-          </Button>
-          
-          <h2 className="text-2xl font-bold text-white mb-2">{selectedCategory}</h2>
-          <p className="text-white/70">Válaszd ki, mit szeretsz és mit nem</p>
-        </div>
-
-        <CategoryIngredientSelector
-          selectedCategory={selectedCategory}
-          userPreferences={preferences}
-          onPreferenceUpdate={handlePreferenceUpdate}
-        />
-      </div>
-    );
-  }
+  const totalStats = getTotalStats();
 
   return (
-    <div>
-      {/* Összefoglaló statisztikák */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card className="bg-white/10 border-white/20 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white/70">Összes alapanyag</p>
-                <p className="text-2xl font-bold">{stats.totalIngredients}</p>
-              </div>
-              <Utensils className="w-8 h-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white/10 border-white/20 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white/70">Kedvelem</p>
-                <p className="text-2xl font-bold text-green-400">{stats.totalLiked}</p>
-              </div>
-              <Plus className="w-8 h-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white/10 border-white/20 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white/70">Nem szeretem</p>
-                <p className="text-2xl font-bold text-red-400">{stats.totalDisliked}</p>
-              </div>
-              <Minus className="w-8 h-8 text-red-400" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white/10 border-white/20 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white/70">Semleges</p>
-                <p className="text-2xl font-bold text-gray-400">{stats.totalNeutral}</p>
-              </div>
-              <Heart className="w-8 h-8 text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* Page Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4 flex items-center justify-center gap-3">
+            <Settings className="w-8 h-8 text-green-400" />
+            Ételpreferenciáim
+          </h1>
+        </div>
 
-      {/* Kategóriák listája */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categorySummaries.map((category) => (
-          <Card 
-            key={category.category}
-            className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer group"
-            onClick={() => setSelectedCategory(category.category)}
-          >
-            <CardHeader>
-              <CardTitle className="text-white flex items-center justify-between">
-                <span className="text-lg">{category.category}</span>
-                <Settings className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-white/70 text-sm">Összes alapanyag</span>
-                  <Badge className="bg-blue-600/20 text-blue-400 border-blue-400/50">
-                    {category.total} db
-                  </Badge>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-white/70 text-sm">Kedvelem</span>
-                  <Badge className="bg-green-600/20 text-green-400 border-green-400/50">
-                    {category.liked} db
-                  </Badge>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-white/70 text-sm">Nem szeretem</span>
-                  <Badge className="bg-red-600/20 text-red-400 border-red-400/50">
-                    {category.disliked} db
-                  </Badge>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-white/70 text-sm">Semleges</span>
-                  <Badge className="bg-gray-600/20 text-gray-400 border-gray-400/50">
-                    {category.total - category.liked - category.disliked} db
-                  </Badge>
-                </div>
-
-                {/* Haladás sáv */}
-                <div className="mt-4">
-                  <div className="w-full bg-white/20 rounded-full h-2">
-                    <div className="flex h-full rounded-full overflow-hidden">
-                      <div 
-                        className="bg-green-500"
-                        style={{ width: `${(category.liked / category.total) * 100}%` }}
-                      />
-                      <div 
-                        className="bg-red-500"
-                        style={{ width: `${(category.disliked / category.total) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-xs text-white/60 mt-1">
-                    {Math.round(((category.liked + category.disliked) / category.total) * 100)}% beállítva
-                  </p>
-                </div>
-              </div>
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-green-600/20 border-green-400/50 text-white">
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-green-400 mb-2">{totalStats.liked}</div>
+              <div className="text-white/80">Kedvelt alapanyag</div>
             </CardContent>
           </Card>
-        ))}
+          <Card className="bg-red-600/20 border-red-400/50 text-white">
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-red-400 mb-2">{totalStats.disliked}</div>
+              <div className="text-white/80">Nem kedvelt alapanyag</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-purple-600/20 border-purple-400/50 text-white">
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-purple-400 mb-2">{totalStats.total}</div>
+              <div className="text-white/80">Összes beállítás</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Category Selection */}
+        <Card className="bg-white/10 border-white/20 mb-8">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Utensils className="w-6 h-6 text-green-400" />
+              Ételkategóriák
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {categories.map((category) => {
+                const stats = getStatsForCategory(category);
+                const isSelected = selectedCategory === category;
+                
+                return (
+                  <Button
+                    key={category}
+                    onClick={() => setSelectedCategory(isSelected ? "" : category)}
+                    variant="outline"
+                    className={`h-auto p-4 flex-col gap-2 transition-all duration-200 ${
+                      isSelected
+                        ? 'bg-purple-600/30 border-purple-400/50 text-white shadow-lg'
+                        : 'bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    <div className="font-semibold text-center leading-tight">{category}</div>
+                    <div className="flex gap-4 text-xs">
+                      <Badge className="bg-green-600/30 text-green-400 border-green-400/50">
+                        ❤️ {stats.liked}
+                      </Badge>
+                      <Badge className="bg-red-600/30 text-red-400 border-red-400/50">
+                        👎 {stats.disliked}
+                      </Badge>
+                    </div>
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Category Ingredient Selector */}
+        {selectedCategory && (
+          <PreferencesCategorySelector
+            category={selectedCategory}
+            userPreferences={userPreferences}
+            onPreferenceUpdate={handlePreferenceUpdate}
+          />
+        )}
       </div>
     </div>
   );
