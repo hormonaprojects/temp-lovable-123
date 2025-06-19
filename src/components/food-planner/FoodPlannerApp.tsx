@@ -1,21 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
-import { Calendar } from "@/components/ui/calendar"
 import { CalendarIcon } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ModeToggle } from "@/components/layout/ModeToggle";
-import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
-import { MainNav } from "@/components/layout/MainNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Settings } from "lucide-react";
 import { UserProfilePage } from "@/components/food-planner/UserProfilePage";
-import { fetchDailyMeals, createDailyMeal, updateDailyMeal, deleteDailyMeal } from "@/services/dailyMealQueries";
+import { fetchDailyMeals } from "@/services/dailyMealQueries";
 import { fetchAllRecipes } from "@/services/recipeQueries";
-import { DailyMeal } from "@/types";
-import { Recipe } from "@/types";
+import { DailyMeal, Recipe } from "@/types";
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
