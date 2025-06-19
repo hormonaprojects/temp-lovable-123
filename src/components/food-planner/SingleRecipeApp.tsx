@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
 import { CategoryIngredientSelector } from "./CategoryIngredientSelector";
@@ -180,8 +179,16 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setLastSearchParams({ category: "", ingredient: "", mealType: "" });
   };
 
+  // Transform mealTypes to match FoodData interface
+  const transformedMealTypes = Object.keys(mealTypes).reduce((acc, mealType) => {
+    acc[mealType] = {
+      categories: categories
+    };
+    return acc;
+  }, {} as { [key: string]: { categories: { [key: string]: string[] } } });
+
   const foodData = {
-    mealTypes: mealTypes,
+    mealTypes: transformedMealTypes,
     categories: categories,
     getFilteredIngredients: getFilteredIngredients
   };
