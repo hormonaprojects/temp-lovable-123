@@ -122,22 +122,55 @@ export const getRecipesByCategory = (
     return recipeIngredients.some(recipeIng => {
       const recipeIngNormalized = normalizeText(recipeIng);
       
-      // Teljes egyezés vagy részleges egyezés mindkét irányban
+      // SZIGORÚBB egyezés: teljes egyezés vagy tartalmazás mindkét irányban
       const exactMatch = recipeIngNormalized === searchNormalized;
-      const partialMatch = recipeIngNormalized.includes(searchNormalized) || 
-                          searchNormalized.includes(recipeIngNormalized);
+      const containsIngredient = recipeIngNormalized.includes(searchNormalized);
+      const ingredientContains = searchNormalized.includes(recipeIngNormalized);
       
-      if (exactMatch || partialMatch) {
-        console.log(`✅ Alapanyag egyezés: "${recipeIng}" tartalmazza "${searchIngredient}"-t`);
+      if (exactMatch || containsIngredient || ingredientContains) {
+        console.log(`✅ Alapanyag egyezés találva: "${recipeIng}" <-> "${searchIngredient}"`);
         return true;
       }
       return false;
     });
   };
 
-  // Ha konkrét alapanyag nincs megadva, csak kategória alapján szűrünk
-  if (!ingredient) {
-    // 3. LÉPÉS: Kategória alapú szűrés
+  // Ha konkrét alapanyag van megadva, KÖTELEZŐ hogy szerepeljen a receptben
+  if (ingredient) {
+    console.log(`🎯 KÖTELEZŐ alapanyag szűrés: "${ingredient}"`);
+    
+    const ingredientFilteredRecipes = mealTypeFilteredRecipes.filter(recipe => {
+      const allIngredients = getAllRecipeIngredients(recipe);
+      const hasIngredient = hasExactIngredientMatch(allIngredients, ingredient);
+      
+      if (hasIngredient) {
+        console.log(`✅ Recept TARTALMAZZA "${ingredient}" alapanyagot: ${recipe['Recept_Neve']}`);
+        console.log(`📝 Recept hozzávalói:`, allIngredients.slice(0, 5), '...');
+      } else {
+        console.log(`❌ Recept NEM tartalmazza "${ingredient}" alapanyagot: ${recipe['Recept_Neve']}`);
+      }
+
+      return hasIngredient;
+    });
+
+    console.log(`🎯 KÖTELEZŐ alapanyag szűrés eredménye: ${ingredientFilteredRecipes.length}/${mealTypeFilteredRecipes.length} recept`);
+    
+    if (ingredientFilteredRecipes.length === 0) {
+      console.log(`❌ NINCS EGYETLEN RECEPT SEM "${ingredient}" alapanyaggal a "${mealType}" étkezéshez!`);
+      return [];
+    }
+
+    // Ha vannak preferenciák, prioritizáljuk a recepteket
+    if (userPreferences && userPreferences.length > 0) {
+      console.log('🎯 Preferenciák alapján prioritizáljuk a recepteket');
+      return prioritizeRecipesByPreferences(ingredientFilteredRecipes, userPreferences);
+    }
+    
+    return ingredientFilteredRecipes;
+  }
+
+  // Ha nincs konkrét alapanyag megadva, csak kategória alapján szűrünk
+  if (category) {
     const categoryIngredients = categories[category] || [];
     console.log(`🥕 Kategória alapanyagok (${category}):`, categoryIngredients);
 
@@ -156,7 +189,7 @@ export const getRecipesByCategory = (
       return hasCategory;
     });
 
-    console.log(`✅ Végeredmény (kategória ${category}, ${mealType}):`, categoryFilteredRecipes.length, 'db');
+    console.log(`✅ Kategória szűrés eredménye (${category}, ${mealType}):`, categoryFilteredRecipes.length, 'db');
     
     // Ha vannak preferenciák, prioritizáljuk a recepteket
     if (userPreferences && userPreferences.length > 0) {
@@ -167,27 +200,14 @@ export const getRecipesByCategory = (
     return categoryFilteredRecipes;
   }
 
-  // 4. LÉPÉS: MEGERŐSÍTETT specifikus alapanyag szűrés
-  const finalFilteredRecipes = mealTypeFilteredRecipes.filter(recipe => {
-    const allIngredients = getAllRecipeIngredients(recipe);
-    const hasSpecificIngredient = hasExactIngredientMatch(allIngredients, ingredient);
-    
-    if (hasSpecificIngredient) {
-      console.log(`✅ Recept TARTALMAZZA "${ingredient}" alapanyagot: ${recipe['Recept_Neve']}`);
-    } else {
-      console.log(`❌ Recept NEM tartalmazza "${ingredient}" alapanyagot: ${recipe['Recept_Neve']}`);
-    }
-
-    return hasSpecificIngredient;
-  });
-
-  console.log(`✅ MEGERŐSÍTETT szűrés végeredménye (${ingredient} alapanyag, ${mealType}):`, finalFilteredRecipes.length, 'db');
+  // Ha sem kategória, sem alapanyag nincs megadva, csak étkezési típus alapján
+  console.log(`✅ Csak étkezési típus alapján: ${mealTypeFilteredRecipes.length} recept`);
   
   // Ha vannak preferenciák, prioritizáljuk a recepteket
   if (userPreferences && userPreferences.length > 0) {
     console.log('🎯 Preferenciák alapján prioritizáljuk a recepteket');
-    return prioritizeRecipesByPreferences(finalFilteredRecipes, userPreferences);
+    return prioritizeRecipesByPreferences(mealTypeFilteredRecipes, userPreferences);
   }
   
-  return finalFilteredRecipes;
+  return mealTypeFilteredRecipes;
 };
