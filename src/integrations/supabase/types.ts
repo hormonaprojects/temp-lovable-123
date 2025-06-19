@@ -98,18 +98,29 @@ export type Database = {
           Dátum: string | null
           Értékelés: string | null
           "Recept neve": string | null
+          user_id: string | null
         }
         Insert: {
           Dátum?: string | null
           Értékelés?: string | null
           "Recept neve"?: string | null
+          user_id?: string | null
         }
         Update: {
           Dátum?: string | null
           Értékelés?: string | null
           "Recept neve"?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "Értékelések_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_overview"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       Ételkategóriák: {
         Row: {

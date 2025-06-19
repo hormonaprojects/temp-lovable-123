@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const fetchCategories = async () => {
@@ -40,13 +39,14 @@ export const fetchRecipes = async () => {
   return data;
 };
 
-export const saveRecipeRating = async (recipeName: string, rating: number) => {
+export const saveRecipeRating = async (recipeName: string, rating: number, userId: string) => {
   const { error } = await supabase
     .from('Értékelések')
     .insert({
       'Recept neve': recipeName,
       'Értékelés': rating.toString(),
-      'Dátum': new Date().toISOString()
+      'Dátum': new Date().toISOString(),
+      'user_id': userId
     });
 
   if (error) {

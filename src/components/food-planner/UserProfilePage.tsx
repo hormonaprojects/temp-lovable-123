@@ -101,7 +101,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
       // Kategóriás statisztikák betöltése
       await loadCategoryStats(preferences);
 
-      // Csillagos értékelések betöltése recept adatokkal együtt - CSAK A JELENLEGI FELHASZNÁLÓ ÉRTÉKELÉSEI
+      // Csillagos értékelések betöltése - CSAK A JELENLEGI FELHASZNÁLÓ ÉRTÉKELÉSEI
       await loadStarRatingsWithRecipes();
 
       // Összes alapanyag számának meghatározása
@@ -176,29 +176,16 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
 
   const loadStarRatingsWithRecipes = async () => {
     try {
-      // MÓDOSÍTÁS: Értékelések betöltése CSAK a jelenlegi felhasználótól
-      // Először létrehozunk egy egyedi user_id oszlopot az Értékelések táblában ha még nincs
-      // Egyelőre a recept név alapján próbáljuk meg azonosítani a felhasználó értékeléseit
-      
-      // Az egyszerűség kedvéért most az összes értékelést betöltjük, de ezt később optimalizálni kell
+      // EGYSZERŰSÍTETT MEGOLDÁS: Értékelések betöltése CSAK a jelenlegi felhasználótól
       const { data: ratings, error } = await supabase
         .from('Értékelések')
         .select('*')
+        .eq('user_id', user.id) // FONTOS: csak a jelenlegi felhasználó értékelései
         .order('Dátum', { ascending: false });
 
       if (error) {
         console.error('Értékelések betöltési hiba:', error);
         return;
-      }
-
-      // Kedvencek betöltése a jelenlegi felhasználótól
-      const { data: favorites, error: favoritesError } = await supabase
-        .from('favorites')
-        .select('recipe_name, recipe_data')
-        .eq('user_id', user.id); // FONTOS: csak a jelenlegi felhasználó kedvencei
-
-      if (favoritesError) {
-        console.error('Kedvencek betöltési hiba:', favoritesError);
       }
 
       // Receptek betöltése az Adatbázis táblából
@@ -210,54 +197,26 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         console.error('Receptek betöltési hiba:', recipesError);
       }
 
-      // FONTOS VÁLTOZÁS: Csak azokat az értékeléseket mutatjuk, amelyek receptjei a felhasználó kedvencei között vannak
-      // Ez egy ideiglenes megoldás, amíg nem adunk user_id-t az Értékelések táblához
-      const userFavoriteRecipeNames = favorites?.map(fav => fav.recipe_name) || [];
-
-      // Az értékelések formázása recept adatokkal együtt - CSAK A FELHASZNÁLÓ KEDVENC RECEPTJEIRE
-      const formattedRatings: StarRating[] = (ratings || [])
-        .filter(rating => {
-          const recipeName = rating['Recept neve'] || 'Ismeretlen recept';
-          return userFavoriteRecipeNames.includes(recipeName);
-        })
-        .map(rating => {
-          const recipeName = rating['Recept neve'] || 'Ismeretlen recept';
-          
-          // Először a kedvencekben keresünk
-          let recipeData: Recipe | undefined = undefined;
-          const favorite = favorites?.find(fav => fav.recipe_name === recipeName);
-          
-          if (favorite?.recipe_data) {
-            try {
-              const rawData = favorite.recipe_data;
-              if (typeof rawData === 'string') {
-                recipeData = JSON.parse(rawData) as Recipe;
-              } else if (typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)) {
-                const jsonObj = rawData as { [key: string]: any };
-                if (jsonObj.név && jsonObj.hozzávalók && jsonObj.elkészítés) {
-                  recipeData = jsonObj as Recipe;
-                }
-              }
-            } catch (e) {
-              console.error('Recipe data parsing error from favorites:', e);
-            }
+      // Az értékelések formázása recept adatokkal együtt
+      const formattedRatings: StarRating[] = (ratings || []).map(rating => {
+        const recipeName = rating['Recept neve'] || 'Ismeretlen recept';
+        
+        // Recept keresése az Adatbázis táblában
+        let recipeData: Recipe | undefined = undefined;
+        if (allRecipes) {
+          const foundRecipe = allRecipes.find(recipe => recipe.Recept_Neve === recipeName);
+          if (foundRecipe) {
+            recipeData = convertToStandardRecipe(foundRecipe);
           }
-
-          // Ha nincs a kedvencekben, keresünk az Adatbázis táblában
-          if (!recipeData && allRecipes) {
-            const foundRecipe = allRecipes.find(recipe => recipe.Recept_Neve === recipeName);
-            if (foundRecipe) {
-              recipeData = convertToStandardRecipe(foundRecipe);
-            }
-          }
-          
-          return {
-            recipe_name: recipeName,
-            rating: parseInt(rating['Értékelés']) || 0,
-            date: new Date(rating['Dátum']).toLocaleDateString('hu-HU') || 'Ismeretlen dátum',
-            recipe_data: recipeData
-          };
-        }).filter(rating => rating.rating > 0);
+        }
+        
+        return {
+          recipe_name: recipeName,
+          rating: parseInt(rating['Értékelés']) || 0,
+          date: new Date(rating['Dátum']).toLocaleDateString('hu-HU') || 'Ismeretlen dátum',
+          recipe_data: recipeData
+        };
+      }).filter(rating => rating.rating > 0);
 
       setStarRatings(formattedRatings);
     } catch (error) {

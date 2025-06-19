@@ -20,10 +20,17 @@ interface RecipeDisplayProps {
 export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, user }: RecipeDisplayProps) {
   const [fullScreenModalOpen, setFullScreenModalOpen] = useState(false);
   const { toast } = useToast();
-  const { saveRating } = useSupabaseData();
+  const { saveRating } = useSupabaseData(user?.id); // User ID átadása
 
   const handleRating = async (rating: number) => {
-    if (!recipe) return;
+    if (!recipe || !user?.id) {
+      toast({
+        title: "Hiba",
+        description: "Be kell jelentkezni az értékeléshez.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const success = await saveRating(recipe.név, rating);
     

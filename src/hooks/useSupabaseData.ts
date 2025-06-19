@@ -109,9 +109,14 @@ export function useSupabaseData(userId?: string) {
   };
 
   const saveRating = async (recipeName: string, rating: number) => {
+    if (!userId) {
+      console.error('User ID szükséges az értékelés mentéséhez');
+      return false;
+    }
+
     try {
-      await saveRecipeRating(recipeName, rating);
-      console.log('✅ Értékelés sikeresen mentve:', { recipeName, rating });
+      await saveRecipeRating(recipeName, rating, userId);
+      console.log('✅ Értékelés sikeresen mentve:', { recipeName, rating, userId });
       return true;
     } catch (error) {
       console.error('❌ Értékelés mentési hiba:', error);
