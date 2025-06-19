@@ -175,6 +175,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
 
   const loadStarRatingsWithRecipes = async () => {
     try {
+      // Értékelések betöltése
       const { data: ratings, error } = await supabase
         .from('Értékelések')
         .select('*')
@@ -185,7 +186,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         return;
       }
 
-      // Kedvencek betöltése hogy megkapjuk a recept adatokat
+      // Kedvencek betöltése
       const { data: favorites, error: favoritesError } = await supabase
         .from('favorites')
         .select('recipe_name, recipe_data');
@@ -194,28 +195,53 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         console.error('Kedvencek betöltési hiba:', favoritesError);
       }
 
+      // Receptek betöltése az Új_Receptek táblából
+      const { data: allRecipes, error: recipesError } = await supabase
+        .from('Új_Receptek')
+        .select('*');
+
+      if (recipesError) {
+        console.error('Receptek betöltési hiba:', recipesError);
+      }
+
       // Az értékelések formázása recept adatokkal együtt
       const formattedRatings: StarRating[] = (ratings || []).map(rating => {
         const recipeName = rating['Recept neve'] || 'Ismeretlen recept';
+        
+        // Először a kedvencekben keresünk
+        let recipeData: Recipe | undefined = undefined;
         const favorite = favorites?.find(fav => fav.recipe_name === recipeName);
         
-        // Safe type conversion for recipe_data
-        let recipeData: Recipe | undefined = undefined;
         if (favorite?.recipe_data) {
           try {
-            // If recipe_data is already an object, use it directly, otherwise parse it
             const rawData = favorite.recipe_data;
             if (typeof rawData === 'string') {
               recipeData = JSON.parse(rawData) as Recipe;
             } else if (typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)) {
-              // Convert Json object to Recipe safely
               const jsonObj = rawData as { [key: string]: any };
               if (jsonObj.név && jsonObj.hozzávalók && jsonObj.elkészítés) {
                 recipeData = jsonObj as Recipe;
               }
             }
           } catch (e) {
-            console.error('Recipe data parsing error:', e);
+            console.error('Recipe data parsing error from favorites:', e);
+          }
+        }
+
+        // Ha nincs a kedvencekben, keresünk az Új_Receptek táblában
+        if (!recipeData && allRecipes) {
+          const foundRecipe = allRecipes.find(recipe => recipe.név === recipeName);
+          if (foundRecipe) {
+            recipeData = {
+              név: foundRecipe.név,
+              hozzávalók: foundRecipe.hozzávalók || [],
+              elkészítés: foundRecipe.elkészítés || '',
+              képUrl: foundRecipe.képUrl,
+              elkészítésiIdő: foundRecipe.elkészítésiIdő,
+              fehérje: foundRecipe.fehérje,
+              szénhidrát: foundRecipe.szénhidrát,
+              zsír: foundRecipe.zsír
+            };
           }
         }
         
@@ -706,7 +732,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
             </Card>
           )}
 
-          {/* Csillagos értékelések - KATTINTHATÓ RECEPTEKKEL */}
+          {/* Csillagos értékelések - MINDEN KÁRTYÁRA KATTINTHATÓ */}
           <Card className="bg-white/10 border-white/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
@@ -721,9 +747,7 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                     {displayedRatings.map((rating, index) => (
                       <div 
                         key={index} 
-                        className={`p-4 bg-white/5 rounded-lg border border-white/10 transition-all duration-200 ${
-                          rating.recipe_data ? 'cursor-pointer hover:bg-white/10 hover:border-white/20' : ''
-                        }`}
+                        className="p-4 bg-white/5 rounded-lg border border-white/10 cursor-pointer hover:bg-white/10 hover:border-white/20 transition-all duration-200"
                         onClick={() => rating.recipe_data && openRecipeModal(rating.recipe_data)}
                       >
                         <h4 className="font-medium text-white mb-2 truncate">{rating.recipe_name}</h4>
@@ -741,7 +765,9 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                           <span className="text-sm text-white/60">({rating.rating}/5)</span>
                         </div>
                         <p className="text-xs text-white/50">{rating.date}</p>
-                        <p className="text-xs text-blue-400 mt-1">Kattints a részletekhez</p>
+                        <p className="text-xs text-blue-400 mt-1">
+                          {rating.recipe_data ? 'Kattints a részletekhez' : 'Recept adatok nem elérhetők'}
+                        </p>
                       </div>
                     ))}
                   </div>
