@@ -18,76 +18,111 @@ export function FoodPlannerApp() {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<'auth' | 'preferences' | 'main' | 'admin'>('auth');
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        console.log('✅ Felhasználó bejelentkezett:', { 
-          email: session.user.email, 
-          userId: session.user.id 
-        });
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        console.log('🔄 Auth inicializálása...');
         
-        const userProfile = await fetchUserProfile(session.user.id);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (session?.user) {
+          console.log('✅ Session található:', { 
+            email: session.user.email, 
+            userId: session.user.id 
+          });
+          
+          await processUserSession(session.user);
+        } else {
+          console.log('❌ Nincs aktív session');
+          if (mounted) {
+            setUser(null);
+            setIsAdmin(false);
+            setCurrentPage('auth');
+            setLoading(false);
+            setAuthChecked(true);
+          }
+        }
+      } catch (error) {
+        console.error('Auth inicializálási hiba:', error);
+        if (mounted) {
+          setLoading(false);
+          setAuthChecked(true);
+        }
+      }
+    };
+
+    const processUserSession = async (authUser: any) => {
+      try {
+        const userProfile = await fetchUserProfile(authUser.id);
+        
+        if (!mounted) return;
         
         if (userProfile) {
           const userData = {
-            id: session.user.id,
-            email: session.user.email || '',
-            fullName: userProfile.full_name || session.user.email || 'Ismeretlen felhasználó'
+            id: authUser.id,
+            email: authUser.email || '',
+            fullName: userProfile.full_name || authUser.email || 'Ismeretlen felhasználó'
           };
           
-          // Ellenőrizzük, hogy admin-e a felhasználó
+          // Admin ellenőrzés
           try {
-            const isAdmin = await checkIsAdmin(session.user.id);
-            console.log('🔍 Admin státusz ellenőrzés:', { userId: session.user.id, isAdmin });
+            const adminStatus = await checkIsAdmin(authUser.id);
+            console.log('🔍 Admin státusz:', { userId: authUser.id, isAdmin: adminStatus });
             
-            if (isAdmin) {
-              console.log('👑 Admin felhasználó bejelentkezve - admin felületre irányítás');
+            if (!mounted) return;
+            
+            if (adminStatus) {
+              console.log('👑 Admin felhasználó - admin felületre irányítás');
               setUser(userData);
               setIsAdmin(true);
               setCurrentPage('admin');
               setLoading(false);
+              setAuthChecked(true);
               return;
             }
           } catch (error) {
             console.error('Admin státusz ellenőrzési hiba:', error);
           }
           
-          // Normál felhasználó esetén ellenőrizzük a preferenciákat
-          const hasPrefs = await checkUserHasPreferences(session.user.id);
-          console.log('🍽️ Preferenciák ellenőrzés:', { userId: session.user.id, hasPrefs });
-          
-          setUser(userData);
-          setIsAdmin(false);
-          
-          if (!hasPrefs) {
-            console.log('⚙️ Nincsenek preferenciák - beállítási felületre irányítás');
-            setCurrentPage('preferences');
-          } else {
-            console.log('✅ Preferenciák megvannak - fő alkalmazásra irányítás');
+          // Normál felhasználó esetén
+          console.log('👤 Normál felhasználó - fő alkalmazásra irányítás');
+          if (mounted) {
+            setUser(userData);
+            setIsAdmin(false);
             setCurrentPage('main');
+            setLoading(false);
+            setAuthChecked(true);
           }
         } else {
           console.log('❌ Nincs felhasználói profil - kijelentkeztetés');
           await supabase.auth.signOut();
-          setUser(null);
-          setCurrentPage('auth');
+          if (mounted) {
+            setUser(null);
+            setCurrentPage('auth');
+            setLoading(false);
+            setAuthChecked(true);
+          }
         }
-      } else {
-        console.log('❌ Nincs aktív session');
-        setUser(null);
-        setCurrentPage('auth');
+      } catch (error) {
+        console.error('Felhasználó session feldolgozási hiba:', error);
+        if (mounted) {
+          setLoading(false);
+          setAuthChecked(true);
+        }
       }
-      
-      setLoading(false);
     };
 
-    checkAuthStatus();
-
+    // Auth listener beállítása
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth státusz változás:', { event, userId: session?.user?.id });
+      
+      if (!mounted) return;
       
       if (event === 'SIGNED_OUT') {
         console.log('👋 Felhasználó kijelentkezve');
@@ -95,22 +130,32 @@ export function FoodPlannerApp() {
         setIsAdmin(false);
         setCurrentPage('auth');
         setLoading(false);
+        setAuthChecked(true);
       } else if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ Felhasználó bejelentkezett:', { 
           email: session.user.email, 
           userId: session.user.id 
         });
-        await checkAuthStatus();
+        setLoading(true);
+        await processUserSession(session.user);
       }
     });
 
-    return () => subscription?.unsubscribe();
-  }, []);
+    // Inicializálás
+    if (!authChecked) {
+      initializeAuth();
+    }
+
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
+  }, [authChecked]);
 
   const handleLogin = async () => {
-    console.log('🔑 Új bejelentkezés érzékelve - státusz frissítése');
+    console.log('🔑 Új bejelentkezés érzékelve');
     setLoading(true);
-    await supabase.auth.refreshSession();
+    setAuthChecked(false);
   };
 
   const handleLogout = async () => {
@@ -126,12 +171,12 @@ export function FoodPlannerApp() {
       }
       
       console.log('✅ Sikeres kijelentkezés');
+    } catch (error) {
+      console.error('Kijelentkezési hiba:', error);
+      // Még hiba esetén is próbáljuk visszaállítani az állapotot
       setUser(null);
       setIsAdmin(false);
       setCurrentPage('auth');
-    } catch (error) {
-      console.error('Kijelentkezési hiba:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -144,7 +189,10 @@ export function FoodPlannerApp() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Betöltés...</p>
+        </div>
       </div>
     );
   }
