@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, X, ChevronRight, ChevronLeft, ChefHat } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ChevronRight, ChevronLeft, ChefHat } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { saveUserPreferences } from "@/services/foodPreferencesQueries";
 
@@ -133,14 +132,14 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
       .replace(/\s+/g, '') // szóközök eltávolítása
       .replace(/[^\w]/g, ''); // speciális karakterek eltávolítása
     
+    console.log('🖼️ Kép keresés:', ingredient, '->', normalizedIngredient);
+    
     // Supabase storage URL
-    const bucketUrl = `${supabase.storage.from('alapanyag').getPublicUrl('').data.publicUrl}`;
+    const { data } = supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.jpg`);
     
-    // Különböző fájlkiterjesztések próbálása
-    const extensions = ['jpg', 'jpeg', 'png', 'webp'];
+    console.log('🔗 Generált kép URL:', data.publicUrl);
     
-    // Visszaadjuk az első lehetséges URL-t (a böngésző fogja kezelni, ha nem létezik)
-    return `${bucketUrl}${normalizedIngredient}.jpg`;
+    return data.publicUrl;
   };
 
   const handleNext = () => {
@@ -281,7 +280,11 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                         alt={ingredient}
                         className="w-full h-full object-cover rounded-xl"
                         onError={(e) => {
+                          console.log('❌ Kép betöltési hiba:', ingredient);
                           (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }}
+                        onLoad={() => {
+                          console.log('✅ Kép sikeresen betöltve:', ingredient);
                         }}
                       />
                     </div>
@@ -305,7 +308,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                           }
                         `}
                       >
-                        <Heart className={`w-4 h-4 ${preference === 'like' ? 'fill-current' : ''}`} />
+                        <ThumbsUp className="w-4 h-4" />
                       </Button>
                       
                       <Button
@@ -320,7 +323,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
                           }
                         `}
                       >
-                        <X className="w-4 h-4" />
+                        <ThumbsDown className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
