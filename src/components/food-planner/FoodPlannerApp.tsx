@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -14,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchUserProfile } from "@/services/profileQueries";
 import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
 import { checkIsAdmin } from "@/services/adminQueries";
+import { getFavorites } from "@/services/favoritesQueries";
 
 interface User {
   id: string;
@@ -31,20 +31,23 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [favoritesCount, setFavoritesCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const [profile, preferencesExist, adminStatus] = await Promise.all([
+        const [profile, preferencesExist, adminStatus, favorites] = await Promise.all([
           fetchUserProfile(user.id),
           checkUserHasPreferences(user.id),
-          checkIsAdmin(user.id)
+          checkIsAdmin(user.id),
+          getFavorites(user.id)
         ]);
         
         setUserProfile(profile);
         setHasPreferences(preferencesExist);
         setIsAdmin(adminStatus);
+        setFavoritesCount(favorites?.length || 0);
         
         // Ha nincs preferencia beállítva, mutassuk a setup oldalt
         if (!preferencesExist) {
@@ -60,6 +63,22 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
 
     loadUserData();
   }, [user.id]);
+
+  // Kedvencek számának frissítése amikor a kedvencek oldalra váltunk
+  useEffect(() => {
+    const updateFavoritesCount = async () => {
+      if (currentView === 'favorites') {
+        try {
+          const favorites = await getFavorites(user.id);
+          setFavoritesCount(favorites?.length || 0);
+        } catch (error) {
+          console.error('Kedvencek számának frissítési hiba:', error);
+        }
+      }
+    };
+
+    updateFavoritesCount();
+  }, [currentView, user.id]);
 
   useEffect(() => {
     const handleNavigateToFavorites = () => {
@@ -121,7 +140,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
         return {
           icon: <Star className="w-6 h-6 text-yellow-400 fill-current" />,
           title: "Kedvenc Receptek",
-          subtitle: `${userProfile?.favorites_count || 0} kedvenc recept`
+          subtitle: `${favoritesCount} kedvenc recept`
         };
       case 'preferences':
         return {
