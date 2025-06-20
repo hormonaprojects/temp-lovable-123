@@ -113,9 +113,14 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
   const handlePreferenceChange = (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => {
     const key = `${categoryNames[currentCategoryIndex]}-${ingredient}`;
+    const currentPreference = preferences[key] || 'neutral';
+    
+    // Ha már be van jelölve ugyanaz a preferencia, akkor neutral-ra állítjuk
+    const newPreference = currentPreference === preference ? 'neutral' : preference;
+    
     setPreferences(prev => ({
       ...prev,
-      [key]: preference
+      [key]: newPreference
     }));
   };
 
