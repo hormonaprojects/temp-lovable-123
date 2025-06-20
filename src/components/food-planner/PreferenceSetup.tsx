@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -172,10 +173,22 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   };
 
   const handleFinish = async () => {
+    console.log('🎯 Preferencia setup befejezése...');
+    
+    // Ellenőrizzük, hogy van-e legalább egy beállított preferencia
+    const hasAnyPreference = Object.values(preferences).some(pref => pref !== 'neutral');
+    
+    if (!hasAnyPreference) {
+      toast({
+        title: "Preferencia szükséges! ⚠️",
+        description: "Kérlek, legalább egy ételpreferenciát jelölj be valamelyik kategóriában a folytatáshoz.",
+        variant: "destructive"
+      });
+      return; // Ne folytassuk a mentést, maradjunk ezen az oldalon
+    }
+
     setSaving(true);
     try {
-      console.log('🎯 Preferencia setup befejezése...');
-      
       // Csak azokat a preferenciákat mentjük el, amelyek nem neutral-ak
       const preferencesToSave = Object.entries(preferences)
         .filter(([key, preference]) => preference !== 'neutral')
@@ -190,20 +203,13 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
       console.log('💾 Mentendő preferenciák:', preferencesToSave);
 
-      if (preferencesToSave.length > 0) {
-        await saveUserPreferences(user.id, preferencesToSave);
-        console.log('✅ Preferenciák sikeresen elmentve');
-        toast({
-          title: "Preferenciák mentve! ✅",
-          description: `${preferencesToSave.length} preferencia sikeresen elmentve!`,
-        });
-      } else {
-        console.log('ℹ️ Nincsenek beállítva preferenciák, de ez rendben van');
-        toast({
-          title: "Beállítás befejezve! ✅",
-          description: "A preferencia beállítás befejezve. Később bármikor módosíthatod a beállításokban.",
-        });
-      }
+      await saveUserPreferences(user.id, preferencesToSave);
+      console.log('✅ Preferenciák sikeresen elmentve');
+      
+      toast({
+        title: "Preferenciák mentve! ✅",
+        description: `${preferencesToSave.length} preferencia sikeresen elmentve!`,
+      });
       
       // KRITIKUS: Mindig befejezzük a setup-ot és jelöljük befejezettnek
       console.log('🚀 Setup befejezése és átirányítás...');
@@ -213,11 +219,9 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
       console.error('❌ Preferenciák mentési hiba:', error);
       toast({
         title: "Hiba történt",
-        description: "Nem sikerült menteni a preferenciákat, de a setup mégis befejezve.",
+        description: "Nem sikerült menteni a preferenciákat. Próbáld újra!",
         variant: "destructive"
       });
-      // Hiba esetén is befejezzük a setup-ot
-      onComplete();
     } finally {
       setSaving(false);
     }
@@ -263,7 +267,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
               Állítsd be az ételpreferenciáidat a személyre szabott receptajánlásokhoz!
             </p>
             <p className="text-xs text-white/60 mt-1">
-              Opcionális: Ha nem jelölsz meg semmit, később bármikor beállíthatod.
+              <strong>Fontos:</strong> Legalább egy preferenciát be kell jelölnöd a folytatáshoz.
             </p>
             <button
               onClick={() => setShowInfoModal(true)}
