@@ -17,36 +17,20 @@ const Index = () => {
   const [needsPreferences, setNeedsPreferences] = useState<boolean>(false);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        console.log('🔄 Kezdeti session lekérése...');
-        const { data: { session } } = await supabase.auth.getSession();
-        const currentUser = session?.user ?? null;
-        console.log('👤 Felhasználó:', currentUser?.email || 'nincs');
-        setUser(currentUser);
-        
-        if (currentUser) {
-          console.log('🔍 Felhasználó setup állapot ellenőrzése kezdődik...');
-          await checkUserSetupStatus(currentUser.id);
-        }
-      } catch (error) {
-        console.error('❌ Session lekérési hiba:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    let isMounted = true;
 
     const checkUserSetupStatus = async (userId: string) => {
       try {
         console.log('🔍 Profil adatok ellenőrzése...');
         
-        // Check if user has personal info
+        // Check if user has personal info with timeout
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('age, weight, height, activity_level')
           .eq('id', userId)
           .maybeSingle();
+
+        if (!isMounted) return;
 
         if (profileError && profileError.code !== 'PGRST116') {
           console.error('❌ Profile ellenőrzési hiba:', profileError);
@@ -66,45 +50,85 @@ const Index = () => {
         
         if (!hasPersonalInfo) {
           console.log('🔄 Személyes adatok hiányoznak, setup szükséges');
-          setNeedsPersonalInfo(true);
-          setLoading(false);
+          if (isMounted) {
+            setNeedsPersonalInfo(true);
+            setLoading(false);
+          }
           return;
         }
 
-        // Check if user has preferences
+        // Check if user has preferences with timeout
         console.log('🔍 Preferenciák ellenőrzése...');
         const hasPreferences = await checkUserHasPreferences(userId);
+        
+        if (!isMounted) return;
+        
         console.log('✅ Van preferencia:', hasPreferences);
         
         if (!hasPreferences) {
           console.log('🔄 Preferenciák hiányoznak, setup szükséges');
-          setNeedsPreferences(true);
-          setLoading(false);
+          if (isMounted) {
+            setNeedsPreferences(true);
+            setLoading(false);
+          }
           return;
         }
 
         // Check admin status
         console.log('🔍 Admin státusz ellenőrzése...');
         const adminStatus = await checkIsAdmin(userId);
+        
+        if (!isMounted) return;
+        
         console.log('✅ Admin státusz:', adminStatus);
-        setIsAdmin(adminStatus);
+        if (isMounted) {
+          setIsAdmin(adminStatus);
+          setLoading(false);
+        }
         
         console.log('✅ Setup ellenőrzés befejezve');
-        setLoading(false);
 
       } catch (error) {
         console.error('❌ Felhasználó setup ellenőrzési hiba:', error);
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    getInitialSession();
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        console.log('🔄 Kezdeti session lekérése...');
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user ?? null;
+        console.log('👤 Felhasználó:', currentUser?.email || 'nincs');
+        
+        if (!isMounted) return;
+        
+        setUser(currentUser);
+        
+        if (currentUser) {
+          console.log('🔍 Felhasználó setup állapot ellenőrzése kezdődik...');
+          await checkUserSetupStatus(currentUser.id);
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('❌ Session lekérési hiba:', error);
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-    // Listen for auth changes
+    // Set up auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth állapot változás:', event, session?.user?.email);
+      
+      if (!isMounted) return;
       
       const currentUser = session?.user ?? null;
       setUser(currentUser);
@@ -123,7 +147,22 @@ const Index = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Initialize
+    getInitialSession();
+
+    // Add a safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn('⚠️ Safety timeout triggered - forcing loading to false');
+        setLoading(false);
+      }
+    }, 10000); // 10 seconds timeout
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+      clearTimeout(safetyTimeout);
+    };
   }, []);
 
   const handleLogout = async () => {
