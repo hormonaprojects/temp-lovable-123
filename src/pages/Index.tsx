@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FoodPlannerApp } from "@/components/food-planner/FoodPlannerApp";
@@ -19,6 +18,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [currentSetupStep, setCurrentSetupStep] = useState<'personal-info' | 'health-conditions' | 'preferences' | 'complete'>('complete');
   const [checkingSetupStatus, setCheckingSetupStatus] = useState(false);
+  const [setupCompleted, setSetupCompleted] = useState(false); // Új flag a beállítások befejezéséhez
 
   useEffect(() => {
     console.log('🔄 Index komponens betöltődött');
@@ -63,10 +63,10 @@ const Index = () => {
 
   // Ellenőrizzük a felhasználó beállítási állapotát amikor bejelentkezik
   useEffect(() => {
-    if (user && !checkingSetupStatus) {
+    if (user && !checkingSetupStatus && !setupCompleted) {
       checkUserSetupStatus();
     }
-  }, [user]);
+  }, [user, setupCompleted]);
 
   const checkUserSetupStatus = async () => {
     if (!user) return;
@@ -98,6 +98,7 @@ const Index = () => {
       // Ha minden megvan, akkor kész
       console.log('✅ Minden beállítás kész');
       setCurrentSetupStep('complete');
+      setSetupCompleted(true); // Jelezzük, hogy a beállítás befejezve
       
     } catch (error) {
       console.error('❌ Beállítási állapot ellenőrzési hiba:', error);
@@ -112,6 +113,9 @@ const Index = () => {
     try {
       console.log('🚪 Kijelentkezés...');
       await supabase.auth.signOut();
+      // Reset setup state kijelentkezéskor
+      setSetupCompleted(false);
+      setCurrentSetupStep('complete');
     } catch (error) {
       console.error('❌ Kijelentkezési hiba:', error);
     }
@@ -130,6 +134,7 @@ const Index = () => {
   const handlePreferencesComplete = () => {
     console.log('✅ Preferenciák befejezve, tovább az apphoz');
     setCurrentSetupStep('complete');
+    setSetupCompleted(true); // Jelezzük, hogy a teljes beállítás befejezve
   };
 
   // Loading state
