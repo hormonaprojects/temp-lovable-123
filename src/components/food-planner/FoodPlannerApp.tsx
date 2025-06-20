@@ -8,7 +8,7 @@ import { FavoritesPage } from "./FavoritesPage";
 import { PreferenceSetup } from "./PreferenceSetup";
 import { PreferencesPage } from "./PreferencesPage";
 import { AdminDashboard } from "../admin/AdminDashboard";
-import { User, Settings, Shield, Star, ChefHat, Calendar } from "lucide-react";
+import { User, Settings, Shield, Star, ChefHat, Calendar, Menu, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchUserProfile } from "@/services/profileQueries";
 import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
@@ -35,6 +35,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [favoritesCount, setFavoritesCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (showPreferenceSetup) {
@@ -149,31 +150,21 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
     switch (currentView) {
       case 'favorites':
         return {
-          icon: <Star className="w-6 h-6 text-yellow-400 fill-current" />,
-          title: "Kedvenc Receptek",
-          subtitle: `${favoritesCount} kedvenc recept`
+          icon: <Star className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 fill-current" />,
+          title: "Kedvencek",
+          subtitle: `${favoritesCount} recept`
         };
       case 'preferences':
         return {
-          icon: <Settings className="w-6 h-6 text-green-400" />,
-          title: "Ételpreferenciáim",
-          subtitle: "Kezeld az ételpreferenciáidat",
-          action: (
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-purple-600 hover:bg-purple-700 text-white border border-purple-500"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Szerkesztés
-            </Button>
-          )
+          icon: <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />,
+          title: "Preferenciák",
+          subtitle: "Ételpreferenciák"
         };
       case 'profile':
         return {
-          icon: <User className="w-6 h-6 text-purple-400" />,
-          title: "Profilom",
-          subtitle: "Személyes adatok és beállítások"
+          icon: <User className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />,
+          title: "Profil",
+          subtitle: "Beállítások"
         };
       default:
         return null;
@@ -242,140 +233,133 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
     }
   };
 
+  const navItems = [
+    { key: 'single', icon: ChefHat, label: 'Receptek', isActive: currentView === 'single' || currentView === 'daily' },
+    { key: 'favorites', icon: Star, label: 'Kedvencek', isActive: currentView === 'favorites' },
+    { key: 'preferences', icon: Settings, label: 'Preferenciák', isActive: currentView === 'preferences' },
+    { key: 'profile', icon: User, label: 'Profil', isActive: currentView === 'profile' },
+    ...(isAdmin ? [{ key: 'admin', icon: Shield, label: 'Admin', isActive: currentView === 'admin' }] : [])
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
-      {/* Sticky Header with Modern Admin-style Design */}
+      {/* Mobile-optimized Header */}
       <div className="sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-          {/* Top Row - Brand and User Info */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="text-white">
-              <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                🍽️ Ételtervező
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
+          {/* Mobile Header - Compact Layout */}
+          <div className="flex justify-between items-center">
+            {/* Brand - Compact on mobile */}
+            <div className="text-white flex-1 min-w-0">
+              <h1 className="text-base sm:text-xl md:text-2xl font-bold flex items-center gap-1 sm:gap-2 truncate">
+                🍽️ <span className="hidden xs:inline">Ételtervező</span><span className="xs:hidden">Étel</span>
               </h1>
-              <p className="text-sm sm:text-base text-white/70">Ételek és receptek tervezése</p>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="text-right text-white/90">
-                <div className="font-medium">{user.fullName}</div>
-                <div className="text-sm text-white/60">Felhasználó</div>
+            {/* User Info - Compact on mobile */}
+            <div className="flex items-center gap-1 sm:gap-3">
+              <div className="hidden sm:block text-right text-white/90">
+                <div className="font-medium text-sm">{user.fullName}</div>
               </div>
               
-              <Avatar className="w-10 h-10 border-2 border-white/30">
+              <Avatar className="w-8 h-8 sm:w-10 sm:h-10 border-2 border-white/30">
                 <AvatarImage src={userProfile?.avatar_url || undefined} alt="Profilkép" />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-xs sm:text-sm">
                   {getInitials(userProfile?.full_name || user.fullName)}
                 </AvatarFallback>
               </Avatar>
               
+              {/* Mobile Menu Toggle */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="sm:hidden p-2 text-white/70 hover:text-white"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+              
+              {/* Desktop Logout */}
               <Button
                 onClick={onLogout}
                 variant="ghost"
                 size="sm"
-                className="bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 hover:bg-red-500/30 hover:text-white transition-all duration-200 px-3 py-2"
+                className="hidden sm:flex bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 hover:bg-red-500/30 hover:text-white transition-all duration-200 px-2 sm:px-3 py-2 text-xs sm:text-sm"
               >
-                Kijelentkezés
+                Kilépés
               </Button>
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex items-center">
-            <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-1 flex space-x-1">
-              <button
-                onClick={() => setCurrentView('single')}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
-                  ${currentView === 'single' || currentView === 'daily'
-                    ? 'bg-white/20 text-white shadow-lg border border-white/20' 
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }
-                `}
-              >
-                <ChefHat className="w-4 h-4" />
-                Receptgenerátor
-              </button>
-
-              <button
-                onClick={() => setCurrentView('favorites')}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
-                  ${currentView === 'favorites'
-                    ? 'bg-white/20 text-white shadow-lg border border-white/20' 
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }
-                `}
-              >
-                <Star className="w-4 h-4" />
-                Kedvencek
-              </button>
-
-              <button
-                onClick={() => setCurrentView('preferences')}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
-                  ${currentView === 'preferences'
-                    ? 'bg-white/20 text-white shadow-lg border border-white/20' 
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }
-                `}
-              >
-                <Settings className="w-4 h-4" />
-                Preferenciák
-              </button>
-
-              <button
-                onClick={() => setCurrentView('profile')}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
-                  ${currentView === 'profile'
-                    ? 'bg-white/20 text-white shadow-lg border border-white/20' 
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }
-                `}
-              >
-                <User className="w-4 h-4" />
-                Profil
-              </button>
-
-              {/* Admin - csak adminoknak */}
-              {isAdmin && (
+          {/* Mobile Dropdown Menu */}
+          {mobileMenuOpen && (
+            <div className="sm:hidden mt-3 bg-black/40 backdrop-blur-sm border border-white/10 rounded-lg p-2 space-y-1">
+              {navItems.map((item) => (
                 <button
-                  onClick={() => setCurrentView('admin')}
+                  key={item.key}
+                  onClick={() => {
+                    setCurrentView(item.key as any);
+                    setMobileMenuOpen(false);
+                  }}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
-                    ${currentView === 'admin'
+                    w-full flex items-center gap-2 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm
+                    ${item.isActive
                       ? 'bg-white/20 text-white shadow-lg border border-white/20' 
                       : 'text-white/70 hover:text-white hover:bg-white/10'
                     }
                   `}
                 >
-                  <Shield className="w-4 h-4" />
-                  Admin
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
                 </button>
-              )}
+              ))}
+              <div className="border-t border-white/10 mt-2 pt-2">
+                <button
+                  onClick={onLogout}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm bg-red-500/20 text-red-200 hover:bg-red-500/30 hover:text-white"
+                >
+                  Kijelentkezés
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Tab Navigation */}
+          <div className="hidden sm:flex items-center mt-4">
+            <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-1 flex space-x-1 overflow-x-auto">
+              {navItems.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => setCurrentView(item.key as any)}
+                  className={`
+                    flex items-center gap-2 px-3 md:px-4 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap
+                    ${item.isActive
+                      ? 'bg-white/20 text-white shadow-lg border border-white/20' 
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }
+                  `}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span className="hidden md:inline">{item.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Page-specific header */}
+          {/* Page-specific header - Only show on larger screens or compact on mobile */}
           {getPageTitle() && (
-            <div className="mt-6 flex justify-between items-center">
+            <div className="mt-3 sm:mt-6 flex justify-between items-center">
               <div className="text-white flex items-center gap-2">
                 {getPageTitle()?.icon}
                 <div>
-                  <h2 className="text-xl font-bold">{getPageTitle()?.title}</h2>
-                  <p className="text-sm text-white/70">{getPageTitle()?.subtitle}</p>
+                  <h2 className="text-lg sm:text-xl font-bold">{getPageTitle()?.title}</h2>
+                  <p className="text-xs sm:text-sm text-white/70">{getPageTitle()?.subtitle}</p>
                 </div>
               </div>
-              {getPageTitle()?.action}
             </div>
           )}
         </div>
       </div>
 
-      {/* Main Content - dinamikusan változó tartalom */}
-      <div className="py-6 sm:py-8">
+      {/* Main Content */}
+      <div className="py-4 sm:py-6 md:py-8">
         {renderContent()}
       </div>
     </div>
