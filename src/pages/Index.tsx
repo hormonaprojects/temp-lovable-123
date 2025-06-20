@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FoodPlannerApp } from "@/components/food-planner/FoodPlannerApp";
@@ -22,6 +23,7 @@ const Index = () => {
   const [checkingSetupStatus, setCheckingSetupStatus] = useState(false);
   const [setupCompleted, setSetupCompleted] = useState(false);
   const [preferencesJustCompleted, setPreferencesJustCompleted] = useState(false);
+  const [setupSkipped, setSetupSkipped] = useState(false); // Új state: jelzi, hogy a setup be lett fejezve
 
   useEffect(() => {
     console.log('🔄 Index komponens betöltődött');
@@ -49,6 +51,7 @@ const Index = () => {
         setSetupCompleted(false);
         setCurrentSetupStep('complete');
         setPreferencesJustCompleted(false);
+        setSetupSkipped(false); // Reset setup skipped flag
         setLoading(false);
         return;
       }
@@ -101,11 +104,11 @@ const Index = () => {
 
   // Ellenőrizzük a felhasználó beállítási állapotát amikor bejelentkezik
   useEffect(() => {
-    // CSAK akkor ellenőrizzük, ha van érvényes session ÉS user
-    if (session && user && !checkingSetupStatus && !setupCompleted && !preferencesJustCompleted) {
+    // CSAK akkor ellenőrizzük, ha van érvényes session ÉS user ÉS még nem fejezte be vagy hagyta ki a setupot
+    if (session && user && !checkingSetupStatus && !setupCompleted && !preferencesJustCompleted && !setupSkipped) {
       checkUserSetupStatus();
     }
-  }, [session, user, setupCompleted, preferencesJustCompleted]);
+  }, [session, user, setupCompleted, preferencesJustCompleted, setupSkipped]);
 
   const checkUserSetupStatus = async () => {
     if (!session || !user) {
@@ -127,18 +130,9 @@ const Index = () => {
         return;
       }
 
-      // 2. Ellenőrizzük az ételpreferenciákat
-      const hasPreferences = await checkUserHasPreferences(user.id);
-      console.log('🍽️ Van preferencia:', hasPreferences);
-      
-      if (!hasPreferences) {
-        console.log('❌ Nincsenek preferenciák, egészségügyi állapotok beállítás szükséges');
-        setCurrentSetupStep('health-conditions');
-        return;
-      }
-
-      // Ha minden megvan, akkor kész
-      console.log('✅ Minden beállítás kész');
+      // Ha személyes adatok megvannak, akkor a setup alapvetően kész
+      // Nem ellenőrizzük kötelezően a preferenciákat, csak ajánljuk
+      console.log('✅ Személyes adatok megvannak, setup befejezve');
       setCurrentSetupStep('complete');
       setSetupCompleted(true);
       
@@ -159,6 +153,7 @@ const Index = () => {
       setSetupCompleted(false);
       setCurrentSetupStep('complete');
       setPreferencesJustCompleted(false);
+      setSetupSkipped(false);
     } catch (error) {
       console.error('❌ Kijelentkezési hiba:', error);
     }
@@ -179,6 +174,7 @@ const Index = () => {
     setCurrentSetupStep('complete');
     setSetupCompleted(true);
     setPreferencesJustCompleted(true);
+    setSetupSkipped(true); // Jelöljük, hogy a setup befejezve
   };
 
   // Loading state
@@ -247,3 +243,4 @@ const Index = () => {
 };
 
 export default Index;
+
