@@ -17,165 +17,121 @@ const Index = () => {
   const [needsPreferences, setNeedsPreferences] = useState<boolean>(false);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const checkUserSetupStatus = async (userId: string) => {
+    const initializeAuth = async () => {
       try {
-        console.log('🔍 Profil adatok ellenőrzése...');
+        console.log('🔄 Session inicializálás...');
         
-        // Check if user has personal info with timeout
+        // Egyszerű session lekérés
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Session hiba:', error);
+          setLoading(false);
+          return;
+        }
+
+        const currentUser = session?.user ?? null;
+        console.log('👤 Felhasználó:', currentUser?.email || 'nincs');
+        setUser(currentUser);
+
+        if (currentUser) {
+          await checkUserSetup(currentUser.id);
+        } else {
+          setLoading(false);
+        }
+
+      } catch (error) {
+        console.error('❌ Inicializálási hiba:', error);
+        setLoading(false);
+      }
+    };
+
+    const checkUserSetup = async (userId: string) => {
+      try {
+        console.log('🔍 Felhasználó setup ellenőrzése...');
+
+        // Profil adatok ellenőrzése
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('age, weight, height, activity_level')
           .eq('id', userId)
           .maybeSingle();
 
-        if (!isMounted) return;
-
         if (profileError && profileError.code !== 'PGRST116') {
-          console.error('❌ Profile ellenőrzési hiba:', profileError);
+          console.error('❌ Profile hiba:', profileError);
           setLoading(false);
           return;
         }
-
-        console.log('📊 Profil adatok:', profile);
 
         const hasPersonalInfo = profile && 
           profile.age && 
           profile.weight && 
           profile.height && 
           profile.activity_level;
-        
-        console.log('✅ Van személyes adat:', hasPersonalInfo);
-        
+
         if (!hasPersonalInfo) {
-          console.log('🔄 Személyes adatok hiányoznak, setup szükséges');
-          if (isMounted) {
-            setNeedsPersonalInfo(true);
-            setLoading(false);
-          }
+          console.log('🔄 Személyes adatok hiányoznak');
+          setNeedsPersonalInfo(true);
+          setLoading(false);
           return;
         }
 
-        // Check if user has preferences with timeout
-        console.log('🔍 Preferenciák ellenőrzése...');
+        // Preferenciák ellenőrzése
         const hasPreferences = await checkUserHasPreferences(userId);
         
-        if (!isMounted) return;
-        
-        console.log('✅ Van preferencia:', hasPreferences);
-        
         if (!hasPreferences) {
-          console.log('🔄 Preferenciák hiányoznak, setup szükséges');
-          if (isMounted) {
-            setNeedsPreferences(true);
-            setLoading(false);
-          }
+          console.log('🔄 Preferenciák hiányoznak');
+          setNeedsPreferences(true);
+          setLoading(false);
           return;
         }
 
-        // Check admin status
-        console.log('🔍 Admin státusz ellenőrzése...');
+        // Admin státusz ellenőrzése
         const adminStatus = await checkIsAdmin(userId);
-        
-        if (!isMounted) return;
-        
-        console.log('✅ Admin státusz:', adminStatus);
-        if (isMounted) {
-          setIsAdmin(adminStatus);
-          setLoading(false);
-        }
+        setIsAdmin(adminStatus);
         
         console.log('✅ Setup ellenőrzés befejezve');
+        setLoading(false);
 
       } catch (error) {
-        console.error('❌ Felhasználó setup ellenőrzési hiba:', error);
-        if (isMounted) {
-          setLoading(false);
-        }
+        console.error('❌ Setup ellenőrzési hiba:', error);
+        setLoading(false);
       }
     };
 
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        console.log('🔄 Kezdeti session lekérése...');
-        const { data: { session } } = await supabase.auth.getSession();
-        const currentUser = session?.user ?? null;
-        console.log('👤 Felhasználó:', currentUser?.email || 'nincs');
-        
-        if (!isMounted) return;
-        
-        setUser(currentUser);
-        
-        if (currentUser) {
-          console.log('🔍 Felhasználó setup állapot ellenőrzése kezdődik...');
-          await checkUserSetupStatus(currentUser.id);
-        } else {
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('❌ Session lekérési hiba:', error);
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    // Set up auth state listener
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth állapot változás:', event, session?.user?.email);
-      
-      if (!isMounted) return;
+    // Auth állapot figyelő
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth változás:', event, session?.user?.email);
       
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       
-      // Reset all states when user changes
+      // Reset states
       setIsAdmin(false);
       setNeedsPersonalInfo(false);
       setNeedsPreferences(false);
       
       if (currentUser && event === 'SIGNED_IN') {
         setLoading(true);
-        console.log('🔍 Új bejelentkezés, setup állapot ellenőrzése...');
-        await checkUserSetupStatus(currentUser.id);
+        await checkUserSetup(currentUser.id);
       } else if (!currentUser) {
         setLoading(false);
       }
     });
 
-    // Initialize
-    getInitialSession();
+    // Inicializálás
+    initializeAuth();
 
-    // Add a safety timeout to prevent infinite loading
-    const safetyTimeout = setTimeout(() => {
-      if (isMounted && loading) {
-        console.warn('⚠️ Safety timeout triggered - forcing loading to false');
-        setLoading(false);
-      }
-    }, 10000); // 10 seconds timeout
-
+    // Cleanup
     return () => {
-      isMounted = false;
       subscription.unsubscribe();
-      clearTimeout(safetyTimeout);
     };
   }, []);
 
   const handleLogout = async () => {
     try {
-      console.log('🚪 Kijelentkezés indítása...');
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('❌ Kijelentkezési hiba:', error);
-        throw error;
-      }
-      console.log('✅ Kijelentkezés sikeres');
-      
-      // Reset states
+      console.log('🚪 Kijelentkezés...');
+      await supabase.auth.signOut();
       setUser(null);
       setIsAdmin(false);
       setNeedsPersonalInfo(false);
@@ -183,11 +139,6 @@ const Index = () => {
       setLoading(false);
     } catch (error) {
       console.error('❌ Kijelentkezési hiba:', error);
-      setUser(null);
-      setIsAdmin(false);
-      setNeedsPersonalInfo(false);
-      setNeedsPreferences(false);
-      setLoading(false);
     }
   };
 
@@ -202,7 +153,7 @@ const Index = () => {
     setNeedsPreferences(false);
   };
 
-  // Show loading while checking initial state
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
@@ -214,7 +165,7 @@ const Index = () => {
     );
   }
 
-  // Show auth form if no user
+  // No user - show auth
   if (!user) {
     return <ModernAuthForm onSuccess={() => {}} />;
   }
@@ -225,7 +176,7 @@ const Index = () => {
     fullName: user.user_metadata?.full_name || user.email || 'Felhasználó'
   };
 
-  // Show personal info setup if needed
+  // Personal info setup needed
   if (needsPersonalInfo) {
     return (
       <PersonalInfoSetup
@@ -235,7 +186,7 @@ const Index = () => {
     );
   }
 
-  // Show preferences setup if needed
+  // Preferences setup needed
   if (needsPreferences) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
@@ -249,7 +200,7 @@ const Index = () => {
     );
   }
 
-  // Show admin dashboard if admin
+  // Admin interface
   if (isAdmin) {
     return (
       <AdminDashboard
@@ -260,7 +211,7 @@ const Index = () => {
     );
   }
 
-  // Show normal user interface
+  // Normal user interface
   return (
     <FoodPlannerApp
       user={userProfile}
