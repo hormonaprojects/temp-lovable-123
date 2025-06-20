@@ -122,7 +122,7 @@ export function PreferenceSetup({ userId, onComplete }: PreferenceSetupProps) {
 
       if (preferencesToSave.length > 0) {
         const { error } = await supabase
-          .from('food_preferences')
+          .from('Ételpreferenciák')
           .insert(preferencesToSave);
 
         if (error) {

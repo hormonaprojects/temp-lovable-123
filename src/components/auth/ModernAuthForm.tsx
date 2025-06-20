@@ -30,14 +30,6 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          // Set session persistence based on remember me checkbox
-          ...(rememberMe && { 
-            data: { 
-              remember_me: true 
-            }
-          })
-        }
       });
 
       if (error) {
@@ -119,6 +111,10 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
     }
   };
 
+  const handleRememberMeChange = (checked: boolean | "indeterminate") => {
+    setRememberMe(checked === true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -189,7 +185,7 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
                     <Checkbox
                       id="remember-me"
                       checked={rememberMe}
-                      onCheckedChange={setRememberMe}
+                      onCheckedChange={handleRememberMeChange}
                     />
                     <Label
                       htmlFor="remember-me"

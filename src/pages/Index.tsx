@@ -49,7 +49,7 @@ const Index = () => {
         } else {
           // Check if user has set up food preferences
           const { data: preferences } = await supabase
-            .from('food_preferences')
+            .from('Ételpreferenciák')
             .select('id')
             .eq('user_id', userId)
             .limit(1);
