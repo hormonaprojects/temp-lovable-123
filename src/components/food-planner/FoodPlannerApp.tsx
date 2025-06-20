@@ -122,13 +122,13 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
         </div>
       </div>
     );
-  };
+  }
 
   // Ha nincs preferencia beállítva, mutassuk a setup oldalt
   if (hasPreferences === false && currentView === 'preference-setup') {
     return (
       <PreferenceSetup
-        userId={user.id}
+        user={user}
         onComplete={handlePreferenceSetupComplete}
       />
     );

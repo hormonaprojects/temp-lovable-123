@@ -3,19 +3,14 @@ import { useState, useEffect } from "react";
 import { FoodPlannerApp } from "@/components/food-planner/FoodPlannerApp";
 import { ModernAuthForm } from "@/components/auth/ModernAuthForm";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
-import { PersonalInfoSetup } from "@/components/food-planner/PersonalInfoSetup";
-import { PreferenceSetup } from "@/components/food-planner/PreferenceSetup";
 import { supabase } from "@/integrations/supabase/client";
 import { checkIsAdmin } from "@/services/adminQueries";
-import { fetchUserProfile } from "@/services/profileQueries";
 import type { User } from "@supabase/supabase-js";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [needsPersonalInfo, setNeedsPersonalInfo] = useState<boolean>(false);
-  const [needsPreferences, setNeedsPreferences] = useState<boolean>(false);
 
   useEffect(() => {
     // Get initial session
@@ -24,42 +19,24 @@ const Index = () => {
         const { data: { session } } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
         setUser(currentUser);
-        setLoading(false);
+        setLoading(false); // Set loading to false immediately after getting session
         
+        // Check admin status separately without blocking
         if (currentUser) {
-          await checkUserStatus(currentUser.id);
+          checkAdminStatus(currentUser.id);
         }
       } catch (error) {
         console.error('Session lekérési hiba:', error);
-        setLoading(false);
+        setLoading(false); // Always set loading to false even on error
       }
     };
 
-    const checkUserStatus = async (userId: string) => {
+    const checkAdminStatus = async (userId: string) => {
       try {
-        // Check admin status
         const adminStatus = await checkIsAdmin(userId);
         setIsAdmin(adminStatus);
-
-        // Check if user needs to complete personal info or preferences
-        const profile = await fetchUserProfile(userId);
-        
-        if (!profile || !profile.age || !profile.weight || !profile.height || !profile.activity_level) {
-          setNeedsPersonalInfo(true);
-        } else {
-          // Check if user has set up food preferences
-          const { data: preferences } = await supabase
-            .from('Ételpreferenciák')
-            .select('id')
-            .eq('user_id', userId)
-            .limit(1);
-
-          if (!preferences || preferences.length === 0) {
-            setNeedsPreferences(true);
-          }
-        }
       } catch (error) {
-        console.error('User státusz ellenőrzési hiba:', error);
+        console.error('Admin státusz ellenőrzési hiba:', error);
         setIsAdmin(false);
       }
     };
@@ -76,11 +53,9 @@ const Index = () => {
       setUser(currentUser);
       
       if (currentUser) {
-        await checkUserStatus(currentUser.id);
+        checkAdminStatus(currentUser.id);
       } else {
         setIsAdmin(false);
-        setNeedsPersonalInfo(false);
-        setNeedsPreferences(false);
       }
     });
 
@@ -98,20 +73,10 @@ const Index = () => {
       console.log('Kijelentkezés sikeres');
     } catch (error) {
       console.error('Kijelentkezési hiba:', error);
+      // Force logout even if there's an error
       setUser(null);
       setIsAdmin(false);
-      setNeedsPersonalInfo(false);
-      setNeedsPreferences(false);
     }
-  };
-
-  const handlePersonalInfoComplete = () => {
-    setNeedsPersonalInfo(false);
-    setNeedsPreferences(true);
-  };
-
-  const handlePreferencesComplete = () => {
-    setNeedsPreferences(false);
   };
 
   if (loading) {
@@ -129,44 +94,24 @@ const Index = () => {
     return <ModernAuthForm onSuccess={() => {}} />;
   }
 
-  // Show personal info setup if needed
-  if (needsPersonalInfo) {
-    return (
-      <PersonalInfoSetup
-        userId={user.id}
-        onComplete={handlePersonalInfoComplete}
-      />
-    );
-  }
-
-  // Show preference setup if needed
-  if (needsPreferences) {
-    return (
-      <PreferenceSetup
-        userId={user.id}
-        onComplete={handlePreferencesComplete}
-      />
-    );
-  }
-
   const userProfile = {
     id: user.id,
     email: user.email || '',
     fullName: user.user_metadata?.full_name || user.email || 'Felhasználó'
   };
 
-  // If admin, show admin interface
+  // Ha admin, csak az admin felületet mutassuk
   if (isAdmin) {
     return (
       <AdminDashboard
         user={userProfile}
         onLogout={handleLogout}
-        onBackToApp={() => {}}
+        onBackToApp={() => {}} // Adminoknak nincs "vissza" opció
       />
     );
   }
 
-  // Show main app
+  // Ha normál user, az ételtervező alkalmazást mutassuk
   return (
     <FoodPlannerApp
       user={userProfile}
