@@ -174,6 +174,8 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   const handleFinish = async () => {
     setSaving(true);
     try {
+      console.log('🎯 Preferencia setup befejezése...');
+      
       // Csak azokat a preferenciákat mentjük el, amelyek nem neutral-ak
       const preferencesToSave = Object.entries(preferences)
         .filter(([key, preference]) => preference !== 'neutral')
@@ -190,6 +192,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
       if (preferencesToSave.length > 0) {
         await saveUserPreferences(user.id, preferencesToSave);
+        console.log('✅ Preferenciák sikeresen elmentve');
         toast({
           title: "Preferenciák mentve! ✅",
           description: `${preferencesToSave.length} preferencia sikeresen elmentve!`,
@@ -198,19 +201,23 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
         console.log('ℹ️ Nincsenek beállítva preferenciák, de ez rendben van');
         toast({
           title: "Beállítás befejezve! ✅",
-          description: "Később bármikor beállíthatod a preferenciáidat a beállításokban.",
+          description: "A preferencia beállítás befejezve. Később bármikor módosíthatod a beállításokban.",
         });
       }
       
-      // Mindig befejezzük a beállítást
+      // KRITIKUS: Mindig befejezzük a setup-ot és jelöljük befejezettnek
+      console.log('🚀 Setup befejezése és átirányítás...');
       onComplete();
+      
     } catch (error) {
-      console.error('Preferenciák mentési hiba:', error);
+      console.error('❌ Preferenciák mentési hiba:', error);
       toast({
         title: "Hiba történt",
-        description: "Nem sikerült menteni a preferenciákat.",
+        description: "Nem sikerült menteni a preferenciákat, de a setup mégis befejezve.",
         variant: "destructive"
       });
+      // Hiba esetén is befejezzük a setup-ot
+      onComplete();
     } finally {
       setSaving(false);
     }
