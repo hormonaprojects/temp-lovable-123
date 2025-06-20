@@ -131,7 +131,7 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
       } else {
         toast({
           title: "Email elküldve! 📧",
-          description: "Ellenőrizd az email fiókodat a jelszó visszaállításához.",
+          description: "Ellenőrizd az email fiókodat a jelszó visszaállításához szükséges linkért.",
         });
         setForgotPasswordMode(false);
       }
