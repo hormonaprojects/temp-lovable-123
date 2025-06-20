@@ -15,7 +15,6 @@ const Index = () => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [needsPersonalInfo, setNeedsPersonalInfo] = useState<boolean>(false);
   const [needsPreferences, setNeedsPreferences] = useState<boolean>(false);
-  const [setupChecked, setSetupChecked] = useState<boolean>(false);
 
   useEffect(() => {
     // Get initial session
@@ -29,12 +28,9 @@ const Index = () => {
         
         if (currentUser) {
           await checkUserSetupStatus(currentUser.id);
-        } else {
-          setSetupChecked(true);
         }
       } catch (error) {
         console.error('❌ Session lekérési hiba:', error);
-        setSetupChecked(true);
       } finally {
         setLoading(false);
       }
@@ -55,6 +51,7 @@ const Index = () => {
 
         if (profileError && profileError.code !== 'PGRST116') {
           console.error('❌ Profile ellenőrzési hiba:', profileError);
+          return;
         }
 
         const hasPersonalInfo = profile && profile.age && profile.weight && profile.height && profile.activity_level;
@@ -62,7 +59,6 @@ const Index = () => {
         
         if (!hasPersonalInfo) {
           setNeedsPersonalInfo(true);
-          setSetupChecked(true);
           return;
         }
 
@@ -73,7 +69,6 @@ const Index = () => {
         
         if (!hasPreferences) {
           setNeedsPreferences(true);
-          setSetupChecked(true);
           return;
         }
 
@@ -82,11 +77,9 @@ const Index = () => {
         const adminStatus = await checkIsAdmin(userId);
         console.log('✅ Admin státusz:', adminStatus);
         setIsAdmin(adminStatus);
-        setSetupChecked(true);
 
       } catch (error) {
         console.error('❌ Felhasználó setup ellenőrzési hiba:', error);
-        setSetupChecked(true);
       }
     };
 
@@ -101,18 +94,18 @@ const Index = () => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       
-      if (currentUser && !setupChecked) {
+      if (currentUser) {
         await checkUserSetupStatus(currentUser.id);
-      } else if (!currentUser) {
+      } else {
         setIsAdmin(false);
         setNeedsPersonalInfo(false);
         setNeedsPreferences(false);
-        setSetupChecked(true);
+        setLoading(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [setupChecked]);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -129,14 +122,12 @@ const Index = () => {
       setIsAdmin(false);
       setNeedsPersonalInfo(false);
       setNeedsPreferences(false);
-      setSetupChecked(false);
     } catch (error) {
       console.error('❌ Kijelentkezési hiba:', error);
       setUser(null);
       setIsAdmin(false);
       setNeedsPersonalInfo(false);
       setNeedsPreferences(false);
-      setSetupChecked(false);
     }
   };
 
@@ -152,7 +143,7 @@ const Index = () => {
   };
 
   // Show loading while checking initial state
-  if (loading || !setupChecked) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
         <div className="text-center">
