@@ -37,6 +37,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
   const [favoritesCount, setFavoritesCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [preferencesCompleted, setPreferencesCompleted] = useState(false); // Új flag a preferenciák befejezéséhez
 
   useEffect(() => {
     if (showPreferenceSetup) {
@@ -59,7 +60,8 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
         setIsAdmin(adminStatus);
         setFavoritesCount(favorites?.length || 0);
         
-        if (!preferencesExist && !showPreferenceSetup) {
+        // Csak akkor menjen a preference-setup-ra, ha nincs preferencia ÉS még nem fejezte be
+        if (!preferencesExist && !showPreferenceSetup && !preferencesCompleted) {
           setCurrentView('preference-setup');
         }
         
@@ -71,7 +73,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
     };
 
     loadUserData();
-  }, [user.id, showPreferenceSetup]);
+  }, [user.id, showPreferenceSetup, preferencesCompleted]);
 
   useEffect(() => {
     const updateFavoritesCount = async () => {
@@ -114,6 +116,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
 
   const handlePreferenceSetupComplete = () => {
     setHasPreferences(true);
+    setPreferencesCompleted(true); // Jelöljük meg, hogy befejezték a preferenciákat
     setCurrentView('single');
     if (onPreferenceSetupComplete) {
       onPreferenceSetupComplete();
