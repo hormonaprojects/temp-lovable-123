@@ -241,9 +241,9 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
   const getHeaderClass = () => {
     const baseClass = "sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10";
     
-    // Remove sticky for profile page in landscape mode on mobile
+    // COMPLETELY REMOVE sticky for profile page in landscape mode on mobile
     if (currentView === 'profile') {
-      return `${baseClass} profile-no-sticky-landscape`;
+      return `${baseClass} profile-no-sticky-landscape profile-landscape-header`;
     }
     
     return baseClass;

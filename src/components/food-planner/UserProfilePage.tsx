@@ -466,103 +466,103 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 py-2 sm:py-8 space-y-2 sm:space-y-6 profile-portrait-container">
           {/* Statisztikák */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-2 sm:mb-6">
             <Card className="bg-white/10 border-white/20 text-white">
-              <CardContent className="p-4">
+              <CardContent className="p-2 sm:p-4 profile-mobile-card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white/70">Regisztráció</p>
-                    <p className="text-2xl font-bold">{formatDate(profileData?.created_at || new Date().toISOString())}</p>
+                    <p className="text-xs sm:text-sm text-white/70 profile-portrait-stats">Regisztráció</p>
+                    <p className="text-sm sm:text-2xl font-bold profile-portrait-number">{formatDate(profileData?.created_at || new Date().toISOString())}</p>
                   </div>
-                  <Calendar className="w-8 h-8 text-blue-400" />
+                  <Calendar className="w-4 h-4 sm:w-8 sm:h-8 text-blue-400" />
                 </div>
               </CardContent>
             </Card>
             
             <Card className="bg-white/10 border-white/20 text-white">
-              <CardContent className="p-4">
+              <CardContent className="p-2 sm:p-4 profile-mobile-card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white/70">Kedvencek</p>
-                    <p className="text-2xl font-bold">{favoritesCount}</p>
+                    <p className="text-xs sm:text-sm text-white/70 profile-portrait-stats">Kedvencek</p>
+                    <p className="text-sm sm:text-2xl font-bold profile-portrait-number">{favoritesCount}</p>
                   </div>
-                  <Heart className="w-8 h-8 text-red-400" />
+                  <Heart className="w-4 h-4 sm:w-8 sm:h-8 text-red-400" />
                 </div>
               </CardContent>
             </Card>
             
             <Card className="bg-white/10 border-white/20 text-white">
-              <CardContent className="p-4">
+              <CardContent className="p-2 sm:p-4 profile-mobile-card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white/70">Preferenciák</p>
-                    <p className="text-2xl font-bold">{preferenceStats.storedPreferences}</p>
+                    <p className="text-xs sm:text-sm text-white/70 profile-portrait-stats">Preferenciák</p>
+                    <p className="text-sm sm:text-2xl font-bold profile-portrait-number">{preferenceStats.storedPreferences}</p>
                   </div>
-                  <Utensils className="w-8 h-8 text-green-400" />
+                  <Utensils className="w-4 h-4 sm:w-8 sm:h-8 text-green-400" />
                 </div>
               </CardContent>
             </Card>
             
             <Card className="bg-white/10 border-white/20 text-white">
-              <CardContent className="p-4">
+              <CardContent className="p-2 sm:p-4 profile-mobile-card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white/70">Értékelések</p>
-                    <p className="text-2xl font-bold">{starRatings.length}</p>
+                    <p className="text-xs sm:text-sm text-white/70 profile-portrait-stats">Értékelések</p>
+                    <p className="text-sm sm:text-2xl font-bold profile-portrait-number">{starRatings.length}</p>
                   </div>
-                  <Star className="w-8 h-8 text-yellow-400" />
+                  <Star className="w-4 h-4 sm:w-8 sm:h-8 text-yellow-400" />
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Profil információk */}
-          <Card className="bg-white/10 border-white/20 mb-6">
-            <CardHeader>
+          <Card className="bg-white/10 border-white/20 mb-2 sm:mb-6">
+            <CardHeader className="p-2 sm:p-6">
               <CardTitle className="text-white flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  Profil információk
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Shield className="w-3 h-3 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-lg profile-portrait-card-title">Profil információk</span>
                 </div>
                 {!isEditing ? (
                   <Button
                     onClick={handleEditProfile}
                     variant="outline"
                     size="sm"
-                    className="bg-purple-600 hover:bg-purple-700 text-white border border-purple-500"
+                    className="bg-purple-600 hover:bg-purple-700 text-white border border-purple-500 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2 profile-mobile-button"
                   >
-                    <Edit className="w-4 h-4 mr-2" />
+                    <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     Szerkesztés
                   </Button>
                 ) : (
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 sm:gap-2">
                     <Button
                       onClick={handleSaveProfile}
                       disabled={isSaving}
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2 profile-mobile-button"
                     >
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       {isSaving ? 'Mentés...' : 'Mentés'}
                     </Button>
                     <Button
                       onClick={handleCancelEdit}
                       variant="outline"
                       size="sm"
-                      className="border-white/30 text-white hover:bg-white/10"
+                      className="border-white/30 text-white hover:bg-white/10 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2 profile-mobile-button"
                     >
-                      <X className="w-4 h-4 mr-2" />
+                      <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Mégse
                     </Button>
                   </div>
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-start gap-6">
-                <div className="flex flex-col items-center gap-4">
+            <CardContent className="space-y-2 sm:space-y-6 p-2 sm:p-6">
+              <div className="flex items-start gap-2 sm:gap-6">
+                <div className="flex flex-col items-center gap-2 sm:gap-4">
                   <AvatarUpload
                     currentAvatarUrl={profileData?.avatar_url}
                     userId={user.id}
@@ -573,121 +573,121 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                 
                 <div className="flex-1">
                   {isEditing ? (
-                    <div className="space-y-4">
+                    <div className="space-y-2 sm:space-y-4">
                       <div>
-                        <Label htmlFor="fullName" className="text-sm font-medium text-white/70 mb-1 block">
+                        <Label htmlFor="fullName" className="text-xs sm:text-sm font-medium text-white/70 mb-1 block profile-mobile-text">
                           Teljes név
                         </Label>
                         <Input
                           id="fullName"
                           value={editableProfile?.full_name || ''}
                           onChange={(e) => handleInputChange('full_name', e.target.value)}
-                          className="max-w-sm bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                          className="max-w-sm bg-white/10 border-white/20 text-white placeholder:text-white/50 text-xs sm:text-sm profile-mobile-input"
                         />
                       </div>
                       
                       {/* Email field (readonly) */}
                       <div>
-                        <Label className="text-sm font-medium text-white/70 mb-1 block">
+                        <Label className="text-xs sm:text-sm font-medium text-white/70 mb-1 block profile-mobile-text">
                           Email cím
                         </Label>
                         <Input
                           value={user.email}
                           disabled={true}
-                          className="max-w-sm bg-white/5 border-white/10 text-white/50 cursor-not-allowed"
+                          className="max-w-sm bg-white/5 border-white/10 text-white/50 cursor-not-allowed text-xs sm:text-sm profile-mobile-input"
                         />
                         <p className="text-xs text-white/50 mt-1">Az email cím nem módosítható</p>
                       </div>
 
                       {/* Password change section */}
-                      <div className="space-y-4 border-t border-white/10 pt-4">
-                        <h4 className="text-lg font-medium text-white">Jelszó megváltoztatása</h4>
+                      <div className="space-y-2 sm:space-y-4 border-t border-white/10 pt-2 sm:pt-4">
+                        <h4 className="text-sm sm:text-lg font-medium text-white profile-portrait-card-title">Jelszó megváltoztatása</h4>
                         
                         <div>
-                          <Label htmlFor="currentPassword" className="text-sm font-medium text-white/70 mb-1 block">
+                          <Label htmlFor="currentPassword" className="text-xs sm:text-sm font-medium text-white/70 mb-1 block profile-mobile-text">
                             Jelenlegi jelszó
                           </Label>
                           <div className="relative max-w-sm">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                            <Lock className="absolute left-3 top-3 h-3 w-3 sm:h-4 sm:w-4 text-white/50" />
                             <Input
                               id="currentPassword"
                               type={showCurrentPassword ? "text" : "password"}
                               placeholder="Jelenlegi jelszavad"
                               value={currentPassword}
                               onChange={(e) => setCurrentPassword(e.target.value)}
-                              className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                              className="pl-8 sm:pl-10 pr-8 sm:pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 text-xs sm:text-sm profile-mobile-input"
                             />
                             <button
                               type="button"
                               onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                              className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/70"
+                              className="absolute right-3 top-3 h-3 w-3 sm:h-4 sm:w-4 text-white/50 hover:text-white/70"
                             >
-                              {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              {showCurrentPassword ? <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4" />}
                             </button>
                           </div>
                         </div>
 
                         <div>
-                          <Label htmlFor="newPassword" className="text-sm font-medium text-white/70 mb-1 block">
+                          <Label htmlFor="newPassword" className="text-xs sm:text-sm font-medium text-white/70 mb-1 block profile-mobile-text">
                             Új jelszó (min. 6 karakter)
                           </Label>
                           <div className="relative max-w-sm">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                            <Lock className="absolute left-3 top-3 h-3 w-3 sm:h-4 sm:w-4 text-white/50" />
                             <Input
                               id="newPassword"
                               type={showNewPassword ? "text" : "password"}
                               placeholder="Új jelszó"
                               value={newPassword}
                               onChange={(e) => setNewPassword(e.target.value)}
-                              className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                              className="pl-8 sm:pl-10 pr-8 sm:pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 text-xs sm:text-sm profile-mobile-input"
                             />
                             <button
                               type="button"
                               onClick={() => setShowNewPassword(!showNewPassword)}
-                              className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/70"
+                              className="absolute right-3 top-3 h-3 w-3 sm:h-4 sm:w-4 text-white/50 hover:text-white/70"
                             >
-                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              {showNewPassword ? <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4" />}
                             </button>
                           </div>
                         </div>
 
                         <div>
-                          <Label htmlFor="confirmPassword" className="text-sm font-medium text-white/70 mb-1 block">
+                          <Label htmlFor="confirmPassword" className="text-xs sm:text-sm font-medium text-white/70 mb-1 block profile-mobile-text">
                             Új jelszó megerősítése
                           </Label>
                           <div className="relative max-w-sm">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                            <Lock className="absolute left-3 top-3 h-3 w-3 sm:h-4 sm:w-4 text-white/50" />
                             <Input
                               id="confirmPassword"
                               type={showConfirmPassword ? "text" : "password"}
                               placeholder="Új jelszó megerősítése"
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
-                              className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                              className="pl-8 sm:pl-10 pr-8 sm:pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 text-xs sm:text-sm profile-mobile-input"
                             />
                             <button
                               type="button"
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/70"
+                              className="absolute right-3 top-3 h-3 w-3 sm:h-4 sm:w-4 text-white/50 hover:text-white/70"
                             >
-                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              {showConfirmPassword ? <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4" />}
                             </button>
                           </div>
                           {confirmPassword && newPassword !== confirmPassword && (
-                            <p className="text-sm text-red-400 mt-1">A jelszavak nem egyeznek meg</p>
+                            <p className="text-xs text-red-400 mt-1">A jelszavak nem egyeznek meg</p>
                           )}
                         </div>
 
-                        <div className="bg-blue-500/10 border border-blue-400/20 rounded-lg p-3 max-w-md">
-                          <p className="text-sm text-blue-300">
+                        <div className="bg-blue-500/10 border border-blue-400/20 rounded-lg p-2 sm:p-3 max-w-md">
+                          <p className="text-xs sm:text-sm text-blue-300">
                             💡 <strong>Jelszó változtatás:</strong> Ha meg szeretnéd változtatni a jelszavad, töltsd ki mindhárom mezőt. Ha nem szeretnéd változtatni, hagyd őket üresen.
                           </p>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
                         <div>
-                          <Label htmlFor="age" className="text-sm font-medium text-white/70 mb-1 block">
+                          <Label htmlFor="age" className="text-xs sm:text-sm font-medium text-white/70 mb-1 block profile-mobile-text">
                             Életkor (év)
                           </Label>
                           <Input
@@ -696,11 +696,11 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                             value={editableProfile?.age || ''}
                             onChange={(e) => handleInputChange('age', parseInt(e.target.value) || '')}
                             placeholder="30"
-                            className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-xs sm:text-sm profile-mobile-input"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="weight" className="text-sm font-medium text-white/70 mb-1 block">
+                          <Label htmlFor="weight" className="text-xs sm:text-sm font-medium text-white/70 mb-1 block profile-mobile-text">
                             Testsúly (kg)
                           </Label>
                           <Input
@@ -710,11 +710,11 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                             value={editableProfile?.weight || ''}
                             onChange={(e) => handleInputChange('weight', parseFloat(e.target.value) || '')}
                             placeholder="70"
-                            className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-xs sm:text-sm profile-mobile-input"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="height" className="text-sm font-medium text-white/70 mb-1 block">
+                          <Label htmlFor="height" className="text-xs sm:text-sm font-medium text-white/70 mb-1 block profile-mobile-text">
                             Magasság (cm)
                           </Label>
                           <Input
@@ -723,11 +723,11 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                             value={editableProfile?.height || ''}
                             onChange={(e) => handleInputChange('height', parseInt(e.target.value) || '')}
                             placeholder="175"
-                            className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-xs sm:text-sm profile-mobile-input"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="activity" className="text-sm font-medium text-white/70 mb-1 block">
+                          <Label htmlFor="activity" className="text-xs sm:text-sm font-medium text-white/70 mb-1 block profile-mobile-text">
                             Aktivitási szint
                           </Label>
                           <select
@@ -748,32 +748,32 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                     </div>
                   ) : (
                     <>
-                      <h2 className="text-2xl font-bold text-white mb-1">{editableProfile?.full_name || user.fullName}</h2>
-                      <p className="text-white/60 mb-4">{user.email}</p>
+                      <h2 className="text-lg sm:text-2xl font-bold text-white mb-1 profile-portrait-card-title">{editableProfile?.full_name || user.fullName}</h2>
+                      <p className="text-white/60 mb-2 sm:mb-4 text-xs sm:text-base profile-portrait-text">{user.email}</p>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
                         {editableProfile?.age && (
-                          <div className="text-center p-3 bg-blue-600/20 rounded-lg">
-                            <p className="text-sm text-white/70">Életkor</p>
-                            <p className="text-lg font-semibold text-blue-400">{editableProfile.age} év</p>
+                          <div className="text-center p-2 sm:p-3 bg-blue-600/20 rounded-lg">
+                            <p className="text-xs sm:text-sm text-white/70 profile-portrait-stats">Életkor</p>
+                            <p className="text-sm sm:text-lg font-semibold text-blue-400 profile-portrait-number">{editableProfile.age} év</p>
                           </div>
                         )}
                         {editableProfile?.weight && (
-                          <div className="text-center p-3 bg-green-600/20 rounded-lg">
-                            <p className="text-sm text-white/70">Testsúly</p>
-                            <p className="text-lg font-semibold text-green-400">{editableProfile.weight} kg</p>
+                          <div className="text-center p-2 sm:p-3 bg-green-600/20 rounded-lg">
+                            <p className="text-xs sm:text-sm text-white/70 profile-portrait-stats">Testsúly</p>
+                            <p className="text-sm sm:text-lg font-semibold text-green-400 profile-portrait-number">{editableProfile.weight} kg</p>
                           </div>
                         )}
                         {editableProfile?.height && (
-                          <div className="text-center p-3 bg-purple-600/20 rounded-lg">
-                            <p className="text-sm text-white/70">Magasság</p>
-                            <p className="text-lg font-semibold text-purple-400">{editableProfile.height} cm</p>
+                          <div className="text-center p-2 sm:p-3 bg-purple-600/20 rounded-lg">
+                            <p className="text-xs sm:text-sm text-white/70 profile-portrait-stats">Magasság</p>
+                            <p className="text-sm sm:text-lg font-semibold text-purple-400 profile-portrait-number">{editableProfile.height} cm</p>
                           </div>
                         )}
                         {editableProfile?.activity_level && (
-                          <div className="text-center p-3 bg-orange-600/20 rounded-lg">
-                            <p className="text-sm text-white/70">Aktivitási szint</p>
-                            <p className="text-lg font-semibold text-orange-400">
+                          <div className="text-center p-2 sm:p-3 bg-orange-600/20 rounded-lg">
+                            <p className="text-xs sm:text-sm text-white/70 profile-portrait-stats">Aktivitási szint</p>
+                            <p className="text-sm sm:text-lg font-semibold text-orange-400">
                               {editableProfile.activity_level === 'sedentary' && 'Ülő munkás'}
                               {editableProfile.activity_level === 'lightly_active' && 'Könnyű aktivitás'}
                               {editableProfile.activity_level === 'moderately_active' && 'Közepes aktivitás'}

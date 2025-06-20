@@ -125,7 +125,7 @@
       @apply px-1 py-1 text-xs;
     }
 
-    /* Profile page mobile optimizations */
+    /* Profile page mobile optimizations - MUCH SMALLER TEXTS */
     .profile-mobile-text {
       @apply text-xs leading-tight;
     }
@@ -135,37 +135,53 @@
     }
 
     .profile-mobile-container {
-      @apply px-2 py-2 space-y-3;
+      @apply px-1 py-1 space-y-2;
     }
 
     .profile-mobile-card {
-      @apply p-3 space-y-2;
+      @apply p-2 space-y-1;
     }
 
     .profile-mobile-input {
-      @apply text-sm px-2 py-2;
+      @apply text-xs px-2 py-1;
     }
 
     .profile-mobile-button {
-      @apply text-xs px-3 py-2;
+      @apply text-xs px-2 py-1;
     }
 
-    /* Portrait mode specific fixes */
+    /* Portrait mode specific fixes - VERY COMPACT */
     @media (orientation: portrait) {
       .profile-portrait-spacing {
-        @apply pt-4 pb-6;
+        @apply pt-1 pb-2;
       }
 
       .profile-portrait-text {
-        @apply text-xs;
+        @apply text-xs leading-tight;
       }
 
       .profile-portrait-title {
-        @apply text-sm;
+        @apply text-xs font-medium;
       }
 
       .profile-portrait-header {
-        @apply text-base;
+        @apply text-sm leading-tight;
+      }
+
+      .profile-portrait-card-title {
+        @apply text-sm font-medium;
+      }
+
+      .profile-portrait-stats {
+        @apply text-xs;
+      }
+
+      .profile-portrait-number {
+        @apply text-base font-bold;
+      }
+
+      .profile-portrait-container {
+        @apply px-1 py-1 space-y-1;
       }
     }
 
@@ -185,7 +201,7 @@
 
       /* Profile specific landscape fixes */
       .profile-landscape-container {
-        @apply pt-2 pb-4;
+        @apply pt-1 pb-2;
       }
 
       .profile-landscape-text {
@@ -193,17 +209,24 @@
       }
 
       .profile-landscape-spacing {
-        @apply space-y-2;
+        @apply space-y-1;
       }
 
       .profile-landscape-card {
         @apply p-2;
       }
 
-      /* Remove sticky positioning in landscape for profile pages */
+      /* COMPLETELY REMOVE sticky positioning in landscape for profile pages */
       .profile-no-sticky-landscape {
-        position: relative !important;
+        position: static !important;
         top: auto !important;
+      }
+
+      /* Profile landscape header should not be sticky at all */
+      .profile-landscape-header {
+        position: static !important;
+        top: auto !important;
+        @apply relative;
       }
     }
   }
