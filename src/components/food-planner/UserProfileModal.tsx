@@ -1,12 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { User, Save, Edit3, ExternalLink, ArrowLeft } from "lucide-react";
+import { User, Save, Edit3, ExternalLink, ArrowLeft, Eye, EyeOff, Lock } from "lucide-react";
 import { fetchUserProfile, updateUserProfile, UserProfile } from "@/services/profileQueries";
 import { AvatarUpload } from "./AvatarUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -24,6 +26,10 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,15 +60,61 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
   const handleSave = async () => {
     if (!profile) return;
 
+    // Jelszó validáció ha meg van adva
+    if (newPassword || confirmPassword) {
+      if (newPassword !== confirmPassword) {
+        toast({
+          title: "Jelszó hiba",
+          description: "A két jelszó nem egyezik meg!",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        toast({
+          title: "Jelszó hiba",
+          description: "A jelszónak legalább 6 karakter hosszúnak kell lennie!",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
+      // Profil adatok frissítése
       await updateUserProfile(user.id, {
         full_name: profile.full_name,
         age: profile.age,
         weight: profile.weight
       });
+
+      // Jelszó frissítése ha meg van adva
+      if (newPassword) {
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+
+        if (passwordError) {
+          console.error('Jelszó frissítési hiba:', passwordError);
+          toast({
+            title: "Jelszó frissítési hiba",
+            description: passwordError.message,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        toast({
+          title: "Jelszó frissítve! 🔒",
+          description: "A jelszavad sikeresen megváltozott.",
+        });
+      }
       
       setIsEditing(false);
+      setNewPassword("");
+      setConfirmPassword("");
       toast({
         title: "Profil mentve! ✅",
         description: "Az alapadatok sikeresen frissítve lettek.",
@@ -99,6 +151,13 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
         [field]: value
       } : null);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setNewPassword("");
+    setConfirmPassword("");
+    loadProfile(); // Visszaállítjuk az eredeti adatokat
   };
 
   if (loading) {
@@ -179,6 +238,62 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
               <p className="text-xs text-gray-500">Az email cím nem módosítható</p>
             </div>
 
+            {/* Jelszó változtatás - csak szerkesztés módban */}
+            {isEditing && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword" className="text-sm font-medium text-gray-700">
+                    Új jelszó (opcionális, min. 6 karakter)
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? "text" : "password"}
+                      placeholder="Új jelszó (ha változtatni szeretnéd)"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-10 pr-10 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                    >
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                    Jelszó megerősítése
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Jelszó megerősítése"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10 pr-10 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {confirmPassword && newPassword !== confirmPassword && (
+                    <p className="text-sm text-red-500">A jelszavak nem egyeznek meg</p>
+                  )}
+                </div>
+              </>
+            )}
+
             {/* Kor */}
             <div className="space-y-2">
               <Label htmlFor="age" className="text-sm font-medium text-gray-700">
@@ -252,7 +367,7 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
             ) : (
               <>
                 <Button
-                  onClick={() => setIsEditing(false)}
+                  onClick={handleCancelEdit}
                   variant="outline"
                   className="px-6 py-2 rounded-lg font-medium border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200 h-10"
                 >
