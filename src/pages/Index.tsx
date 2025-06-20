@@ -18,7 +18,8 @@ const Index = () => {
   const navigate = useNavigate();
   const [currentSetupStep, setCurrentSetupStep] = useState<'personal-info' | 'health-conditions' | 'preferences' | 'complete'>('complete');
   const [checkingSetupStatus, setCheckingSetupStatus] = useState(false);
-  const [setupCompleted, setSetupCompleted] = useState(false); // Új flag a beállítások befejezéséhez
+  const [setupCompleted, setSetupCompleted] = useState(false);
+  const [preferencesJustCompleted, setPreferencesJustCompleted] = useState(false);
 
   useEffect(() => {
     console.log('🔄 Index komponens betöltődött');
@@ -63,10 +64,10 @@ const Index = () => {
 
   // Ellenőrizzük a felhasználó beállítási állapotát amikor bejelentkezik
   useEffect(() => {
-    if (user && !checkingSetupStatus && !setupCompleted) {
+    if (user && !checkingSetupStatus && !setupCompleted && !preferencesJustCompleted) {
       checkUserSetupStatus();
     }
-  }, [user, setupCompleted]);
+  }, [user, setupCompleted, preferencesJustCompleted]);
 
   const checkUserSetupStatus = async () => {
     if (!user) return;
@@ -98,7 +99,7 @@ const Index = () => {
       // Ha minden megvan, akkor kész
       console.log('✅ Minden beállítás kész');
       setCurrentSetupStep('complete');
-      setSetupCompleted(true); // Jelezzük, hogy a beállítás befejezve
+      setSetupCompleted(true);
       
     } catch (error) {
       console.error('❌ Beállítási állapot ellenőrzési hiba:', error);
@@ -116,6 +117,7 @@ const Index = () => {
       // Reset setup state kijelentkezéskor
       setSetupCompleted(false);
       setCurrentSetupStep('complete');
+      setPreferencesJustCompleted(false);
     } catch (error) {
       console.error('❌ Kijelentkezési hiba:', error);
     }
@@ -134,7 +136,8 @@ const Index = () => {
   const handlePreferencesComplete = () => {
     console.log('✅ Preferenciák befejezve, tovább az apphoz');
     setCurrentSetupStep('complete');
-    setSetupCompleted(true); // Jelezzük, hogy a teljes beállítás befejezve
+    setSetupCompleted(true);
+    setPreferencesJustCompleted(true);
   };
 
   // Loading state
