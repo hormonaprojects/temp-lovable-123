@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThumbsUp, ThumbsDown, ChevronRight, ChevronLeft, ChefHat } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { saveUserPreferences } from "@/services/foodPreferencesQueries";
+import { PreferenceInfoModal } from "./PreferenceInfoModal";
 
 interface User {
   id: string;
@@ -28,6 +29,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   const [preferences, setPreferences] = useState<PreferenceState>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(true); // Automatikusan megjelenő popup
   const { toast } = useToast();
 
   const categoryNames = [
@@ -222,6 +224,12 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
+      {/* Info Modal */}
+      <PreferenceInfoModal 
+        isOpen={showInfoModal} 
+        onClose={() => setShowInfoModal(false)} 
+      />
+
       {/* Modern Header */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
@@ -235,6 +243,12 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
             <p className="text-sm sm:text-base text-white/80">
               Állítsd be az ételpreferenciáidat a személyre szabott receptajánlásokhoz!
             </p>
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="mt-2 text-xs text-blue-300 hover:text-blue-200 underline"
+            >
+              Segítség a beállításokhoz
+            </button>
           </div>
           
           {/* Progress Bar */}

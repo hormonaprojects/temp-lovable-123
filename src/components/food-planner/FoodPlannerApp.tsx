@@ -14,6 +14,7 @@ import { fetchUserProfile } from "@/services/profileQueries";
 import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
 import { checkIsAdmin } from "@/services/adminQueries";
 import { getFavorites } from "@/services/favoritesQueries";
+import { HealthConditionsSetup } from "./HealthConditionsSetup";
 
 interface User {
   id: string;
@@ -29,7 +30,7 @@ interface FoodPlannerAppProps {
 }
 
 export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, onPreferenceSetupComplete }: FoodPlannerAppProps) {
-  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'preferences' | 'admin'>('single');
+  const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'health-conditions' | 'preferences' | 'admin'>('single');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -119,6 +120,10 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
     }
   };
 
+  const handleHealthConditionsComplete = () => {
+    setCurrentView('preference-setup');
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
@@ -139,6 +144,16 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
       <PreferenceSetup
         user={user}
         onComplete={handlePreferenceSetupComplete}
+      />
+    );
+  }
+
+  if (currentView === 'health-conditions') {
+    return (
+      <HealthConditionsSetup
+        user={user}
+        onComplete={handleHealthConditionsComplete}
+        onBack={() => setCurrentView('single')}
       />
     );
   }

@@ -12,6 +12,9 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [showPersonalInfo, setShowPersonalInfo] = useState(true);
+  const [showHealthConditions, setShowHealthConditions] = useState(false);
+  const [showPreferenceSetup, setShowPreferenceSetup] = useState(false);
 
   useEffect(() => {
     console.log('🔄 Index komponens betöltődött');
@@ -61,6 +64,16 @@ const Index = () => {
     } catch (error) {
       console.error('❌ Kijelentkezési hiba:', error);
     }
+  };
+
+  const handlePersonalInfoComplete = () => {
+    setShowPersonalInfo(false);
+    setShowHealthConditions(true);
+  };
+
+  const handleHealthConditionsComplete = () => {
+    setShowHealthConditions(false);
+    setShowPreferenceSetup(true);
   };
 
   // Loading state

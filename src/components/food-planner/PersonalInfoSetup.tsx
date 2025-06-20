@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,13 +25,14 @@ export function PersonalInfoSetup({ user, onComplete }: PersonalInfoSetupProps) 
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSavePersonalInfo = async () => {
-    if (!age || !weight || !height || !activityLevel) {
-      toast({
-        title: "Hiányzó adatok",
-        description: "Kérlek töltsd ki az összes mezőt!",
-        variant: "destructive",
-      });
+  const validateForm = () => {
+    return !(!age || !weight || !height || !activityLevel);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
 
@@ -42,34 +42,28 @@ export function PersonalInfoSetup({ user, onComplete }: PersonalInfoSetupProps) 
         .from('profiles')
         .upsert({
           id: user.id,
-          full_name: user.fullName,
           age: parseInt(age),
           weight: parseFloat(weight),
-          height: parseInt(height),
+          height: parseFloat(height),
           activity_level: activityLevel,
           updated_at: new Date().toISOString()
         });
 
-      if (error) {
-        console.error('Profil frissítési hiba:', error);
-        toast({
-          title: "Hiba",
-          description: "Nem sikerült menteni az adatokat. Próbáld újra!",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Sikeres mentés! ✅",
-          description: "Személyes adataid sikeresen elmentve!",
-        });
-        onComplete();
-      }
+      if (error) throw error;
+
+      toast({
+        title: "Személyes adatok mentve! ✅",
+        description: "Sikeresen elmentettük a személyes adataidat!"
+      });
+
+      // Most az egészségügyi állapotok beállítására navigálunk
+      onComplete();
     } catch (error) {
       console.error('Személyes adatok mentési hiba:', error);
       toast({
-        title: "Hiba",
-        description: "Nem sikerült menteni az adatokat. Próbáld újra!",
-        variant: "destructive",
+        title: "Hiba történt",
+        description: "Nem sikerült menteni a személyes adatokat.",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -168,7 +162,7 @@ export function PersonalInfoSetup({ user, onComplete }: PersonalInfoSetupProps) 
 
             <div className="pt-6">
               <Button
-                onClick={handleSavePersonalInfo}
+                onClick={handleSubmit}
                 disabled={isLoading || !age || !weight || !height || !activityLevel}
                 className="w-full h-12 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
               >
