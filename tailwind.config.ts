@@ -127,7 +127,16 @@ export default {
 				'95vh': '95vh'
 			},
 			minHeight: {
-				'touch': '44px'
+				'touch': '44px',
+				'screen-mobile': ['100vh', '100dvh']
+			},
+			// Mobile-first breakpoints
+			screens: {
+				'xs': '475px',
+			},
+			// Better mobile spacing
+			width: {
+				'screen-mobile': '100vw'
 			}
 		}
 	},
