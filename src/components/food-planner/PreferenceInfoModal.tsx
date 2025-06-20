@@ -9,15 +9,7 @@ interface PreferenceInfoModalProps {
   onComplete?: () => void;
 }
 
-export function PreferenceInfoModal({ isOpen, onClose, onComplete }: PreferenceInfoModalProps) {
-  const handleComplete = () => {
-    if (onComplete) {
-      onComplete();
-    } else {
-      onClose();
-    }
-  };
-
+export function PreferenceInfoModal({ isOpen, onClose }: PreferenceInfoModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl bg-white">
@@ -77,7 +69,7 @@ export function PreferenceInfoModal({ isOpen, onClose, onComplete }: PreferenceI
               <div>
                 <h4 className="font-semibold text-amber-800 mb-1">Fontos megjegyzés</h4>
                 <p className="text-amber-700 text-sm">
-                  Ha allergiád vagy intoleranciád van valamilyen alapanyagra, mindenképpen jelöld meg "Nem szeretem" gombbal, hogy biztonosan elkerüljük ezeket a receptekben.
+                  Ha allergiád vagy intoleranciád van valamilyen alapanyagra, mindenképpen jelöld meg "Nem szeretem" gombbal, hogy biztonsan elkerüljük ezeket a receptekben.
                 </p>
               </div>
             </div>
@@ -93,7 +85,7 @@ export function PreferenceInfoModal({ isOpen, onClose, onComplete }: PreferenceI
             Megoszlás leállítása
           </Button>
           <Button
-            onClick={handleComplete}
+            onClick={onClose}
             className="px-6 bg-green-600 hover:bg-green-700 text-white"
           >
             Beállítás befejezve!

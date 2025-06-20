@@ -217,12 +217,6 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     }
   };
 
-  // Modal bezárása és beállítás befejezése funkció
-  const handleModalComplete = () => {
-    setShowInfoModal(false);
-    completeSetup();
-  };
-
   // Normál befejezés funkció
   const handleFinish = () => {
     completeSetup();
@@ -248,11 +242,10 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
-      {/* Info Modal - most már átadjuk a completeSetup függvényt */}
+      {/* Info Modal - most már csak bezárja magát */}
       <PreferenceInfoModal 
         isOpen={showInfoModal} 
         onClose={() => setShowInfoModal(false)}
-        onComplete={handleModalComplete}
       />
 
       {/* Modern Header */}
