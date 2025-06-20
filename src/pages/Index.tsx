@@ -27,7 +27,6 @@ const Index = () => {
         setUser(currentUser);
         
         if (currentUser) {
-          console.log('🔍 Felhasználó setup állapot ellenőrzése kezdődik...');
           await checkUserSetupStatus(currentUser.id);
         }
       } catch (error) {
@@ -39,35 +38,27 @@ const Index = () => {
 
     const checkUserSetupStatus = async (userId: string) => {
       try {
-        console.log('🔍 Profil adatok ellenőrzése...');
+        console.log('🔍 Felhasználó setup állapot ellenőrzése:', userId);
         
         // Check if user has personal info
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('age, weight, height, activity_level')
           .eq('id', userId)
-          .maybeSingle();
+          .single();
+
+        console.log('📊 Profil adatok:', profile, profileError);
 
         if (profileError && profileError.code !== 'PGRST116') {
           console.error('❌ Profile ellenőrzési hiba:', profileError);
-          setLoading(false);
           return;
         }
 
-        console.log('📊 Profil adatok:', profile);
-
-        const hasPersonalInfo = profile && 
-          profile.age && 
-          profile.weight && 
-          profile.height && 
-          profile.activity_level;
-        
+        const hasPersonalInfo = profile && profile.age && profile.weight && profile.height && profile.activity_level;
         console.log('✅ Van személyes adat:', hasPersonalInfo);
         
         if (!hasPersonalInfo) {
-          console.log('🔄 Személyes adatok hiányoznak, setup szükséges');
           setNeedsPersonalInfo(true);
-          setLoading(false);
           return;
         }
 
@@ -77,9 +68,7 @@ const Index = () => {
         console.log('✅ Van preferencia:', hasPreferences);
         
         if (!hasPreferences) {
-          console.log('🔄 Preferenciák hiányoznak, setup szükséges');
           setNeedsPreferences(true);
-          setLoading(false);
           return;
         }
 
@@ -88,13 +77,9 @@ const Index = () => {
         const adminStatus = await checkIsAdmin(userId);
         console.log('✅ Admin státusz:', adminStatus);
         setIsAdmin(adminStatus);
-        
-        console.log('✅ Setup ellenőrzés befejezve');
-        setLoading(false);
 
       } catch (error) {
         console.error('❌ Felhasználó setup ellenőrzési hiba:', error);
-        setLoading(false);
       }
     };
 
@@ -109,16 +94,12 @@ const Index = () => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       
-      // Reset all states when user changes
-      setIsAdmin(false);
-      setNeedsPersonalInfo(false);
-      setNeedsPreferences(false);
-      
-      if (currentUser && event === 'SIGNED_IN') {
-        setLoading(true);
-        console.log('🔍 Új bejelentkezés, setup állapot ellenőrzése...');
+      if (currentUser) {
         await checkUserSetupStatus(currentUser.id);
-      } else if (!currentUser) {
+      } else {
+        setIsAdmin(false);
+        setNeedsPersonalInfo(false);
+        setNeedsPreferences(false);
         setLoading(false);
       }
     });
@@ -141,14 +122,12 @@ const Index = () => {
       setIsAdmin(false);
       setNeedsPersonalInfo(false);
       setNeedsPreferences(false);
-      setLoading(false);
     } catch (error) {
       console.error('❌ Kijelentkezési hiba:', error);
       setUser(null);
       setIsAdmin(false);
       setNeedsPersonalInfo(false);
       setNeedsPreferences(false);
-      setLoading(false);
     }
   };
 
