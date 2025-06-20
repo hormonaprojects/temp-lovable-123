@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { PreferencesCategorySelector } from "./PreferencesCategorySelector";
-import { CategoryIngredientSelector } from "./CategoryIngredientSelector";
+import { PreferenceCategoryIngredientSelector } from "./CategoryIngredientSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChefHat, ArrowLeft, ArrowRight } from "lucide-react";
@@ -108,7 +108,7 @@ export function PreferenceSetup({ user, onComplete, onBack }: PreferenceSetupPro
                   <div className="w-24"></div>
                 </div>
 
-                <CategoryIngredientSelector
+                <PreferenceCategoryIngredientSelector
                   category={selectedCategory}
                   selectedPreferences={preferences[selectedCategory] || {}}
                   onPreferenceChange={handlePreferenceChange}

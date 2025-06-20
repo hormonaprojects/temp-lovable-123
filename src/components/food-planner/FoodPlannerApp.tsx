@@ -109,6 +109,11 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
     setCurrentView('single');
   };
 
+  const handlePreferenceSetupBack = () => {
+    // Go back to basic info setup if preferences setup is called from there
+    setCurrentView('single');
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
@@ -130,6 +135,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
       <PreferenceSetup
         user={user}
         onComplete={handlePreferenceSetupComplete}
+        onBack={handlePreferenceSetupBack}
       />
     );
   }
