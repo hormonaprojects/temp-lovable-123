@@ -17,28 +17,42 @@ const Index = () => {
   const [needsPreferences, setNeedsPreferences] = useState<boolean>(false);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
       try {
-        console.log('🔄 Kezdeti session lekérése...');
+        console.log('🔄 Alkalmazás inicializálása...');
+        
+        // Get initial session
         const { data: { session } } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
+        
         console.log('👤 Felhasználó:', currentUser?.email || 'nincs');
+        
+        if (!mounted) return;
+        
         setUser(currentUser);
         
         if (currentUser) {
           await checkUserSetupStatus(currentUser.id);
         }
       } catch (error) {
-        console.error('❌ Session lekérési hiba:', error);
+        console.error('❌ Inicializálási hiba:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     const checkUserSetupStatus = async (userId: string) => {
       try {
         console.log('🔍 Felhasználó setup állapot ellenőrzése:', userId);
+        
+        // Reset states
+        setNeedsPersonalInfo(false);
+        setNeedsPreferences(false);
+        setIsAdmin(false);
         
         // Check if user has personal info
         const { data: profile, error: profileError } = await supabase
@@ -48,6 +62,8 @@ const Index = () => {
           .single();
 
         console.log('📊 Profil adatok:', profile, profileError);
+
+        if (!mounted) return;
 
         if (profileError && profileError.code !== 'PGRST116') {
           console.error('❌ Profile ellenőrzési hiba:', profileError);
@@ -67,6 +83,8 @@ const Index = () => {
         const hasPreferences = await checkUserHasPreferences(userId);
         console.log('✅ Van preferencia:', hasPreferences);
         
+        if (!mounted) return;
+        
         if (!hasPreferences) {
           setNeedsPreferences(true);
           return;
@@ -76,20 +94,26 @@ const Index = () => {
         console.log('🔍 Admin státusz ellenőrzése...');
         const adminStatus = await checkIsAdmin(userId);
         console.log('✅ Admin státusz:', adminStatus);
-        setIsAdmin(adminStatus);
+        
+        if (mounted) {
+          setIsAdmin(adminStatus);
+        }
 
       } catch (error) {
         console.error('❌ Felhasználó setup ellenőrzési hiba:', error);
       }
     };
 
-    getInitialSession();
+    // Initialize the app
+    initializeAuth();
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth állapot változás:', event, session?.user?.email);
+      
+      if (!mounted) return;
       
       const currentUser = session?.user ?? null;
       setUser(currentUser);
@@ -104,7 +128,10 @@ const Index = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {
