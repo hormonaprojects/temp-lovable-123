@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, User, Heart, Utensils, Settings, Star, Save, X, Shield, Calendar, ArrowLeft } from "lucide-react";
+import { Edit, User, Heart, Utensils, Settings, Star, Save, X, Shield, Calendar, ArrowLeft, Eye, EyeOff, Lock } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserPreferences, FoodPreference } from "@/services/foodPreferencesQueries";
 import { updateUserProfile } from "@/services/profileQueries";
@@ -48,6 +48,15 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
   const [isSaving, setIsSaving] = useState(false);
   const [showAllRatings, setShowAllRatings] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const { toast } = useToast();
 
   const categoryNames = [
@@ -231,12 +240,56 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditableProfile(profileData);
+    // Reset password fields
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   const handleSaveProfile = async () => {
+    // Password validation if any password field is filled
+    if (currentPassword || newPassword || confirmPassword) {
+      if (!currentPassword) {
+        toast({
+          title: "Jelszó hiba",
+          description: "Add meg a jelenlegi jelszavadat!",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!newPassword) {
+        toast({
+          title: "Jelszó hiba",
+          description: "Add meg az új jelszót!",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        toast({
+          title: "Jelszó hiba",
+          description: "A két új jelszó nem egyezik meg!",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        toast({
+          title: "Jelszó hiba",
+          description: "Az új jelszónak legalább 6 karakter hosszúnak kell lennie!",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     try {
       setIsSaving(true);
       
+      // Profile data update
       await updateUserProfile(user.id, {
         full_name: editableProfile?.full_name || '',
         age: editableProfile?.age || null,
@@ -245,8 +298,51 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
         activity_level: editableProfile?.activity_level || null
       });
 
+      // Password update if provided
+      if (currentPassword && newPassword) {
+        // First verify current password by re-authenticating
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: currentPassword
+        });
+
+        if (signInError) {
+          toast({
+            title: "Jelszó hiba",
+            description: "A jelenlegi jelszó helytelen!",
+            variant: "destructive"
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        // If current password is correct, update to new password
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+
+        if (passwordError) {
+          console.error('Jelszó frissítési hiba:', passwordError);
+          toast({
+            title: "Jelszó frissítési hiba",
+            description: passwordError.message,
+            variant: "destructive"
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        toast({
+          title: "Jelszó frissítve! 🔒",
+          description: "A jelszavad sikeresen megváltozott.",
+        });
+      }
+
       setProfileData(editableProfile);
       setIsEditing(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
       
       toast({
         title: "Profil mentve! ✅",
@@ -489,6 +585,106 @@ export function UserProfilePage({ user, onClose, onLogout }: UserProfilePageProp
                           className="max-w-sm bg-white/10 border-white/20 text-white placeholder:text-white/50"
                         />
                       </div>
+                      
+                      {/* Email field (readonly) */}
+                      <div>
+                        <Label className="text-sm font-medium text-white/70 mb-1 block">
+                          Email cím
+                        </Label>
+                        <Input
+                          value={user.email}
+                          disabled={true}
+                          className="max-w-sm bg-white/5 border-white/10 text-white/50 cursor-not-allowed"
+                        />
+                        <p className="text-xs text-white/50 mt-1">Az email cím nem módosítható</p>
+                      </div>
+
+                      {/* Password change section */}
+                      <div className="space-y-4 border-t border-white/10 pt-4">
+                        <h4 className="text-lg font-medium text-white">Jelszó megváltoztatása</h4>
+                        
+                        <div>
+                          <Label htmlFor="currentPassword" className="text-sm font-medium text-white/70 mb-1 block">
+                            Jelenlegi jelszó
+                          </Label>
+                          <div className="relative max-w-sm">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                            <Input
+                              id="currentPassword"
+                              type={showCurrentPassword ? "text" : "password"}
+                              placeholder="Jelenlegi jelszavad"
+                              value={currentPassword}
+                              onChange={(e) => setCurrentPassword(e.target.value)}
+                              className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                              className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/70"
+                            >
+                              {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="newPassword" className="text-sm font-medium text-white/70 mb-1 block">
+                            Új jelszó (min. 6 karakter)
+                          </Label>
+                          <div className="relative max-w-sm">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                            <Input
+                              id="newPassword"
+                              type={showNewPassword ? "text" : "password"}
+                              placeholder="Új jelszó"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/70"
+                            >
+                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="confirmPassword" className="text-sm font-medium text-white/70 mb-1 block">
+                            Új jelszó megerősítése
+                          </Label>
+                          <div className="relative max-w-sm">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                            <Input
+                              id="confirmPassword"
+                              type={showConfirmPassword ? "text" : "password"}
+                              placeholder="Új jelszó megerősítése"
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/70"
+                            >
+                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                          {confirmPassword && newPassword !== confirmPassword && (
+                            <p className="text-sm text-red-400 mt-1">A jelszavak nem egyeznek meg</p>
+                          )}
+                        </div>
+
+                        <div className="bg-blue-500/10 border border-blue-400/20 rounded-lg p-3 max-w-md">
+                          <p className="text-sm text-blue-300">
+                            💡 <strong>Jelszó változtatás:</strong> Ha meg szeretnéd változtatni a jelszavad, töltsd ki mindhárom mezőt. Ha nem szeretnéd változtatni, hagyd őket üresen.
+                          </p>
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="age" className="text-sm font-medium text-white/70 mb-1 block">
