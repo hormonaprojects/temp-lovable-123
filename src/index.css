@@ -185,7 +185,7 @@
       }
     }
 
-    /* Landscape mode fixes for mobile */
+    /* Landscape mode fixes for mobile - REMOVE STICKY COMPLETELY FOR PROFILE */
     @media (orientation: landscape) and (max-height: 500px) {
       .sticky-header-mobile {
         position: relative !important;
@@ -199,7 +199,7 @@
         @apply text-xs leading-tight;
       }
 
-      /* Profile specific landscape fixes */
+      /* Profile specific landscape fixes - COMPLETELY REMOVE STICKY */
       .profile-landscape-container {
         @apply pt-1 pb-2;
       }
@@ -216,17 +216,18 @@
         @apply p-2;
       }
 
-      /* COMPLETELY REMOVE sticky positioning in landscape for profile pages */
-      .profile-no-sticky-landscape {
-        position: static !important;
-        top: auto !important;
-      }
-
-      /* Profile landscape header should not be sticky at all */
-      .profile-landscape-header {
+      /* FORCE REMOVE sticky positioning in landscape for profile pages */
+      .profile-header-landscape {
         position: static !important;
         top: auto !important;
         @apply relative;
+      }
+
+      /* Force non-sticky header for profile in landscape */
+      .profile-landscape-header-force {
+        position: static !important;
+        top: auto !important;
+        @apply relative bg-transparent;
       }
     }
   }

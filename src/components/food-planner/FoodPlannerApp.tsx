@@ -243,7 +243,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
     
     // COMPLETELY REMOVE sticky for profile page in landscape mode on mobile
     if (currentView === 'profile') {
-      return `${baseClass} profile-no-sticky-landscape profile-landscape-header`;
+      return `${baseClass} profile-header-landscape profile-landscape-header-force`;
     }
     
     return baseClass;
