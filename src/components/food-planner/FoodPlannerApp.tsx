@@ -24,15 +24,23 @@ interface User {
 interface FoodPlannerAppProps {
   user: User;
   onLogout: () => void;
+  showPreferenceSetup?: boolean;
+  onPreferenceSetupComplete?: () => void;
 }
 
-export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
+export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, onPreferenceSetupComplete }: FoodPlannerAppProps) {
   const [currentView, setCurrentView] = useState<'single' | 'daily' | 'profile' | 'favorites' | 'preference-setup' | 'preferences' | 'admin'>('single');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [favoritesCount, setFavoritesCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (showPreferenceSetup) {
+      setCurrentView('preference-setup');
+    }
+  }, [showPreferenceSetup]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -49,8 +57,8 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
         setIsAdmin(adminStatus);
         setFavoritesCount(favorites?.length || 0);
         
-        // Ha nincs preferencia beállítva, mutassuk a setup oldalt
-        if (!preferencesExist) {
+        // Ha nincs preferencia beállítva és nem külön kértük, mutassuk a setup oldalt
+        if (!preferencesExist && !showPreferenceSetup) {
           setCurrentView('preference-setup');
         }
         
@@ -62,7 +70,7 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
     };
 
     loadUserData();
-  }, [user.id]);
+  }, [user.id, showPreferenceSetup]);
 
   // Kedvencek számának frissítése amikor a kedvencek oldalra váltunk
   useEffect(() => {
@@ -107,6 +115,9 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
   const handlePreferenceSetupComplete = () => {
     setHasPreferences(true);
     setCurrentView('single');
+    if (onPreferenceSetupComplete) {
+      onPreferenceSetupComplete();
+    }
   };
 
   const getInitials = (name: string) => {
@@ -124,8 +135,8 @@ export function FoodPlannerApp({ user, onLogout }: FoodPlannerAppProps) {
     );
   }
 
-  // Ha nincs preferencia beállítva, mutassuk a setup oldalt
-  if (hasPreferences === false && currentView === 'preference-setup') {
+  // Ha preference setup módban vagyunk
+  if (currentView === 'preference-setup') {
     return (
       <PreferenceSetup
         user={user}
