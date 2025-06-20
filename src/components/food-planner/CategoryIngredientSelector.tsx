@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -178,19 +179,23 @@ export function PreferenceCategoryIngredientSelector({
       const { supabase } = await import("@/integrations/supabase/client");
       const { data, error } = await supabase
         .from('Ételkategóriák_Új')
-        .select(category)
-        .limit(1);
+        .select('*');
 
       if (error) throw error;
 
-      if (data && data[0] && data[0][category]) {
-        const categoryIngredients = data[0][category]
-          .split(',')
-          .map((item: string) => item.trim())
-          .filter((item: string) => item.length > 0);
-        
-        setIngredients(categoryIngredients);
-      }
+      const ingredients: string[] = [];
+      
+      data?.forEach(row => {
+        const categoryValue = row[category];
+        if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
+          const ingredient = categoryValue.trim();
+          if (!ingredients.includes(ingredient)) {
+            ingredients.push(ingredient);
+          }
+        }
+      });
+      
+      setIngredients(ingredients.sort());
     } catch (error) {
       console.error('Alapanyagok betöltési hiba:', error);
     } finally {
@@ -202,19 +207,13 @@ export function PreferenceCategoryIngredientSelector({
     const currentPreference = selectedPreferences[ingredient] || 'neutral';
     let newPreference: 'like' | 'dislike' | 'neutral';
 
-    // Cycle through: neutral -> like -> dislike -> neutral
-    switch (currentPreference) {
-      case 'neutral':
-        newPreference = 'like';
-        break;
-      case 'like':
-        newPreference = 'dislike';
-        break;
-      case 'dislike':
-        newPreference = 'neutral';
-        break;
-      default:
-        newPreference = 'neutral';
+    // Allow toggling back to neutral from any state
+    if (currentPreference === 'neutral') {
+      newPreference = 'like';
+    } else if (currentPreference === 'like') {
+      newPreference = 'dislike';
+    } else {
+      newPreference = 'neutral';
     }
 
     onPreferenceChange(ingredient, newPreference);
@@ -233,6 +232,9 @@ export function PreferenceCategoryIngredientSelector({
       <div className="text-center mb-6">
         <p className="text-sm text-gray-600 mb-2">
           Kattints az alapanyagokra a preferenciák beállításához:
+        </p>
+        <p className="text-xs text-gray-500">
+          Semleges → Kedvelt → Nem kedvelt → Semleges
         </p>
       </div>
 
