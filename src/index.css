@@ -125,6 +125,50 @@
       @apply px-1 py-1 text-xs;
     }
 
+    /* Profile page mobile optimizations */
+    .profile-mobile-text {
+      @apply text-xs leading-tight;
+    }
+
+    .profile-mobile-title {
+      @apply text-sm font-medium;
+    }
+
+    .profile-mobile-container {
+      @apply px-2 py-2 space-y-3;
+    }
+
+    .profile-mobile-card {
+      @apply p-3 space-y-2;
+    }
+
+    .profile-mobile-input {
+      @apply text-sm px-2 py-2;
+    }
+
+    .profile-mobile-button {
+      @apply text-xs px-3 py-2;
+    }
+
+    /* Portrait mode specific fixes */
+    @media (orientation: portrait) {
+      .profile-portrait-spacing {
+        @apply pt-4 pb-6;
+      }
+
+      .profile-portrait-text {
+        @apply text-xs;
+      }
+
+      .profile-portrait-title {
+        @apply text-sm;
+      }
+
+      .profile-portrait-header {
+        @apply text-base;
+      }
+    }
+
     /* Landscape mode fixes for mobile */
     @media (orientation: landscape) and (max-height: 500px) {
       .sticky-header-mobile {
@@ -137,6 +181,29 @@
       
       .mobile-landscape-text {
         @apply text-xs leading-tight;
+      }
+
+      /* Profile specific landscape fixes */
+      .profile-landscape-container {
+        @apply pt-2 pb-4;
+      }
+
+      .profile-landscape-text {
+        @apply text-xs;
+      }
+
+      .profile-landscape-spacing {
+        @apply space-y-2;
+      }
+
+      .profile-landscape-card {
+        @apply p-2;
+      }
+
+      /* Remove sticky positioning in landscape for profile pages */
+      .profile-no-sticky-landscape {
+        position: relative !important;
+        top: auto !important;
       }
     }
   }

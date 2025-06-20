@@ -58,7 +58,6 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
         setIsAdmin(adminStatus);
         setFavoritesCount(favorites?.length || 0);
         
-        // Ha nincs preferencia beállítva és nem külön kértük, mutassuk a setup oldalt
         if (!preferencesExist && !showPreferenceSetup) {
           setCurrentView('preference-setup');
         }
@@ -73,7 +72,6 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
     loadUserData();
   }, [user.id, showPreferenceSetup]);
 
-  // Kedvencek számának frissítése amikor a kedvencek oldalra váltunk
   useEffect(() => {
     const updateFavoritesCount = async () => {
       if (currentView === 'favorites') {
@@ -136,7 +134,6 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
     );
   }
 
-  // Ha preference setup módban vagyunk
   if (currentView === 'preference-setup') {
     return (
       <PreferenceSetup
@@ -189,7 +186,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
         );
       case 'profile':
         return (
-          <div className="max-w-6xl mx-auto p-3 sm:p-6">
+          <div className="max-w-6xl mx-auto profile-mobile-container sm:p-6">
             <UserProfilePage
               user={user}
               onClose={() => setCurrentView('single')}
@@ -241,10 +238,21 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
     ...(isAdmin ? [{ key: 'admin', icon: Shield, label: 'Admin', isActive: currentView === 'admin' }] : [])
   ];
 
+  const getHeaderClass = () => {
+    const baseClass = "sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10";
+    
+    // Remove sticky for profile page in landscape mode on mobile
+    if (currentView === 'profile') {
+      return `${baseClass} profile-no-sticky-landscape`;
+    }
+    
+    return baseClass;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
       {/* Mobile-optimized Header */}
-      <div className="sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
+      <div className={getHeaderClass()}>
         <div className="max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
           {/* Mobile Header - Compact Layout */}
           <div className="flex justify-between items-center">
@@ -349,8 +357,8 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
               <div className="text-white flex items-center gap-2">
                 {getPageTitle()?.icon}
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold">{getPageTitle()?.title}</h2>
-                  <p className="text-xs sm:text-sm text-white/70">{getPageTitle()?.subtitle}</p>
+                  <h2 className="text-lg sm:text-xl font-bold profile-portrait-header">{getPageTitle()?.title}</h2>
+                  <p className="text-xs sm:text-sm text-white/70 profile-portrait-text">{getPageTitle()?.subtitle}</p>
                 </div>
               </div>
             </div>
@@ -359,7 +367,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
       </div>
 
       {/* Main Content */}
-      <div className="py-4 sm:py-6 md:py-8">
+      <div className="py-4 sm:py-6 md:py-8 profile-portrait-spacing profile-landscape-container">
         {renderContent()}
       </div>
     </div>
