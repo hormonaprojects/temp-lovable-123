@@ -160,7 +160,7 @@ export function CategoryIngredientSelector({
   );
 }
 
-// Separate component for preference setup (used in PreferenceSetup)
+// Separate component for preference setup (used in PreferenceSetup) - with image-based interface
 export function PreferenceCategoryIngredientSelector({ 
   category, 
   selectedPreferences, 
@@ -233,19 +233,27 @@ export function PreferenceCategoryIngredientSelector({
         <p className="text-sm text-gray-600 mb-2">
           Kattints az alapanyagokra a preferenciák beállításához:
         </p>
-        <p className="text-xs text-gray-500">
-          Semleges → Kedvelt → Nem kedvelt → Semleges
+        <p className="text-xs text-gray-500 flex items-center justify-center gap-4">
+          <span className="flex items-center gap-1">
+            ➖ Semleges
+          </span>
+          <span className="flex items-center gap-1">
+            👍 Kedvelt
+          </span>
+          <span className="flex items-center gap-1">
+            👎 Nem kedvelt
+          </span>
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {ingredients.map((ingredient) => {
           const preference = selectedPreferences[ingredient] || 'neutral';
           return (
             <Button
               key={ingredient}
               variant="ghost"
-              className={`p-4 rounded-lg border-2 transition-all duration-200 text-left flex items-center justify-between min-h-[60px] ${
+              className={`p-3 rounded-lg border transition-all duration-200 text-left flex flex-col items-center justify-center min-h-[80px] relative ${
                 preference === 'like' 
                   ? 'border-green-500 bg-green-50 hover:bg-green-100 text-green-800'
                   : preference === 'dislike'
@@ -254,8 +262,17 @@ export function PreferenceCategoryIngredientSelector({
               }`}
               onClick={() => handleIngredientClick(ingredient)}
             >
-              <span className="flex-1 text-sm font-medium">{ingredient}</span>
-              <span className="text-lg">
+              <div className="text-2xl mb-1">
+                {category === 'Húsfélék' && '🥩'}
+                {category === 'Halak' && '🐟'}
+                {category === 'Zöldségek / Vegetáriánus' && '🥬'}
+                {category === 'Gyümölcsök' && '🍎'}
+                {category === 'Tejtermékek' && '🥛'}
+                {category === 'Gabonák és Tészták' && '🌾'}
+                {category === 'Olajok és Magvak' && '🌰'}
+              </div>
+              <span className="text-xs font-medium text-center leading-tight">{ingredient}</span>
+              <span className="absolute top-1 right-1 text-sm">
                 {preference === 'like' && '👍'}
                 {preference === 'dislike' && '👎'}
                 {preference === 'neutral' && '➖'}
