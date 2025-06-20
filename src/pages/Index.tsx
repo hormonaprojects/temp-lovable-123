@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FoodPlannerApp } from "@/components/food-planner/FoodPlannerApp";
 import { ModernAuthForm } from "@/components/auth/ModernAuthForm";
 import { PersonalInfoSetup } from "@/components/food-planner/PersonalInfoSetup";
@@ -10,9 +10,22 @@ import type { User } from "@supabase/supabase-js";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.log('🔄 Index komponens betöltődött');
+
+    // Ellenőrizzük, hogy ez egy jelszó visszaállítási link-e
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
+    const type = searchParams.get('type');
+
+    if (accessToken && refreshToken && type === 'recovery') {
+      console.log('🔑 Jelszó visszaállítási link észlelve, átirányítás...');
+      navigate('/reset-password?' + searchParams.toString());
+      return;
+    }
 
     // Egyszerű session ellenőrzés
     const getSession = async () => {
@@ -39,7 +52,7 @@ const Index = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [searchParams, navigate]);
 
   const handleLogout = async () => {
     try {
