@@ -15,31 +15,87 @@ const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isValidSession, setIsValidSession] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if we have the necessary tokens in the URL
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
+    const checkSession = async () => {
+      console.log('🔍 ResetPassword oldal betöltődött');
+      
+      // Ellenőrizzük az URL paramétereket
+      const accessToken = searchParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token');
+      const type = searchParams.get('type');
 
-    if (!accessToken || !refreshToken || type !== 'recovery') {
-      toast({
-        title: "Érvénytelen link",
-        description: "A jelszó visszaállítási link érvénytelen vagy lejárt.",
-        variant: "destructive",
-      });
-      navigate('/');
-      return;
-    }
+      console.log('🔍 URL paraméterek:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
 
-    // Set the session with the tokens from the URL
-    supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
+      // Ha vannak URL paraméterek, állítsuk be a session-t
+      if (accessToken && refreshToken && type === 'recovery') {
+        console.log('🔑 Token paraméterek találhatók, session beállítása...');
+        try {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            console.error('❌ Session beállítási hiba:', error);
+            toast({
+              title: "Érvénytelen link",
+              description: "A jelszó visszaállítási link érvénytelen vagy lejárt.",
+              variant: "destructive",
+            });
+            navigate('/');
+            return;
+          }
+
+          console.log('✅ Session sikeresen beállítva URL paraméterekből');
+          setIsValidSession(true);
+        } catch (error) {
+          console.error('❌ Session beállítási hiba:', error);
+          toast({
+            title: "Hiba",
+            description: "Hiba történt a session beállításakor.",
+            variant: "destructive",
+          });
+          navigate('/');
+          return;
+        }
+      } else {
+        // Ha nincsenek URL paraméterek, ellenőrizzük a meglévő session-t
+        console.log('🔍 URL paraméterek hiányoznak, meglévő session ellenőrzése...');
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error || !session) {
+            console.log('❌ Nincs érvényes session');
+            toast({
+              title: "Érvénytelen link",
+              description: "A jelszó visszaállítási link érvénytelen vagy lejárt.",
+              variant: "destructive",
+            });
+            navigate('/');
+            return;
+          }
+
+          console.log('✅ Érvényes session találva');
+          setIsValidSession(true);
+        } catch (error) {
+          console.error('❌ Session ellenőrzési hiba:', error);
+          toast({
+            title: "Hiba",
+            description: "Hiba történt a session ellenőrzésekor.",
+            variant: "destructive",
+          });
+          navigate('/');
+          return;
+        }
+      }
+    };
+
+    checkSession();
   }, [searchParams, navigate, toast]);
 
   const handleResetPassword = async () => {
@@ -63,17 +119,20 @@ const ResetPassword = () => {
 
     setIsLoading(true);
     try {
+      console.log('🔄 Jelszó frissítése...');
       const { error } = await supabase.auth.updateUser({
         password: password
       });
 
       if (error) {
+        console.error('❌ Jelszó frissítési hiba:', error);
         toast({
           title: "Hiba",
           description: error.message,
           variant: "destructive",
         });
       } else {
+        console.log('✅ Jelszó sikeresen frissítve');
         toast({
           title: "Sikeres jelszó változtatás! 🎉",
           description: "A jelszavad sikeresen megváltozott. Most már bejelentkezhetsz az új jelszóval.",
@@ -82,7 +141,7 @@ const ResetPassword = () => {
         navigate('/');
       }
     } catch (error) {
-      console.error("Jelszó változtatási hiba:", error);
+      console.error("❌ Jelszó változtatási hiba:", error);
       toast({
         title: "Hiba",
         description: "Váratlan hiba történt. Kérlek próbáld újra!",
@@ -92,6 +151,18 @@ const ResetPassword = () => {
       setIsLoading(false);
     }
   };
+
+  // Ha még nem ellenőriztük a session-t, loading képernyő
+  if (!isValidSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-lg">Jelszó visszaállítás ellenőrzése...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center p-4">
