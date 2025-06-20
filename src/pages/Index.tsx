@@ -2,15 +2,19 @@
 import { useState, useEffect } from "react";
 import { FoodPlannerApp } from "@/components/food-planner/FoodPlannerApp";
 import { ModernAuthForm } from "@/components/auth/ModernAuthForm";
+import { BasicInfoSetup } from "@/components/food-planner/BasicInfoSetup";
+import { PreferenceSetup } from "@/components/food-planner/PreferenceSetup";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { checkIsAdmin } from "@/services/adminQueries";
+import { fetchUserProfile } from "@/services/profileQueries";
 import type { User } from "@supabase/supabase-js";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [setupStep, setSetupStep] = useState<'basic' | 'preferences' | 'complete'>('complete');
 
   useEffect(() => {
     // Get initial session
@@ -19,15 +23,15 @@ const Index = () => {
         const { data: { session } } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
         setUser(currentUser);
-        setLoading(false); // Set loading to false immediately after getting session
+        setLoading(false);
         
-        // Check admin status separately without blocking
         if (currentUser) {
           checkAdminStatus(currentUser.id);
+          checkUserSetup(currentUser.id);
         }
       } catch (error) {
         console.error('Session lekérési hiba:', error);
-        setLoading(false); // Always set loading to false even on error
+        setLoading(false);
       }
     };
 
@@ -38,6 +42,32 @@ const Index = () => {
       } catch (error) {
         console.error('Admin státusz ellenőrzési hiba:', error);
         setIsAdmin(false);
+      }
+    };
+
+    const checkUserSetup = async (userId: string) => {
+      try {
+        const profile = await fetchUserProfile(userId);
+        
+        if (!profile || !profile.age || !profile.weight || !profile.height || !profile.activity_level) {
+          setSetupStep('basic');
+        } else {
+          // Check if preferences are set up
+          const { data: preferences } = await supabase
+            .from('Ételpreferenciák')
+            .select('*')
+            .eq('user_id', userId)
+            .limit(1);
+          
+          if (!preferences || preferences.length === 0) {
+            setSetupStep('preferences');
+          } else {
+            setSetupStep('complete');
+          }
+        }
+      } catch (error) {
+        console.error('Felhasználó beállítások ellenőrzési hiba:', error);
+        setSetupStep('basic');
       }
     };
 
@@ -54,8 +84,10 @@ const Index = () => {
       
       if (currentUser) {
         checkAdminStatus(currentUser.id);
+        checkUserSetup(currentUser.id);
       } else {
         setIsAdmin(false);
+        setSetupStep('complete');
       }
     });
 
@@ -73,9 +105,9 @@ const Index = () => {
       console.log('Kijelentkezés sikeres');
     } catch (error) {
       console.error('Kijelentkezési hiba:', error);
-      // Force logout even if there's an error
       setUser(null);
       setIsAdmin(false);
+      setSetupStep('complete');
     }
   };
 
@@ -106,12 +138,32 @@ const Index = () => {
       <AdminDashboard
         user={userProfile}
         onLogout={handleLogout}
-        onBackToApp={() => {}} // Adminoknak nincs "vissza" opció
+        onBackToApp={() => {}}
       />
     );
   }
 
-  // Ha normál user, az ételtervező alkalmazást mutassuk
+  // Setup flow for new users
+  if (setupStep === 'basic') {
+    return (
+      <BasicInfoSetup
+        user={userProfile}
+        onComplete={() => setSetupStep('preferences')}
+      />
+    );
+  }
+
+  if (setupStep === 'preferences') {
+    return (
+      <PreferenceSetup
+        user={userProfile}
+        onComplete={() => setSetupStep('complete')}
+        onBack={() => setSetupStep('basic')}
+      />
+    );
+  }
+
+  // Ha minden be van állítva, az ételtervező alkalmazást mutassuk
   return (
     <FoodPlannerApp
       user={userProfile}

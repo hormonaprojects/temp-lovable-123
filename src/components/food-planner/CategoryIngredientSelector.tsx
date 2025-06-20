@@ -1,154 +1,148 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Utensils, Search } from "lucide-react";
-
-interface MealTypeData {
-  [key: string]: {
-    categories: {
-      [key: string]: string[];
-    };
-  };
-}
-
-interface FoodData {
-  mealTypes: MealTypeData;
-  categories: Record<string, string[]>;
-  getFilteredIngredients: (category: string) => string[];
-}
+import { supabase } from "@/integrations/supabase/client";
+import { ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 
 interface CategoryIngredientSelectorProps {
-  selectedMealType: string;
-  foodData: FoodData;
-  onGetRecipe: (category: string, ingredient: string) => Promise<void>;
+  category: string;
+  selectedPreferences: Record<string, 'like' | 'dislike' | 'neutral'>;
+  onPreferenceChange: (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => void;
 }
 
 export function CategoryIngredientSelector({ 
-  selectedMealType, 
-  foodData, 
-  onGetRecipe 
+  category, 
+  selectedPreferences, 
+  onPreferenceChange 
 }: CategoryIngredientSelectorProps) {
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedIngredient, setSelectedIngredient] = useState("");
+  const [ingredients, setIngredients] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-    setSelectedIngredient("");
+  useEffect(() => {
+    loadIngredients();
+  }, [category]);
+
+  const loadIngredients = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('Ételkategóriák_Új')
+        .select(category)
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data[0] && data[0][category]) {
+        const categoryIngredients = data[0][category]
+          .split(',')
+          .map((item: string) => item.trim())
+          .filter((item: string) => item.length > 0);
+        
+        setIngredients(categoryIngredients);
+      }
+    } catch (error) {
+      console.error('Alapanyagok betöltési hiba:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleIngredientSelect = (ingredient: string) => {
-    setSelectedIngredient(ingredient);
+  const getPreferenceIcon = (ingredient: string) => {
+    const preference = selectedPreferences[ingredient] || 'neutral';
+    
+    switch (preference) {
+      case 'like':
+        return <ThumbsUp className="w-5 h-5 text-green-600" />;
+      case 'dislike':
+        return <ThumbsDown className="w-5 h-5 text-red-600" />;
+      default:
+        return <Minus className="w-5 h-5 text-gray-400" />;
+    }
   };
 
-  const handleGetRecipe = () => {
-    onGetRecipe(selectedCategory, selectedIngredient);
+  const getButtonClass = (ingredient: string) => {
+    const preference = selectedPreferences[ingredient] || 'neutral';
+    const baseClass = "p-4 rounded-lg border-2 transition-all duration-200 text-left flex items-center justify-between min-h-[60px]";
+    
+    switch (preference) {
+      case 'like':
+        return `${baseClass} border-green-500 bg-green-50 hover:bg-green-100 text-green-800`;
+      case 'dislike':
+        return `${baseClass} border-red-500 bg-red-50 hover:bg-red-100 text-red-800`;
+      default:
+        return `${baseClass} border-gray-200 bg-white hover:bg-gray-50 text-gray-700`;
+    }
   };
 
-  const getRandomRecipe = () => {
-    onGetRecipe("", "");
+  const handleIngredientClick = (ingredient: string) => {
+    const currentPreference = selectedPreferences[ingredient] || 'neutral';
+    let newPreference: 'like' | 'dislike' | 'neutral';
+
+    // Cycle through: neutral -> like -> dislike -> neutral
+    switch (currentPreference) {
+      case 'neutral':
+        newPreference = 'like';
+        break;
+      case 'like':
+        newPreference = 'dislike';
+        break;
+      case 'dislike':
+        newPreference = 'neutral';
+        break;
+      default:
+        newPreference = 'neutral';
+    }
+
+    onPreferenceChange(ingredient, newPreference);
   };
 
-  // Get categories for selected meal type
-  const availableCategories = selectedMealType && foodData.mealTypes[selectedMealType] 
-    ? Object.keys(foodData.mealTypes[selectedMealType].categories) 
-    : [];
-
-  // Get ingredients for selected category
-  const availableIngredients = selectedCategory 
-    ? foodData.getFilteredIngredients(selectedCategory)
-    : [];
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Random Recipe Button */}
-      <div className="text-center">
-        <Button
-          onClick={getRandomRecipe}
-          className="bg-gradient-to-r from-yellow-500/80 to-orange-600/80 hover:from-yellow-600/90 hover:to-orange-700/90 backdrop-blur-sm border border-yellow-300/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 text-sm sm:text-base"
-        >
-          🎲 Véletlenszerű recept ({selectedMealType})
-        </Button>
+    <div className="space-y-4">
+      <div className="text-center mb-6">
+        <p className="text-sm text-gray-600 mb-2">
+          Kattints az alapanyagokra a preferenciák beállításához:
+        </p>
+        <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+          <div className="flex items-center gap-1">
+            <Minus className="w-4 h-4" />
+            <span>Semleges</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <ThumbsUp className="w-4 h-4 text-green-600" />
+            <span>Szeretem</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <ThumbsDown className="w-4 h-4 text-red-600" />
+            <span>Nem szeretem</span>
+          </div>
+        </div>
       </div>
 
-      {/* Category Selection */}
-      {availableCategories.length > 0 && (
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
-          <CardHeader>
-            <CardTitle className="text-white text-xl sm:text-2xl font-bold flex items-center gap-3">
-              <Utensils className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" />
-              Válassz kategóriát
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {availableCategories.map((category) => (
-                <Button
-                  key={category}
-                  onClick={() => handleCategorySelect(category)}
-                  variant="outline"
-                  className={`h-auto p-4 sm:p-6 transition-all duration-300 ${
-                    selectedCategory === category
-                      ? 'bg-green-600/30 border-green-400/50 text-white shadow-lg transform scale-105'
-                      : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40 hover:transform hover:scale-102'
-                  }`}
-                >
-                  <div className="text-center">
-                    <div className="font-semibold text-sm sm:text-base mb-2">{category}</div>
-                    <Badge variant="secondary" className="bg-white/20 text-white/90">
-                      {foodData.getFilteredIngredients(category).length} alapanyag
-                    </Badge>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Ingredient Selection */}
-      {selectedCategory && availableIngredients.length > 0 && (
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
-          <CardHeader>
-            <CardTitle className="text-white text-xl sm:text-2xl font-bold flex items-center gap-3">
-              <Search className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
-              Válassz alapanyagot ({selectedCategory})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
-              {availableIngredients.map((ingredient) => (
-                <Button
-                  key={ingredient}
-                  onClick={() => handleIngredientSelect(ingredient)}
-                  variant="outline"
-                  size="sm"
-                  className={`p-2 sm:p-3 h-auto transition-all duration-200 text-xs sm:text-sm ${
-                    selectedIngredient === ingredient
-                      ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-md transform scale-105'
-                      : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
-                  }`}
-                >
-                  {ingredient}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Generate Recipe Button */}
-      {(selectedCategory || selectedIngredient) && (
-        <div className="text-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {ingredients.map((ingredient) => (
           <Button
-            onClick={handleGetRecipe}
-            className="bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-700/90 hover:to-pink-700/90 backdrop-blur-sm border border-purple-300/20 text-white px-8 sm:px-12 py-4 sm:py-6 rounded-2xl font-bold text-base sm:text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
+            key={ingredient}
+            variant="ghost"
+            className={getButtonClass(ingredient)}
+            onClick={() => handleIngredientClick(ingredient)}
           >
-            🍽️ Recept generálása
-            {selectedCategory && ` (${selectedCategory})`}
-            {selectedIngredient && ` - ${selectedIngredient}`}
+            <span className="flex-1 text-sm font-medium">{ingredient}</span>
+            {getPreferenceIcon(ingredient)}
           </Button>
+        ))}
+      </div>
+
+      {ingredients.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          Nincs elérhető alapanyag ebben a kategóriában.
         </div>
       )}
     </div>
