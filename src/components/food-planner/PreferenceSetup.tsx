@@ -28,7 +28,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   const [preferences, setPreferences] = useState<PreferenceState>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(true); // Visszaállítva true-ra
+  const [showInfoModal, setShowInfoModal] = useState(true);
   const { toast } = useToast();
 
   const categoryNames = [
@@ -174,21 +174,35 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   const handleFinish = async () => {
     setSaving(true);
     try {
-      const preferencesToSave = Object.entries(preferences).map(([key, preference]) => {
-        const [category, ingredient] = key.split('-', 2);
-        return {
-          category,
-          ingredient,
-          preference
-        };
-      });
+      // Csak azokat a preferenciákat mentjük el, amelyek nem neutral-ak
+      const preferencesToSave = Object.entries(preferences)
+        .filter(([key, preference]) => preference !== 'neutral')
+        .map(([key, preference]) => {
+          const [category, ingredient] = key.split('-', 2);
+          return {
+            category,
+            ingredient,
+            preference
+          };
+        });
 
-      await saveUserPreferences(user.id, preferencesToSave);
-      
-      toast({
-        title: "Preferenciák mentve! ✅",
-        description: "Sikeresen elmentettük az ételpreferenciáidat!",
-      });
+      console.log('💾 Mentendő preferenciák:', preferencesToSave);
+
+      // Ha vannak preferenciák, akkor mentjük őket
+      if (preferencesToSave.length > 0) {
+        await saveUserPreferences(user.id, preferencesToSave);
+        toast({
+          title: "Preferenciák mentve! ✅",
+          description: `${preferencesToSave.length} preferencia sikeresen elmentve!`,
+        });
+      } else {
+        // Ha nincs beállítva semmi, akkor is engedjük befejezni
+        console.log('ℹ️ Nincsenek beállítva preferenciák, de ez rendben van');
+        toast({
+          title: "Beállítás befejezve! ✅",
+          description: "Később bármikor beállíthatod a preferenciáidat a beállításokban.",
+        });
+      }
       
       onComplete();
     } catch (error) {
@@ -241,6 +255,9 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
             </div>
             <p className="text-sm sm:text-base text-white/80">
               Állítsd be az ételpreferenciáidat a személyre szabott receptajánlásokhoz!
+            </p>
+            <p className="text-xs text-white/60 mt-1">
+              Opcionális: Ha nem jelölsz meg semmit, később bármikor beállíthatod.
             </p>
             <button
               onClick={() => setShowInfoModal(true)}
