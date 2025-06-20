@@ -23,7 +23,7 @@ export const getUserHealthConditions = async (userId: string): Promise<HealthCon
   }
 
   console.log('✅ Betöltött egészségügyi állapotok:', data?.length || 0);
-  return data || [];
+  return (data || []) as HealthCondition[];
 };
 
 export const saveUserHealthConditions = async (
