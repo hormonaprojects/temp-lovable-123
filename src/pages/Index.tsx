@@ -23,21 +23,19 @@ const Index = () => {
         const { data: { session } } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+        setLoading(false);
         
         if (currentUser) {
           await checkUserSetupStatus(currentUser.id);
         }
       } catch (error) {
         console.error('Session lekérési hiba:', error);
-      } finally {
         setLoading(false);
       }
     };
 
     const checkUserSetupStatus = async (userId: string) => {
       try {
-        console.log('Felhasználó setup ellenőrzése:', userId);
-        
         // Check if user has personal info
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -49,20 +47,15 @@ const Index = () => {
           console.error('Profile ellenőrzési hiba:', profileError);
         }
 
-        console.log('Profil adatok:', profile);
-
         const hasPersonalInfo = profile && profile.age && profile.weight && profile.height && profile.activity_level;
         
         if (!hasPersonalInfo) {
-          console.log('Személyes adatok hiányoznak');
           setNeedsPersonalInfo(true);
           return;
         }
 
         // Check if user has preferences
         const hasPreferences = await checkUserHasPreferences(userId);
-        console.log('Van ételpreferencia:', hasPreferences);
-        
         if (!hasPreferences) {
           setNeedsPreferences(true);
           return;
@@ -95,8 +88,6 @@ const Index = () => {
         setNeedsPersonalInfo(false);
         setNeedsPreferences(false);
       }
-      
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -121,13 +112,11 @@ const Index = () => {
   };
 
   const handlePersonalInfoComplete = () => {
-    console.log('Személyes adatok mentése kész');
     setNeedsPersonalInfo(false);
     setNeedsPreferences(true);
   };
 
   const handlePreferencesComplete = () => {
-    console.log('Ételpreferenciák mentése kész');
     setNeedsPreferences(false);
   };
 
@@ -154,7 +143,6 @@ const Index = () => {
 
   // Ha szükséges a személyes adatok bekérése
   if (needsPersonalInfo) {
-    console.log('Személyes adatok bekérő oldal megjelenítése');
     return (
       <PersonalInfoSetup
         user={userProfile}
@@ -165,7 +153,6 @@ const Index = () => {
 
   // Ha szükséges az ételpreferenciák beállítása
   if (needsPreferences) {
-    console.log('Ételpreferenciák oldal megjelenítése');
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
         <FoodPlannerApp
