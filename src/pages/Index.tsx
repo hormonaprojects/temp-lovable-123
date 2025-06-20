@@ -1,10 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FoodPlannerApp } from "@/components/food-planner/FoodPlannerApp";
 import { ModernAuthForm } from "@/components/auth/ModernAuthForm";
 import { PersonalInfoSetup } from "@/components/food-planner/PersonalInfoSetup";
+import { HealthConditionsSetup } from "@/components/food-planner/HealthConditionsSetup";
+import { PreferenceSetup } from "@/components/food-planner/PreferenceSetup";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchUserProfile } from "@/services/profileQueries";
+import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
 import type { User } from "@supabase/supabase-js";
 
 const Index = () => {
@@ -12,9 +17,8 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [showPersonalInfo, setShowPersonalInfo] = useState(true);
-  const [showHealthConditions, setShowHealthConditions] = useState(false);
-  const [showPreferenceSetup, setShowPreferenceSetup] = useState(false);
+  const [currentSetupStep, setCurrentSetupStep] = useState<'personal-info' | 'health-conditions' | 'preferences' | 'complete'>('complete');
+  const [checkingSetupStatus, setCheckingSetupStatus] = useState(false);
 
   useEffect(() => {
     console.log('🔄 Index komponens betöltődött');
@@ -57,6 +61,53 @@ const Index = () => {
     };
   }, [searchParams, navigate]);
 
+  // Ellenőrizzük a felhasználó beállítási állapotát amikor bejelentkezik
+  useEffect(() => {
+    if (user && !checkingSetupStatus) {
+      checkUserSetupStatus();
+    }
+  }, [user]);
+
+  const checkUserSetupStatus = async () => {
+    if (!user) return;
+    
+    setCheckingSetupStatus(true);
+    try {
+      console.log('🔍 Felhasználó beállítási állapot ellenőrzése...');
+      
+      // 1. Ellenőrizzük a személyes adatokat
+      const profile = await fetchUserProfile(user.id);
+      console.log('👤 Profil adatok:', profile);
+      
+      if (!profile || !profile.age || !profile.weight || !profile.height || !profile.activity_level) {
+        console.log('❌ Hiányos személyes adatok, személyes info beállítás szükséges');
+        setCurrentSetupStep('personal-info');
+        return;
+      }
+
+      // 2. Ellenőrizzük az ételpreferenciákat
+      const hasPreferences = await checkUserHasPreferences(user.id);
+      console.log('🍽️ Van preferencia:', hasPreferences);
+      
+      if (!hasPreferences) {
+        console.log('❌ Nincsenek preferenciák, egészségügyi állapotok beállítás szükséges');
+        setCurrentSetupStep('health-conditions');
+        return;
+      }
+
+      // Ha minden megvan, akkor kész
+      console.log('✅ Minden beállítás kész');
+      setCurrentSetupStep('complete');
+      
+    } catch (error) {
+      console.error('❌ Beállítási állapot ellenőrzési hiba:', error);
+      // Ha hiba van, kezdjük az elejéről
+      setCurrentSetupStep('personal-info');
+    } finally {
+      setCheckingSetupStatus(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       console.log('🚪 Kijelentkezés...');
@@ -67,23 +118,30 @@ const Index = () => {
   };
 
   const handlePersonalInfoComplete = () => {
-    setShowPersonalInfo(false);
-    setShowHealthConditions(true);
+    console.log('✅ Személyes adatok befejezve, tovább az egészségügyi állapotokhoz');
+    setCurrentSetupStep('health-conditions');
   };
 
   const handleHealthConditionsComplete = () => {
-    setShowHealthConditions(false);
-    setShowPreferenceSetup(true);
+    console.log('✅ Egészségügyi állapotok befejezve, tovább a preferenciákhoz');
+    setCurrentSetupStep('preferences');
+  };
+
+  const handlePreferencesComplete = () => {
+    console.log('✅ Preferenciák befejezve, tovább az apphoz');
+    setCurrentSetupStep('complete');
   };
 
   // Loading state
-  if (loading) {
+  if (loading || checkingSetupStatus) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-lg">Betöltés...</p>
-          <p className="text-white text-sm mt-2">Egyszerű auth ellenőrzés...</p>
+          <p className="text-white text-sm mt-2">
+            {checkingSetupStatus ? 'Beállítási állapot ellenőrzése...' : 'Egyszerű auth ellenőrzés...'}
+          </p>
         </div>
       </div>
     );
@@ -100,7 +158,36 @@ const Index = () => {
     fullName: user.user_metadata?.full_name || user.email || 'Felhasználó'
   };
 
-  // Bejelentkezett felhasználó - egyszerű app megjelenítés
+  // Beállítási lépések kezelése
+  if (currentSetupStep === 'personal-info') {
+    return (
+      <PersonalInfoSetup
+        user={userProfile}
+        onComplete={handlePersonalInfoComplete}
+      />
+    );
+  }
+
+  if (currentSetupStep === 'health-conditions') {
+    return (
+      <HealthConditionsSetup
+        user={userProfile}
+        onComplete={handleHealthConditionsComplete}
+        onBack={() => setCurrentSetupStep('personal-info')}
+      />
+    );
+  }
+
+  if (currentSetupStep === 'preferences') {
+    return (
+      <PreferenceSetup
+        user={userProfile}
+        onComplete={handlePreferencesComplete}
+      />
+    );
+  }
+
+  // Bejelentkezett felhasználó - teljes app megjelenítés
   return (
     <FoodPlannerApp
       user={userProfile}
