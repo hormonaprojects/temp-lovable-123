@@ -171,8 +171,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     }
   };
 
-  // Közös függvény a beállítás befejezéséhez
-  const completeSetup = async () => {
+  const handleFinish = async () => {
     setSaving(true);
     try {
       // Csak azokat a preferenciákat mentjük el, amelyek nem neutral-ak
@@ -203,7 +202,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
         });
       }
       
-      // Mindig meghívjuk az onComplete-t
+      // Mindig befejezzük a beállítást
       onComplete();
     } catch (error) {
       console.error('Preferenciák mentési hiba:', error);
@@ -215,11 +214,6 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     } finally {
       setSaving(false);
     }
-  };
-
-  // Normál befejezés funkció
-  const handleFinish = () => {
-    completeSetup();
   };
 
   if (loading) {
@@ -242,7 +236,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
-      {/* Info Modal - most már csak bezárja magát */}
+      {/* Info Modal */}
       <PreferenceInfoModal 
         isOpen={showInfoModal} 
         onClose={() => setShowInfoModal(false)}

@@ -6,7 +6,6 @@ import { Heart, X, ThumbsUp, ThumbsDown } from "lucide-react";
 interface PreferenceInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete?: () => void;
 }
 
 export function PreferenceInfoModal({ isOpen, onClose }: PreferenceInfoModalProps) {
@@ -76,19 +75,12 @@ export function PreferenceInfoModal({ isOpen, onClose }: PreferenceInfoModalProp
           </div>
         </div>
 
-        <div className="flex justify-center gap-4 pt-4">
+        <div className="flex justify-center pt-4">
           <Button
             onClick={onClose}
-            variant="outline"
-            className="px-6"
+            className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Megoszlás leállítása
-          </Button>
-          <Button
-            onClick={onClose}
-            className="px-6 bg-green-600 hover:bg-green-700 text-white"
-          >
-            Beállítás befejezve!
+            Értem!
           </Button>
         </div>
       </DialogContent>
