@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import {
   updateUserPreference,
   FoodPreference 
 } from "@/services/foodPreferencesQueries";
-import { PreferencesCategorySelector } from "./PreferencesCategorySelector";
+import { IngredientPreferenceSelector } from "./IngredientPreferenceSelector";
 import { supabase } from '@/integrations/supabase/client';
 
 interface User {
@@ -268,9 +269,9 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
           </CardContent>
         </Card>
 
-        {/* Category Ingredient Selector */}
+        {/* Ingredient Preference Selector */}
         {selectedCategory && (
-          <PreferencesCategorySelector
+          <IngredientPreferenceSelector
             category={selectedCategory}
             userPreferences={userPreferences}
             onPreferenceUpdate={handlePreferenceUpdate}
