@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -188,7 +189,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
       console.log('💾 Mentendő preferenciák:', preferencesToSave);
 
-      // Ha vannak preferenciák, akkor mentjük őket
+      // Mindig befejezzük a folyamatot, függetlenül attól, hogy vannak-e preferenciák
       if (preferencesToSave.length > 0) {
         await saveUserPreferences(user.id, preferencesToSave);
         toast({
@@ -196,7 +197,6 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
           description: `${preferencesToSave.length} preferencia sikeresen elmentve!`,
         });
       } else {
-        // Ha nincs beállítva semmi, akkor is engedjük befejezni
         console.log('ℹ️ Nincsenek beállítva preferenciák, de ez rendben van');
         toast({
           title: "Beállítás befejezve! ✅",
@@ -204,6 +204,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
         });
       }
       
+      // Mindig meghívjuk az onComplete-t
       onComplete();
     } catch (error) {
       console.error('Preferenciák mentési hiba:', error);
