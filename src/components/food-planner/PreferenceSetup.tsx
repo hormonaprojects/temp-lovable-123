@@ -28,7 +28,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   const [preferences, setPreferences] = useState<PreferenceState>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(false); // Ne jelenjen meg automatikusan
+  const [showInfoModal, setShowInfoModal] = useState(true); // Visszaállítva true-ra
   const { toast } = useToast();
 
   const categoryNames = [
