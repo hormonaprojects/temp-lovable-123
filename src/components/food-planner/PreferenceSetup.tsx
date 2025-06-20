@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,7 +28,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   const [preferences, setPreferences] = useState<PreferenceState>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(true); // Automatikusan megjelenő popup
+  const [showInfoModal, setShowInfoModal] = useState(false); // Ne jelenjen meg automatikusan
   const { toast } = useToast();
 
   const categoryNames = [
