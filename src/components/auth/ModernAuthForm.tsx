@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Mail, Lock, User, ChefHat } from "lucide-react";
@@ -16,9 +17,11 @@ interface ModernAuthFormProps {
 export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
 
   const handleSignIn = async () => {
@@ -27,6 +30,14 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: {
+          // Set session persistence based on remember me checkbox
+          ...(rememberMe && { 
+            data: { 
+              remember_me: true 
+            }
+          })
+        }
       });
 
       if (error) {
@@ -36,6 +47,12 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
           variant: "destructive",
         });
       } else {
+        // Configure session persistence
+        if (rememberMe) {
+          // Extend session for 30 days
+          localStorage.setItem('supabase.auth.remember_me', 'true');
+        }
+        
         toast({
           title: "Sikeres bejelentkezés! 🎉",
           description: "Üdvözlünk újra!",
@@ -50,6 +67,24 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
   };
 
   const handleSignUp = async () => {
+    if (password !== confirmPassword) {
+      toast({
+        title: "Jelszó hiba",
+        description: "A jelszavak nem egyeznek meg.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Jelszó hiba",
+        description: "A jelszónak legalább 6 karakter hosszúnak kell lennie.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
@@ -58,7 +93,9 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
         options: {
           data: {
             full_name: fullName,
+            needs_personal_info: true
           },
+          emailRedirectTo: `${window.location.origin}/`
         },
       });
 
@@ -147,6 +184,20 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
                       </button>
                     </div>
                   </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember-me"
+                      checked={rememberMe}
+                      onCheckedChange={setRememberMe}
+                    />
+                    <Label
+                      htmlFor="remember-me"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Emlékezz rám 30 napig
+                    </Label>
+                  </div>
                 </div>
 
                 <Button
@@ -217,11 +268,31 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
                       </button>
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password" className="text-sm font-medium text-gray-700">
+                      Jelszó megerősítése
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="confirm-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                      />
+                    </div>
+                    {confirmPassword && password !== confirmPassword && (
+                      <p className="text-sm text-red-600">A jelszavak nem egyeznek meg</p>
+                    )}
+                  </div>
                 </div>
 
                 <Button
                   onClick={handleSignUp}
-                  disabled={isLoading || !email || !password || !fullName}
+                  disabled={isLoading || !email || !password || !fullName || password !== confirmPassword}
                   className="w-full h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                 >
                   {isLoading ? "Regisztráció..." : "Regisztráció"}
