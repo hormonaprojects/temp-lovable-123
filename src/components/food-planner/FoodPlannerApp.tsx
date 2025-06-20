@@ -238,34 +238,23 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
     ...(isAdmin ? [{ key: 'admin', icon: Shield, label: 'Admin', isActive: currentView === 'admin' }] : [])
   ];
 
-  const getHeaderClass = () => {
-    const baseClass = "sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10";
-    
-    // COMPLETELY REMOVE sticky for profile page in landscape mode on mobile
-    if (currentView === 'profile') {
-      return `${baseClass} profile-header-landscape profile-landscape-header-force`;
-    }
-    
-    return baseClass;
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
-      {/* Mobile-optimized Header */}
-      <div className={getHeaderClass()}>
+      {/* Simplified Header - Always use hamburger menu on mobile and landscape */}
+      <div className="sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
         <div className="max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
-          {/* Mobile Header - Compact Layout */}
+          {/* Header Layout */}
           <div className="flex justify-between items-center">
-            {/* Brand - Compact on mobile */}
+            {/* Brand */}
             <div className="text-white flex-1 min-w-0">
               <h1 className="text-base sm:text-xl md:text-2xl font-bold flex items-center gap-1 sm:gap-2 truncate">
                 🍽️ <span className="hidden xs:inline">Ételtervező</span><span className="xs:hidden">Étel</span>
               </h1>
             </div>
             
-            {/* User Info - Compact on mobile */}
+            {/* User Info */}
             <div className="flex items-center gap-1 sm:gap-3">
-              <div className="hidden sm:block text-right text-white/90">
+              <div className="hidden lg:block text-right text-white/90">
                 <div className="font-medium text-sm">{user.fullName}</div>
               </div>
               
@@ -276,29 +265,29 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
                 </AvatarFallback>
               </Avatar>
               
-              {/* Mobile Menu Toggle */}
+              {/* Hamburger Menu Toggle - Show on mobile and landscape */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="sm:hidden p-2 text-white/70 hover:text-white"
+                className="lg:hidden p-2 text-white/70 hover:text-white"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
               
-              {/* Desktop Logout */}
+              {/* Desktop Logout - Only on large screens */}
               <Button
                 onClick={onLogout}
                 variant="ghost"
                 size="sm"
-                className="hidden sm:flex bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 hover:bg-red-500/30 hover:text-white transition-all duration-200 px-2 sm:px-3 py-2 text-xs sm:text-sm"
+                className="hidden lg:flex bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 hover:bg-red-500/30 hover:text-white transition-all duration-200 px-2 sm:px-3 py-2 text-xs sm:text-sm"
               >
                 Kilépés
               </Button>
             </div>
           </div>
 
-          {/* Mobile Dropdown Menu */}
+          {/* Mobile/Landscape Dropdown Menu */}
           {mobileMenuOpen && (
-            <div className="sm:hidden mt-3 bg-black/40 backdrop-blur-sm border border-white/10 rounded-lg p-2 space-y-1">
+            <div className="lg:hidden mt-3 bg-black/40 backdrop-blur-sm border border-white/10 rounded-lg p-2 space-y-1">
               {navItems.map((item) => (
                 <button
                   key={item.key}
@@ -329,8 +318,8 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
             </div>
           )}
 
-          {/* Desktop Tab Navigation */}
-          <div className="hidden sm:flex items-center mt-4">
+          {/* Desktop Tab Navigation - Only on large screens */}
+          <div className="hidden lg:flex items-center mt-4">
             <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-1 flex space-x-1 overflow-x-auto">
               {navItems.map((item) => (
                 <button
@@ -345,7 +334,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
                   `}
                 >
                   <item.icon className="w-4 h-4" />
-                  <span className="hidden md:inline">{item.label}</span>
+                  <span>{item.label}</span>
                 </button>
               ))}
             </div>
