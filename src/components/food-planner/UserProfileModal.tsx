@@ -26,8 +26,10 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
@@ -61,11 +63,30 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
     if (!profile) return;
 
     // Jelszó validáció ha meg van adva
-    if (newPassword || confirmPassword) {
+    if (currentPassword || newPassword || confirmPassword) {
+      // Ha bármelyik jelszó mező ki van töltve, akkor mindegyiknek kitöltöttnek kell lennie
+      if (!currentPassword) {
+        toast({
+          title: "Jelszó hiba",
+          description: "Add meg a jelenlegi jelszavadat!",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!newPassword) {
+        toast({
+          title: "Jelszó hiba",
+          description: "Add meg az új jelszót!",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (newPassword !== confirmPassword) {
         toast({
           title: "Jelszó hiba",
-          description: "A két jelszó nem egyezik meg!",
+          description: "A két új jelszó nem egyezik meg!",
           variant: "destructive"
         });
         return;
@@ -74,7 +95,7 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
       if (newPassword.length < 6) {
         toast({
           title: "Jelszó hiba",
-          description: "A jelszónak legalább 6 karakter hosszúnak kell lennie!",
+          description: "Az új jelszónak legalább 6 karakter hosszúnak kell lennie!",
           variant: "destructive"
         });
         return;
@@ -91,7 +112,24 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
       });
 
       // Jelszó frissítése ha meg van adva
-      if (newPassword) {
+      if (currentPassword && newPassword) {
+        // Először ellenőrizzük a jelenlegi jelszót egy újra bejelentkezéssel
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: currentPassword
+        });
+
+        if (signInError) {
+          toast({
+            title: "Jelszó hiba",
+            description: "A jelenlegi jelszó helytelen!",
+            variant: "destructive"
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        // Ha a jelenlegi jelszó helyes, frissítjük az újra
         const { error: passwordError } = await supabase.auth.updateUser({
           password: newPassword
         });
@@ -103,6 +141,7 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
             description: passwordError.message,
             variant: "destructive"
           });
+          setIsSaving(false);
           return;
         }
 
@@ -113,6 +152,7 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
       }
       
       setIsEditing(false);
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       toast({
@@ -155,6 +195,7 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
 
   const handleCancelEdit = () => {
     setIsEditing(false);
+    setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
     loadProfile(); // Visszaállítjuk az eredeti adatokat
@@ -242,15 +283,39 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
             {isEditing && (
               <>
                 <div className="space-y-2">
+                  <Label htmlFor="currentPassword" className="text-sm font-medium text-gray-700">
+                    Jelenlegi jelszó
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="currentPassword"
+                      type={showCurrentPassword ? "text" : "password"}
+                      placeholder="Jelenlegi jelszavad"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="pl-10 pr-10 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="newPassword" className="text-sm font-medium text-gray-700">
-                    Új jelszó (opcionális, min. 6 karakter)
+                    Új jelszó (min. 6 karakter)
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="newPassword"
                       type={showNewPassword ? "text" : "password"}
-                      placeholder="Új jelszó (ha változtatni szeretnéd)"
+                      placeholder="Új jelszó"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="pl-10 pr-10 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
@@ -267,14 +332,14 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
 
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                    Jelszó megerősítése
+                    Új jelszó megerősítése
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Jelszó megerősítése"
+                      placeholder="Új jelszó megerősítése"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="pl-10 pr-10 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
@@ -290,6 +355,12 @@ export function UserProfileModal({ isOpen, onClose, user, onOpenFullProfile }: U
                   {confirmPassword && newPassword !== confirmPassword && (
                     <p className="text-sm text-red-500">A jelszavak nem egyeznek meg</p>
                   )}
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-700">
+                    💡 <strong>Jelszó változtatás:</strong> Ha meg szeretnéd változtatni a jelszavad, töltsd ki mindhárom mezőt. Ha nem szeretnéd változtatni, hagyd őket üresen.
+                  </p>
                 </div>
               </>
             )}
