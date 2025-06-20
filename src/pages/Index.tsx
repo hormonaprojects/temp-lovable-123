@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FoodPlannerApp } from "@/components/food-planner/FoodPlannerApp";
@@ -9,10 +10,11 @@ import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchUserProfile } from "@/services/profileQueries";
 import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
-import type { User } from "@supabase/supabase-js";
+import type { User, Session } from "@supabase/supabase-js";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -35,27 +37,62 @@ const Index = () => {
       return;
     }
 
-    // Egyszerű session ellenőrzés
-    const getSession = async () => {
+    // Auth változások figyelése ELSŐ
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth változás:', event, session?.user?.email || 'nincs');
+      
+      // Ha kijelentkezés vagy nincs session, alaphelyzetbe állítjuk mindent
+      if (event === 'SIGNED_OUT' || !session) {
+        console.log('🚪 Nincs érvényes session, visszaállítás auth formra');
+        setSession(null);
+        setUser(null);
+        setSetupCompleted(false);
+        setCurrentSetupStep('complete');
+        setPreferencesJustCompleted(false);
+        setLoading(false);
+        return;
+      }
+
+      // Ha van érvényes session
+      setSession(session);
+      setUser(session.user);
+      setLoading(false);
+    });
+
+    // Kezdeti session ellenőrzés
+    const getInitialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('📋 Session:', session?.user?.email || 'nincs');
-        setUser(session?.user ?? null);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Session hiba:', error);
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        console.log('📋 Kezdeti session:', session?.user?.email || 'nincs');
+        
+        if (!session) {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        setSession(session);
+        setUser(session.user);
         setLoading(false);
       } catch (error) {
-        console.error('❌ Session hiba:', error);
+        console.error('❌ Session lekérési hiba:', error);
+        setSession(null);
+        setUser(null);
         setLoading(false);
       }
     };
 
-    // Auth változások figyelése
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔄 Auth változás:', event, session?.user?.email || 'nincs');
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    getSession();
+    getInitialSession();
 
     return () => {
       subscription.unsubscribe();
@@ -64,13 +101,17 @@ const Index = () => {
 
   // Ellenőrizzük a felhasználó beállítási állapotát amikor bejelentkezik
   useEffect(() => {
-    if (user && !checkingSetupStatus && !setupCompleted && !preferencesJustCompleted) {
+    // CSAK akkor ellenőrizzük, ha van érvényes session ÉS user
+    if (session && user && !checkingSetupStatus && !setupCompleted && !preferencesJustCompleted) {
       checkUserSetupStatus();
     }
-  }, [user, setupCompleted, preferencesJustCompleted]);
+  }, [session, user, setupCompleted, preferencesJustCompleted]);
 
   const checkUserSetupStatus = async () => {
-    if (!user) return;
+    if (!session || !user) {
+      console.log('❌ Nincs érvényes session vagy user, kihagyás');
+      return;
+    }
     
     setCheckingSetupStatus(true);
     try {
@@ -148,15 +189,16 @@ const Index = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-lg">Betöltés...</p>
           <p className="text-white text-sm mt-2">
-            {checkingSetupStatus ? 'Beállítási állapot ellenőrzése...' : 'Egyszerű auth ellenőrzés...'}
+            {checkingSetupStatus ? 'Beállítási állapot ellenőrzése...' : 'Session ellenőrzés...'}
           </p>
         </div>
       </div>
     );
   }
 
-  // No user - show auth
-  if (!user) {
+  // KRITIKUS: Csak akkor lépjünk tovább, ha van érvényes session ÉS user
+  if (!session || !user) {
+    console.log('🔐 Nincs érvényes session, auth form megjelenítése');
     return <ModernAuthForm onSuccess={() => {}} />;
   }
 
