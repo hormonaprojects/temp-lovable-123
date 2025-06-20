@@ -1,12 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ThumbsUp, ThumbsDown, ChevronRight, ChevronLeft, ChefHat } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { saveUserPreferences } from "@/services/foodPreferencesQueries";
 import { PreferenceInfoModal } from "./PreferenceInfoModal";
+import { PreferenceHeader } from "./PreferenceHeader";
+import { IngredientsGrid } from "./IngredientsGrid";
+import { PreferenceNavigation } from "./PreferenceNavigation";
 
 interface User {
   id: string;
@@ -115,49 +115,16 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
   const handlePreferenceChange = (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => {
     const key = `${categoryNames[currentCategoryIndex]}-${ingredient}`;
-    const currentPreference = preferences[key] || 'neutral';
-    
-    // Ha már be van jelölve ugyanaz a preferencia, akkor neutral-ra állítjuk
-    const newPreference = currentPreference === preference ? 'neutral' : preference;
     
     setPreferences(prev => ({
       ...prev,
-      [key]: newPreference
+      [key]: preference
     }));
   };
 
   const getPreferenceForIngredient = (ingredient: string): 'like' | 'dislike' | 'neutral' => {
     const key = `${categoryNames[currentCategoryIndex]}-${ingredient}`;
     return preferences[key] || 'neutral';
-  };
-
-  const getIngredientImage = (ingredient: string): string | null => {
-    // Csak az ékezetek eltávolítása, szóközök megtartása
-    const normalizedIngredient = ingredient
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // ékezetek eltávolítása
-      .replace(/\./g, ''); // pontok eltávolítása
-    
-    console.log('🖼️ Kép keresés:', ingredient, '->', normalizedIngredient);
-    
-    // Először JPG-t próbáljuk, majd PNG-t
-    const jpgUrl = supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.jpg`).data.publicUrl;
-    const pngUrl = supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.png`).data.publicUrl;
-    
-    console.log('🔗 Generált JPG URL:', jpgUrl);
-    console.log('🔗 Generált PNG URL:', pngUrl);
-    
-    // Visszaadjuk mindkét URL-t, először a JPG-t próbáljuk
-    return jpgUrl;
-  };
-
-  const getPngImageUrl = (ingredient: string): string => {
-    const normalizedIngredient = ingredient
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // ékezetek eltávolítása
-      .replace(/\./g, ''); // pontok eltávolítása
-    
-    return supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.png`).data.publicUrl;
   };
 
   const handleNext = () => {
@@ -240,7 +207,6 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
   const currentIngredients = getCurrentCategoryIngredients();
   const isLastCategory = currentCategoryIndex === categoryNames.length - 1;
-  const progress = ((currentCategoryIndex + 1) / categoryNames.length) * 100;
 
   console.log('🎯 Aktuális kategória:', categoryNames[currentCategoryIndex]);
   console.log('🍽️ Aktuális alapanyagok:', currentIngredients);
@@ -253,42 +219,12 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
         onClose={() => setShowInfoModal(false)}
       />
 
-      {/* Modern Header */}
-      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-          <div className="text-center text-white">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <ChefHat className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Ételpreferenciák Beállítása</h1>
-            </div>
-            <p className="text-sm sm:text-base text-white/80">
-              Állítsd be az ételpreferenciáidat a személyre szabott receptajánlásokhoz!
-            </p>
-            <p className="text-xs text-white/60 mt-1">
-              <strong>Fontos:</strong> Legalább egy preferenciát be kell jelölnöd a folytatáshoz.
-            </p>
-            <button
-              onClick={() => setShowInfoModal(true)}
-              className="mt-2 text-xs text-blue-300 hover:text-blue-200 underline"
-            >
-              Segítség a beállításokhoz
-            </button>
-          </div>
-          
-          {/* Progress Bar */}
-          <div className="mt-6 bg-white/10 rounded-full h-3 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-blue-500 to-purple-600 h-full transition-all duration-500 ease-out rounded-full"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="text-center text-white/80 text-sm mt-2 font-medium">
-            {currentCategoryIndex + 1} / {categoryNames.length} kategória
-          </div>
-        </div>
-      </div>
+      {/* Header */}
+      <PreferenceHeader
+        currentCategoryIndex={currentCategoryIndex}
+        totalCategories={categoryNames.length}
+        onShowInfo={() => setShowInfoModal(true)}
+      />
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -303,159 +239,24 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
             </p>
           </div>
 
-          {currentIngredients.length === 0 && (
-            <div className="text-center mb-8 p-6 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <p className="text-yellow-800 font-medium">
-                Nincsenek alapanyagok betöltve ehhez a kategóriához: {categoryNames[currentCategoryIndex]}
-              </p>
-            </div>
-          )}
-
           {/* Ingredients Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
-            {currentIngredients.map((ingredient, index) => {
-              const preference = getPreferenceForIngredient(ingredient);
-              const jpgImageUrl = getIngredientImage(ingredient);
-              const pngImageUrl = getPngImageUrl(ingredient);
-              
-              return (
-                <Card
-                  key={ingredient}
-                  className={`
-                    relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fadeInUp border-2
-                    ${preference === 'like' ? 'bg-green-50 border-green-300 scale-110 shadow-lg ring-2 ring-green-200' : ''}
-                    ${preference === 'dislike' ? 'bg-red-50 border-red-300 scale-90 opacity-70 ring-2 ring-red-200' : ''}
-                    ${preference === 'neutral' ? 'bg-white border-gray-200 hover:shadow-md hover:border-purple-300' : ''}
-                  `}
-                  style={{
-                    animationDelay: `${index * 0.1}s`
-                  }}
-                >
-                  <div className="p-4">
-                    {/* Ingredient Image - Now 1:1 aspect ratio */}
-                    <div className="w-full aspect-square mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
-                      <img
-                        src={jpgImageUrl}
-                        alt={ingredient}
-                        className="w-full h-full object-cover rounded-xl"
-                        onError={(e) => {
-                          console.log('❌ JPG kép betöltési hiba, próbálkozás PNG-vel:', ingredient);
-                          // Ha JPG hiba van, próbáljuk meg a PNG-t
-                          (e.target as HTMLImageElement).src = pngImageUrl;
-                          (e.target as HTMLImageElement).onerror = () => {
-                            console.log('❌ PNG kép is hibás:', ingredient);
-                            // Ha mindkettő hibás, elrejtjük a képet
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          };
-                        }}
-                        onLoad={() => {
-                          console.log('✅ Kép sikeresen betöltve:', ingredient);
-                        }}
-                      />
-                    </div>
-                    
-                    {/* Ingredient Name */}
-                    <h3 className="text-sm font-semibold text-gray-800 text-center mb-3 truncate min-h-[1.25rem]">
-                      {ingredient}
-                    </h3>
-                    
-                    {/* Preference Buttons */}
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        onClick={() => handlePreferenceChange(ingredient, 'like')}
-                        variant={preference === 'like' ? 'default' : 'outline'}
-                        size="sm"
-                        className={`
-                          w-8 h-8 p-0 transition-all duration-200 rounded-full
-                          ${preference === 'like' 
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg' 
-                            : 'hover:bg-green-50 hover:border-green-300 hover:text-green-600'
-                          }
-                        `}
-                      >
-                        <ThumbsUp className="w-4 h-4" />
-                      </Button>
-                      
-                      <Button
-                        onClick={() => handlePreferenceChange(ingredient, 'dislike')}
-                        variant={preference === 'dislike' ? 'default' : 'outline'}
-                        size="sm"
-                        className={`
-                          w-8 h-8 p-0 transition-all duration-200 rounded-full
-                          ${preference === 'dislike' 
-                            ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg' 
-                            : 'hover:bg-red-50 hover:border-red-300 hover:text-red-600'
-                          }
-                        `}
-                      >
-                        <ThumbsDown className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+          <IngredientsGrid
+            ingredients={currentIngredients}
+            categoryName={categoryNames[currentCategoryIndex]}
+            getPreferenceForIngredient={getPreferenceForIngredient}
+            onPreferenceChange={handlePreferenceChange}
+          />
 
           {/* Navigation */}
-          <div className="flex justify-between items-center">
-            <Button
-              onClick={handlePrev}
-              disabled={currentCategoryIndex === 0}
-              variant="outline"
-              className="flex items-center gap-2 px-6 py-3 bg-white/80 backdrop-blur-sm border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all duration-200 disabled:opacity-50"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Előző
-            </Button>
-
-            {isLastCategory ? (
-              <Button
-                onClick={handleFinish}
-                disabled={saving}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50"
-              >
-                {saving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Mentés...
-                  </>
-                ) : (
-                  <>
-                    Befejezés ✅
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleNext}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Következő
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-
-          {/* Progress Indicator */}
-          <div className="mt-6 flex justify-center">
-            <div className="flex gap-2">
-              {categoryNames.map((_, index) => (
-                <div
-                  key={index}
-                  className={`
-                    w-3 h-3 rounded-full transition-all duration-300
-                    ${index === currentCategoryIndex 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 scale-125' 
-                      : index < currentCategoryIndex 
-                        ? 'bg-green-400' 
-                        : 'bg-gray-300'
-                    }
-                  `}
-                />
-              ))}
-            </div>
-          </div>
+          <PreferenceNavigation
+            currentCategoryIndex={currentCategoryIndex}
+            totalCategories={categoryNames.length}
+            isLastCategory={isLastCategory}
+            saving={saving}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            onFinish={handleFinish}
+          />
         </div>
       </div>
     </div>
