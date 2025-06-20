@@ -32,11 +32,6 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          data: {
-            remember_me: rememberMe
-          }
-        }
       });
 
       if (error) {
