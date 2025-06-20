@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -172,7 +171,8 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     }
   };
 
-  const handleFinish = async () => {
+  // Közös függvény a beállítás befejezéséhez
+  const completeSetup = async () => {
     setSaving(true);
     try {
       // Csak azokat a preferenciákat mentjük el, amelyek nem neutral-ak
@@ -189,7 +189,6 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
       console.log('💾 Mentendő preferenciák:', preferencesToSave);
 
-      // Mindig befejezzük a folyamatot, függetlenül attól, hogy vannak-e preferenciák
       if (preferencesToSave.length > 0) {
         await saveUserPreferences(user.id, preferencesToSave);
         toast({
@@ -218,6 +217,17 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     }
   };
 
+  // Modal bezárása és beállítás befejezése funkció
+  const handleModalComplete = () => {
+    setShowInfoModal(false);
+    completeSetup();
+  };
+
+  // Normál befejezés funkció
+  const handleFinish = () => {
+    completeSetup();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 flex items-center justify-center">
@@ -238,10 +248,11 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
-      {/* Info Modal */}
+      {/* Info Modal - most már átadjuk a completeSetup függvényt */}
       <PreferenceInfoModal 
         isOpen={showInfoModal} 
-        onClose={() => setShowInfoModal(false)} 
+        onClose={() => setShowInfoModal(false)}
+        onComplete={handleModalComplete}
       />
 
       {/* Modern Header */}
