@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,6 +97,25 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCategorySelect = (category: string) => {
+    const isSelected = selectedCategory === category;
+    setSelectedCategory(isSelected ? "" : category);
+    
+    // Ha kiválasztottunk egy kategóriát, görgessünk le az alapanyagokhoz
+    if (!isSelected) {
+      setTimeout(() => {
+        const ingredientsSection = document.querySelector('[data-scroll-target="category-ingredients"]');
+        if (ingredientsSection) {
+          ingredientsSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          });
+        }
+      }, 100);
     }
   };
 
@@ -244,7 +264,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                 return (
                   <Button
                     key={category}
-                    onClick={() => setSelectedCategory(isSelected ? "" : category)}
+                    onClick={() => handleCategorySelect(category)}
                     variant="outline"
                     className={`h-auto p-4 flex-col gap-2 transition-all duration-200 ${
                       isSelected
@@ -270,11 +290,13 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
 
         {/* Category Ingredient Selector */}
         {selectedCategory && (
-          <PreferencesCategorySelector
-            category={selectedCategory}
-            userPreferences={userPreferences}
-            onPreferenceUpdate={handlePreferenceUpdate}
-          />
+          <div data-scroll-target="category-ingredients">
+            <PreferencesCategorySelector
+              category={selectedCategory}
+              userPreferences={userPreferences}
+              onPreferenceUpdate={handlePreferenceUpdate}
+            />
+          </div>
         )}
       </div>
     </div>
