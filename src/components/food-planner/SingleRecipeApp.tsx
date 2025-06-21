@@ -26,7 +26,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [selectedMealType, setSelectedMealType] = useState("");
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode<'single' | 'multi'>('single');
+  const [viewMode, setViewMode] = useState<'single' | 'multi'>('single');
   const [multiDayPlan, setMultiDayPlan] = useState<MultiDayMealPlan[]>([]);
   const [isMultiDayLoading, setIsMultiDayLoading] = useState(false);
   const [lastSearchParams, setLastSearchParams] = useState<{
