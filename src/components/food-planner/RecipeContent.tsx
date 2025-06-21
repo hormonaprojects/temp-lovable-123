@@ -4,9 +4,11 @@ import { Clock, Users } from "lucide-react";
 
 interface RecipeContentProps {
   recipe: Recipe;
+  compact?: boolean;
+  isFullScreen?: boolean;
 }
 
-export function RecipeContent({ recipe }: RecipeContentProps) {
+export function RecipeContent({ recipe, compact = false, isFullScreen = false }: RecipeContentProps) {
   // Placeholder képek receptekhez
   const getRecipeImage = (recipeName: string) => {
     // Hash alapú kép kiválasztás a recept neve alapján
@@ -49,6 +51,31 @@ export function RecipeContent({ recipe }: RecipeContentProps) {
     // Ha nincs világos struktúra, az egészet egy lépésként visszaadjuk
     return [instructions.trim()];
   };
+
+  // Compact mód a többnapos étrendtervezőhöz
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <h4 className="font-semibold text-white text-sm">{recipe.név}</h4>
+        {(recipe.főzésiIdő || recipe.adagok) && (
+          <div className="flex gap-2 text-xs text-white/70">
+            {recipe.főzésiIdő && (
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {recipe.főzésiIdő}
+              </span>
+            )}
+            {recipe.adagok && (
+              <span className="flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                {recipe.adagok}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

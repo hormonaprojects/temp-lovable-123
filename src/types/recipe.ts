@@ -4,6 +4,8 @@ export interface Recipe {
   hozzávalók: string[];
   elkészítés: string;
   elkészítésiIdő?: string;
+  főzésiIdő?: string; // Főzési idő hozzáadása
+  adagok?: string; // Adagok hozzáadása
   fehérje?: string;
   szénhidrát?: string;
   zsír?: string;
