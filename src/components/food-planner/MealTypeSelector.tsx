@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useEffect, useRef } from "react";
 
 interface MealTypeSelectorProps {
   selectedMealType: string;
@@ -27,11 +28,29 @@ const mealTypeIcons: { [key: string]: string } = {
 };
 
 export function MealTypeSelector({ selectedMealType, onSelectMealType, foodData }: MealTypeSelectorProps) {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  
   // Az elérhető étkezési típusok a mealTypes objektumból
   const availableMealTypes = foodData?.mealTypes ? Object.keys(foodData.mealTypes) : [];
   
   console.log('🍽️ Elérhető étkezési típusok:', availableMealTypes);
   console.log('🍽️ MealTypes adatok:', foodData?.mealTypes);
+
+  const handleMealTypeSelect = (mealType: string) => {
+    onSelectMealType(mealType);
+    
+    // Scroll to the next section after a short delay to allow content to render
+    setTimeout(() => {
+      const nextSection = document.querySelector('[data-scroll-target="category-selector"]');
+      if (nextSection) {
+        nextSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
+  };
 
   if (availableMealTypes.length === 0) {
     return (
@@ -48,7 +67,7 @@ export function MealTypeSelector({ selectedMealType, onSelectMealType, foodData 
   }
 
   return (
-    <div className="mb-8">
+    <div className="mb-8" ref={sectionRef}>
       <h2 className="text-2xl font-bold text-white mb-6 text-center">
         🍽️ Válassz étkezés típust
       </h2>
@@ -73,7 +92,7 @@ export function MealTypeSelector({ selectedMealType, onSelectMealType, foodData 
           return (
             <Button
               key={mealType}
-              onClick={() => onSelectMealType(mealType)}
+              onClick={() => handleMealTypeSelect(mealType)}
               className={cn(
                 "meal-type-btn py-8 text-lg font-semibold rounded-xl transition-all duration-300 min-h-[120px] flex flex-col items-center justify-center",
                 selectedMealType === mealType

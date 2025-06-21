@@ -236,6 +236,18 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
       setDailyPlan(newPlan);
       setShowResults(true);
 
+      // Scroll to results after generation
+      setTimeout(() => {
+        const resultsSection = document.querySelector('[data-scroll-target="meal-results"]');
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          });
+        }
+      }, 500);
+
       const successfulRecipes = Object.values(newPlan).filter(meal => meal.recipe !== null).length;
       const specificCount = Object.values(newPlan).filter(meal => meal.recipe !== null && meal.isSpecific).length;
       const randomCount = successfulRecipes - specificCount;
@@ -436,7 +448,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
 
               {/* Additional meal customization options for selected meals */}
               {selectedMeals.length > 0 && (
-                <div className="space-y-4">
+                <div className="space-y-4" data-scroll-target="meal-customization">
                   <h4 className="text-lg font-bold text-white text-center mb-4">
                     ⚙️ Személyre szabás (opcionális)
                   </h4>
@@ -492,7 +504,7 @@ export function DailyMealPlanner({ user, onBackToSingle }: DailyMealPlannerProps
           )}
 
           {showResults && !isGenerating && (
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-4 sm:space-y-6" data-scroll-target="meal-results">
               <div className="text-center mb-6 sm:mb-8">
                 <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">🍽️ Mai Étrendem</h3>
                 <p className="text-white/70 text-base sm:text-lg px-4">Személyre szabott receptek az egész napra (preferenciáiddal)</p>

@@ -36,10 +36,34 @@ export function CategoryIngredientSelector({
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
     setSelectedIngredient("");
+    
+    // Scroll to ingredients section after a short delay
+    setTimeout(() => {
+      const ingredientsSection = document.querySelector('[data-scroll-target="ingredients-selector"]');
+      if (ingredientsSection) {
+        ingredientsSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
   };
 
   const handleIngredientSelect = (ingredient: string) => {
     setSelectedIngredient(ingredient);
+    
+    // Scroll to generate button after a short delay
+    setTimeout(() => {
+      const generateSection = document.querySelector('[data-scroll-target="generate-button"]');
+      if (generateSection) {
+        generateSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
   };
 
   const handleGetRecipe = () => {
@@ -61,7 +85,7 @@ export function CategoryIngredientSelector({
     : [];
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8" data-scroll-target="category-selector">
       {/* Random Recipe Button */}
       <div className="text-center">
         <Button
@@ -109,7 +133,7 @@ export function CategoryIngredientSelector({
 
       {/* Ingredient Selection */}
       {selectedCategory && availableIngredients.length > 0 && (
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl" data-scroll-target="ingredients-selector">
           <CardHeader>
             <CardTitle className="text-white text-xl sm:text-2xl font-bold flex items-center gap-3">
               <Search className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
@@ -140,7 +164,7 @@ export function CategoryIngredientSelector({
 
       {/* Generate Recipe Button */}
       {(selectedCategory || selectedIngredient) && (
-        <div className="text-center">
+        <div className="text-center" data-scroll-target="generate-button">
           <Button
             onClick={handleGetRecipe}
             className="bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-700/90 hover:to-pink-700/90 backdrop-blur-sm border border-purple-300/20 text-white px-8 sm:px-12 py-4 sm:py-6 rounded-2xl font-bold text-base sm:text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"

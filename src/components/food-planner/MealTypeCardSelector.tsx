@@ -17,6 +17,22 @@ const mealOptions = [
 ];
 
 export function MealTypeCardSelector({ selectedMeals, onMealToggle, getRecipeCount }: MealTypeCardSelectorProps) {
+  const handleMealToggle = (mealKey: string) => {
+    onMealToggle(mealKey);
+    
+    // Scroll to customization section after a short delay
+    setTimeout(() => {
+      const customizationSection = document.querySelector('[data-scroll-target="meal-customization"]');
+      if (customizationSection) {
+        customizationSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
+  };
+
   return (
     <div className="mb-8">
       <h3 className="text-xl font-bold text-white mb-6 text-center">
@@ -30,7 +46,7 @@ export function MealTypeCardSelector({ selectedMeals, onMealToggle, getRecipeCou
           return (
             <Button
               key={meal.key}
-              onClick={() => onMealToggle(meal.key)}
+              onClick={() => handleMealToggle(meal.key)}
               className={cn(
                 "py-6 text-lg font-semibold rounded-xl transition-all duration-300 min-h-[100px] flex flex-col items-center justify-center border-2",
                 isSelected
