@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Utensils, Search } from "lucide-react";
+import { Utensils, Search, X } from "lucide-react";
 
 interface MealTypeData {
   [key: string]: {
@@ -35,98 +35,90 @@ export function CategoryIngredientSelector({
   multipleIngredients = false,
   onGetMultipleRecipes
 }: CategoryIngredientSelectorProps) {
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedIngredient, setSelectedIngredient] = useState("");
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = useState<{[category: string]: string[]}>({});
+  const [allSelectedIngredients, setAllSelectedIngredients] = useState<string[]>([]);
 
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-    setSelectedIngredient("");
-    setSelectedIngredients([]);
-    
-    // Scroll to ingredients section after a short delay
-    setTimeout(() => {
-      const ingredientsSection = document.querySelector('[data-scroll-target="ingredients-selector"]');
-      if (ingredientsSection) {
-        ingredientsSection.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start',
-          inline: 'nearest'
-        });
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories(prev => {
+      const isSelected = prev.includes(category);
+      if (isSelected) {
+        // Eltávolítjuk a kategóriát és az összes hozzávalóját
+        const newSelectedIngredients = { ...selectedIngredients };
+        delete newSelectedIngredients[category];
+        setSelectedIngredients(newSelectedIngredients);
+        
+        // Frissítjük az összes kiválasztott alapanyag listáját
+        const newAllSelected = Object.values(newSelectedIngredients).flat();
+        setAllSelectedIngredients(newAllSelected);
+        
+        return prev.filter(cat => cat !== category);
+      } else {
+        return [...prev, category];
       }
-    }, 100);
+    });
   };
 
-  const handleIngredientSelect = (ingredient: string) => {
-    if (multipleIngredients) {
-      setSelectedIngredients(prev => {
-        const isSelected = prev.includes(ingredient);
-        if (isSelected) {
-          return prev.filter(item => item !== ingredient);
-        } else {
-          return [...prev, ingredient];
-        }
-      });
-    } else {
-      setSelectedIngredient(ingredient);
+  const handleIngredientToggle = (category: string, ingredient: string) => {
+    setSelectedIngredients(prev => {
+      const categoryIngredients = prev[category] || [];
+      const isSelected = categoryIngredients.includes(ingredient);
       
-      // Scroll to generate button after a short delay
-      setTimeout(() => {
-        const generateSection = document.querySelector('[data-scroll-target="generate-button"]');
-        if (generateSection) {
-          generateSection.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center',
-            inline: 'nearest'
-          });
-        }
-      }, 100);
-    }
+      const newCategoryIngredients = isSelected
+        ? categoryIngredients.filter(item => item !== ingredient)
+        : [...categoryIngredients, ingredient];
+      
+      const newSelectedIngredients = {
+        ...prev,
+        [category]: newCategoryIngredients
+      };
+      
+      // Frissítjük az összes kiválasztott alapanyag listáját
+      const newAllSelected = Object.values(newSelectedIngredients).flat();
+      setAllSelectedIngredients(newAllSelected);
+      
+      return newSelectedIngredients;
+    });
+  };
+
+  const removeIngredient = (ingredient: string) => {
+    setSelectedIngredients(prev => {
+      const newSelectedIngredients = { ...prev };
+      
+      // Megkeressük, melyik kategóriában van ez az alapanyag
+      Object.keys(newSelectedIngredients).forEach(category => {
+        newSelectedIngredients[category] = newSelectedIngredients[category].filter(
+          item => item !== ingredient
+        );
+      });
+      
+      // Frissítjük az összes kiválasztott alapanyag listáját
+      const newAllSelected = Object.values(newSelectedIngredients).flat();
+      setAllSelectedIngredients(newAllSelected);
+      
+      return newSelectedIngredients;
+    });
   };
 
   const handleGetRecipe = () => {
-    if (multipleIngredients && onGetMultipleRecipes && selectedIngredients.length > 0) {
-      onGetMultipleRecipes(selectedCategory, selectedIngredients);
-    } else if (!multipleIngredients && selectedIngredient) {
-      onGetRecipe(selectedCategory, selectedIngredient);
+    if (multipleIngredients && onGetMultipleRecipes && allSelectedIngredients.length > 0) {
+      // Több alapanyag esetén az első kategóriát adjuk át
+      const firstCategory = selectedCategories[0] || "";
+      onGetMultipleRecipes(firstCategory, allSelectedIngredients);
     } else {
-      // Ha nincs alapanyag kiválasztva, de van kategória
-      if (selectedCategory) {
-        if (multipleIngredients && onGetMultipleRecipes) {
-          onGetMultipleRecipes(selectedCategory, []);
-        } else {
-          onGetRecipe(selectedCategory, "");
-        }
-      } else {
-        // Teljesen random recept
-        if (multipleIngredients && onGetMultipleRecipes) {
-          onGetMultipleRecipes("", []);
-        } else {
-          onGetRecipe("", "");
-        }
-      }
+      // Random recept
+      onGetRecipe("", "");
     }
   };
 
   const getRandomRecipe = () => {
-    if (multipleIngredients && onGetMultipleRecipes) {
-      onGetMultipleRecipes("", []);
-    } else {
-      onGetRecipe("", "");
-    }
+    onGetRecipe("", "");
   };
 
   // Get categories for selected meal type
   const availableCategories = selectedMealType && foodData.mealTypes[selectedMealType] 
     ? Object.keys(foodData.mealTypes[selectedMealType].categories) 
     : [];
-
-  // Get ingredients for selected category
-  const availableIngredients = selectedCategory 
-    ? foodData.getFilteredIngredients(selectedCategory)
-    : [];
-
-  const canGenerateRecipe = selectedCategory || selectedIngredient || (multipleIngredients && selectedIngredients.length > 0);
 
   return (
     <div className="space-y-6 sm:space-y-8" data-scroll-target="category-selector">
@@ -140,84 +132,114 @@ export function CategoryIngredientSelector({
         </Button>
       </div>
 
-      {/* Category Selection */}
-      {availableCategories.length > 0 && (
+      {/* Selected Ingredients Display */}
+      {allSelectedIngredients.length > 0 && (
         <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
           <CardHeader className="pb-4">
-            <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
-              <Utensils className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
-              Válassz kategóriát
+            <CardTitle className="text-white text-lg sm:text-xl font-bold">
+              Kiválasztott alapanyagok ({allSelectedIngredients.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-              {availableCategories.map((category) => (
-                <Button
-                  key={category}
-                  onClick={() => handleCategorySelect(category)}
-                  variant="outline"
-                  className={`h-auto p-2 sm:p-3 transition-all duration-300 text-xs sm:text-sm ${
-                    selectedCategory === category
-                      ? 'bg-green-600/30 border-green-400/50 text-white shadow-lg transform scale-105'
-                      : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40 hover:transform hover:scale-102'
-                  }`}
-                >
-                  <div className="text-center w-full">
-                    <div className="font-medium leading-tight mb-1 text-center whitespace-normal break-words min-h-[2rem] flex items-center justify-center">
-                      {category}
-                    </div>
-                    <Badge variant="secondary" className="bg-white/20 text-white/90 text-xs px-1 py-0.5">
-                      {foodData.getFilteredIngredients(category).length}
-                    </Badge>
-                  </div>
-                </Button>
+            <div className="flex flex-wrap gap-2">
+              {allSelectedIngredients.map((ingredient, index) => (
+                <Badge key={`${ingredient}-${index}`} variant="secondary" className="bg-blue-600/30 text-blue-200 border-blue-400/50 flex items-center gap-1">
+                  {ingredient}
+                  <button 
+                    onClick={() => removeIngredient(ingredient)}
+                    className="ml-1 text-blue-200 hover:text-white"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
               ))}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Ingredient Selection */}
-      {selectedCategory && availableIngredients.length > 0 && (
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl" data-scroll-target="ingredients-selector">
+      {/* Category Selection */}
+      {availableCategories.length > 0 && (
+        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
           <CardHeader className="pb-4">
             <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
-              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-              {multipleIngredients ? 'Válassz alapanyagokat (opcionális)' : 'Válassz alapanyagot (opcionális)'} ({selectedCategory})
+              <Utensils className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
+              Válassz kategóriákat
             </CardTitle>
-            {multipleIngredients && selectedIngredients.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedIngredients.map((ingredient) => (
-                  <Badge key={ingredient} variant="secondary" className="bg-blue-600/30 text-blue-200 border-blue-400/50">
-                    {ingredient}
-                    <button 
-                      onClick={() => handleIngredientSelect(ingredient)}
-                      className="ml-2 text-blue-200 hover:text-white"
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
-              {availableIngredients.map((ingredient) => {
-                const isSelected = multipleIngredients 
-                  ? selectedIngredients.includes(ingredient)
-                  : selectedIngredient === ingredient;
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+              {availableCategories.map((category) => {
+                const isSelected = selectedCategories.includes(category);
+                
                 return (
-                  <div key={ingredient} className="relative">
-                    {multipleIngredients ? (
+                  <div
+                    key={category}
+                    className={`p-2 sm:p-3 h-auto transition-all duration-300 text-xs sm:text-sm border rounded cursor-pointer ${
+                      isSelected
+                        ? 'bg-green-600/30 border-green-400/50 text-white shadow-lg'
+                        : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
+                    }`}
+                    onClick={() => handleCategoryToggle(category)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={isSelected}
+                        className="pointer-events-none"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium leading-tight mb-1 text-center whitespace-normal break-words">
+                          {category}
+                        </div>
+                        <Badge variant="secondary" className="bg-white/20 text-white/90 text-xs px-1 py-0.5">
+                          {foodData.getFilteredIngredients(category).length}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ingredient Selection for Selected Categories */}
+      {selectedCategories.map((category) => {
+        const availableIngredients = foodData.getFilteredIngredients(category);
+        const categorySelectedIngredients = selectedIngredients[category] || [];
+
+        return (
+          <Card key={category} className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
+                <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                Alapanyagok - {category}
+              </CardTitle>
+              {categorySelectedIngredients.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {categorySelectedIngredients.map((ingredient) => (
+                    <Badge key={ingredient} variant="secondary" className="bg-blue-600/30 text-blue-200 border-blue-400/50">
+                      {ingredient}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                {availableIngredients.map((ingredient) => {
+                  const isSelected = categorySelectedIngredients.includes(ingredient);
+
+                  return (
+                    <div key={ingredient} className="relative">
                       <div
                         className={`p-2 sm:p-3 h-auto transition-all duration-200 text-xs sm:text-sm border rounded cursor-pointer ${
                           isSelected
                             ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-md'
                             : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
                         }`}
-                        onClick={() => handleIngredientSelect(ingredient)}
+                        onClick={() => handleIngredientToggle(category, ingredient)}
                       >
                         <div className="flex items-center gap-2">
                           <Checkbox
@@ -227,30 +249,17 @@ export function CategoryIngredientSelector({
                           <span className="flex-1 break-words">{ingredient}</span>
                         </div>
                       </div>
-                    ) : (
-                      <Button
-                        onClick={() => handleIngredientSelect(ingredient)}
-                        variant="outline"
-                        size="sm"
-                        className={`p-2 sm:p-3 h-auto transition-all duration-200 text-xs sm:text-sm w-full ${
-                          isSelected
-                            ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-md transform scale-105'
-                            : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
-                        }`}
-                      >
-                        <span className="break-words">{ingredient}</span>
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
 
       {/* Generate Recipe Button */}
-      <div className="text-center" data-scroll-target="generate-button">
+      <div className="text-center">
         <Button
           onClick={handleGetRecipe}
           className="bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-700/90 hover:to-pink-700/90 backdrop-blur-sm border border-purple-300/20 text-white px-8 sm:px-12 py-4 sm:py-6 rounded-2xl font-bold text-base sm:text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"

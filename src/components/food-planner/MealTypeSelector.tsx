@@ -41,6 +41,11 @@ export function MealTypeSelector({
     onSelectMealType(mealType);
     setShowOptions(true);
     
+    // Automatikusan generáljon random receptet
+    if (onGetRandomRecipe) {
+      onGetRandomRecipe();
+    }
+    
     // Auto-scroll to options
     setTimeout(() => {
       const optionsSection = document.querySelector('[data-scroll-target="meal-options"]');
@@ -145,7 +150,7 @@ export function MealTypeSelector({
                 className="bg-gradient-to-r from-green-500/80 to-emerald-600/80 hover:from-green-600/90 hover:to-emerald-700/90 backdrop-blur-sm border border-green-300/20 text-white px-6 py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2"
               >
                 <Shuffle className="w-5 h-5" />
-                Random recept generálása
+                Új random recept generálása
               </Button>
               
               <Button
