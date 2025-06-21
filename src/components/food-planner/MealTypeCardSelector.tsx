@@ -19,18 +19,7 @@ const mealOptions = [
 export function MealTypeCardSelector({ selectedMeals, onMealToggle, getRecipeCount }: MealTypeCardSelectorProps) {
   const handleMealToggle = (mealKey: string) => {
     onMealToggle(mealKey);
-    
-    // Scroll to customization section after a short delay
-    setTimeout(() => {
-      const customizationSection = document.querySelector('[data-scroll-target="meal-customization"]');
-      if (customizationSection) {
-        customizationSection.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start',
-          inline: 'nearest'
-        });
-      }
-    }, 100);
+    // Eltávolítottam az automatikus görgetést, hogy a felhasználó több étkezést is kiválaszthassa
   };
 
   return (
