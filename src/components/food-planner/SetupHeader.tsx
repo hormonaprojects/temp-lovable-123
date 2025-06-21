@@ -18,7 +18,7 @@ export function SetupHeader({ title, subtitle }: SetupHeaderProps) {
         <img 
           src={getLogoUrl()} 
           alt="Hormona Logo" 
-          className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg bg-white/10 p-2 backdrop-blur-sm"
+          className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-xl bg-white/20 p-3 backdrop-blur-sm shadow-lg border border-white/30"
           onError={(e) => {
             e.currentTarget.style.display = 'none';
           }}

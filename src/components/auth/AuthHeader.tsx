@@ -9,11 +9,11 @@ export function AuthHeader() {
 
   return (
     <div className="text-center mb-6 sm:mb-8">
-      <div className="flex justify-center mb-4">
+      <div className="flex justify-center mb-6">
         <img 
           src={getLogoUrl()} 
           alt="Hormona Logo" 
-          className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl bg-white/10 p-2 backdrop-blur-sm"
+          className="w-24 h-24 sm:w-32 sm:h-32 object-contain rounded-2xl bg-white/20 p-4 backdrop-blur-sm shadow-lg border border-white/30"
           onError={(e) => {
             // Fallback styling if logo fails to load
             e.currentTarget.style.display = 'none';

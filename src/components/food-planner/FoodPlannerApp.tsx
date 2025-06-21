@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -275,7 +276,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
               <img 
                 src={getLogoUrl()} 
                 alt="Hormona Logo" 
-                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-white/10 p-1"
+                className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-xl bg-white/20 p-2 backdrop-blur-sm shadow-lg border border-white/30"
                 onError={(e) => {
                   // Fallback to emoji if logo fails to load
                   e.currentTarget.style.display = 'none';
