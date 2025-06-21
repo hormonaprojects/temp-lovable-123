@@ -15,6 +15,7 @@ import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
 import { checkIsAdmin } from "@/services/adminQueries";
 import { getFavorites } from "@/services/favoritesQueries";
 import { HealthConditionsSetup } from "./HealthConditionsSetup";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -37,7 +38,13 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
   const [favoritesCount, setFavoritesCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [preferencesCompleted, setPreferencesCompleted] = useState(false); // Új flag a preferenciák befejezéséhez
+  const [preferencesCompleted, setPreferencesCompleted] = useState(false);
+
+  // Get logo URL from Supabase Storage
+  const getLogoUrl = () => {
+    const { data } = supabase.storage.from('logo').getPublicUrl('hormona_logo.png');
+    return data.publicUrl;
+  };
 
   useEffect(() => {
     if (showPreferenceSetup) {
@@ -263,10 +270,19 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
         <div className="max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
           {/* Header Layout */}
           <div className="flex justify-between items-center">
-            {/* Brand */}
-            <div className="text-white flex-1 min-w-0">
+            {/* Logo and Brand */}
+            <div className="flex items-center gap-2 sm:gap-3 text-white flex-1 min-w-0">
+              <img 
+                src={getLogoUrl()} 
+                alt="Hormona Logo" 
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-white/10 p-1"
+                onError={(e) => {
+                  // Fallback to emoji if logo fails to load
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
               <h1 className="text-base sm:text-xl md:text-2xl font-bold flex items-center gap-1 sm:gap-2 truncate">
-                🍽️ <span className="hidden xs:inline">Ételtervező</span><span className="xs:hidden">Étel</span>
+                <span className="hidden xs:inline">Ételtervező</span><span className="xs:hidden">Étel</span>
               </h1>
             </div>
             
