@@ -42,16 +42,13 @@ export function MealTypeSelector({
     onSelectMealType(mealType);
     setShowOptions(true);
     
-    // MINDIG automatikusan generáljon random receptet az első kiválasztásnál is
-    console.log('🎲 Automatikus random recept generálás...');
+    // AZONNAL generálunk random receptet - nem kell késleltetés
+    console.log('🎲 AZONNALI random recept generálás...');
     if (onGetRandomRecipe) {
-      // Kis késleltetés hogy a mealType frissüljön
-      setTimeout(() => {
-        onGetRandomRecipe();
-      }, 100);
+      onGetRandomRecipe();
     }
     
-    // Auto-scroll to options
+    // Auto-scroll to options - ezt hagyjuk meg a UI élmény miatt
     setTimeout(() => {
       const optionsSection = document.querySelector('[data-scroll-target="meal-options"]');
       if (optionsSection) {
