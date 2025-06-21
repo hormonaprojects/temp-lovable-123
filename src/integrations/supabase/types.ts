@@ -445,6 +445,10 @@ export type Database = {
       }
     }
     Functions: {
+      delete_user_completely: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean

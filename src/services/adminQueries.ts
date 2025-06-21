@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AdminUserOverview {
@@ -92,6 +91,35 @@ export const searchUsers = async (searchTerm: string): Promise<AdminUserOverview
     return data || [];
   } catch (error) {
     console.error('Felhasználók keresési hiba:', error);
+    throw error;
+  }
+};
+
+export const deleteUser = async (userId: string): Promise<boolean> => {
+  try {
+    // Először ellenőrizzük, hogy a felhasználó admin-e
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Nincs bejelentkezett felhasználó');
+    }
+
+    const isAdmin = await checkIsAdmin(user.id);
+    if (!isAdmin) {
+      throw new Error('Nincs admin jogosultság');
+    }
+
+    const { data, error } = await supabase.rpc('delete_user_completely', {
+      target_user_id: userId
+    });
+
+    if (error) {
+      console.error('Felhasználó törlési hiba:', error);
+      throw error;
+    }
+
+    return data || false;
+  } catch (error) {
+    console.error('Felhasználó törlési hiba:', error);
     throw error;
   }
 };
