@@ -32,8 +32,8 @@ export function MultiDayMealPlanGenerator({
   const dayOptions = [3, 5, 7];
   const mealTypes = ['reggeli', 'ebéd', 'vacsora'];
 
-  const handleGeneratePlan = () => {
-    onGeneratePlan(selectedDays);
+  const handleGeneratePlan = async () => {
+    await onGeneratePlan(selectedDays);
   };
 
   if (isLoading) {

@@ -175,9 +175,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     }
   };
 
-  const generateMultiDayPlan = async (days: number) => {
+  const generateMultiDayPlan = async (days: number): Promise<MultiDayMealPlan[]> => {
     setIsMultiDayLoading(true);
-    setMultiDayPlan([]);
     
     try {
       const mealTypesArray = ['reggeli', 'ebéd', 'vacsora'];
@@ -217,6 +216,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         description: `${days} napos étrend sikeresen elkészült.`,
       });
       
+      return newPlan;
+      
     } catch (error) {
       console.error('❌ Hiba a többnapos étrend generálásakor:', error);
       toast({
@@ -224,6 +225,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         description: "Nem sikerült generálni a többnapos étrendet.",
         variant: "destructive"
       });
+      return [];
     } finally {
       setIsMultiDayLoading(false);
     }
