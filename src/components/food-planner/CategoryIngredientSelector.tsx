@@ -256,9 +256,6 @@ export function CategoryIngredientSelector({
           className="bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-700/90 hover:to-pink-700/90 backdrop-blur-sm border border-purple-300/20 text-white px-8 sm:px-12 py-4 sm:py-6 rounded-2xl font-bold text-base sm:text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
         >
           🍽️ Recept generálása
-          {selectedCategory && ` (${selectedCategory})`}
-          {!multipleIngredients && selectedIngredient && ` - ${selectedIngredient}`}
-          {multipleIngredients && selectedIngredients.length > 0 && ` - ${selectedIngredients.length} alapanyag`}
         </Button>
       </div>
     </div>

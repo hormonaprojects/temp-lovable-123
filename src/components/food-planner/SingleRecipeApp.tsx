@@ -29,6 +29,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [viewMode, setViewMode] = useState<'single' | 'multi'>('single');
   const [multiDayPlan, setMultiDayPlan] = useState<MultiDayMealPlan[]>([]);
   const [isMultiDayLoading, setIsMultiDayLoading] = useState(false);
+  const [showIngredientSelection, setShowIngredientSelection] = useState(false);
   const [lastSearchParams, setLastSearchParams] = useState<{
     category: string;
     ingredient: string;
@@ -298,6 +299,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setCurrentRecipe(null);
     setMultiDayPlan([]);
     setViewMode('single');
+    setShowIngredientSelection(false);
     setLastSearchParams({ category: "", ingredient: "", mealType: "" });
   };
 
@@ -321,6 +323,23 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   if (dataLoading) {
     return <LoadingChef />;
   }
+
+  const handleMealTypeSelect = (mealType: string) => {
+    setSelectedMealType(mealType);
+    setShowIngredientSelection(false);
+    setCurrentRecipe(null);
+  };
+
+  const handleGetRandomRecipe = async () => {
+    if (selectedMealType) {
+      setShowIngredientSelection(false);
+      await getRecipe("", "");
+    }
+  };
+
+  const handleShowIngredientSelection = () => {
+    setShowIngredientSelection(true);
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-3 sm:p-6">
@@ -366,11 +385,13 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         <>
           <MealTypeSelector
             selectedMealType={selectedMealType}
-            onSelectMealType={setSelectedMealType}
+            onSelectMealType={handleMealTypeSelect}
             foodData={foodData}
+            onGetRandomRecipe={handleGetRandomRecipe}
+            onShowIngredientSelection={handleShowIngredientSelection}
           />
 
-          {selectedMealType && (
+          {selectedMealType && showIngredientSelection && (
             <CategoryIngredientSelector
               selectedMealType={selectedMealType}
               foodData={foodData}
