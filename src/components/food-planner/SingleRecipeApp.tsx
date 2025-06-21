@@ -48,6 +48,62 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     convertToStandardRecipe
   } = useSupabaseData(user.id);
 
+  // AUTOMATIKUS receptgenerálás amikor meal type változik
+  useEffect(() => {
+    if (selectedMealType && !showIngredientSelection) {
+      console.log('🎯 Meal type változott, automatikus receptgenerálás:', selectedMealType);
+      handleAutoGenerateRecipe();
+    }
+  }, [selectedMealType]);
+
+  const handleAutoGenerateRecipe = async () => {
+    if (!selectedMealType) return;
+    
+    setIsLoading(true);
+    setCurrentRecipe(null);
+    
+    try {
+      console.log('🔍 AUTOMATIKUS recept generálás preferenciákkal:', selectedMealType);
+      
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const foundRecipes = getRecipesByMealType(selectedMealType);
+      console.log(`🎯 Automatikus keresés eredménye: ${foundRecipes.length} recept`);
+
+      await minLoadingTime;
+
+      if (foundRecipes.length > 0) {
+        const randomIndex = Math.floor(Math.random() * foundRecipes.length);
+        const selectedSupabaseRecipe = foundRecipes[randomIndex];
+        const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
+        
+        setCurrentRecipe(standardRecipe);
+        setLastSearchParams({ category: "", ingredient: "", mealType: selectedMealType });
+        
+        toast({
+          title: "Recept betöltve!",
+          description: `${standardRecipe.név} automatikusan betöltve (preferenciáiddal).`,
+        });
+      } else {
+        toast({
+          title: "Nincs megfelelő recept",
+          description: `Nincs recept "${selectedMealType}" étkezéshez (preferenciáid szerint).`,
+          variant: "destructive"
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ Hiba az automatikus recept generálásakor:', error);
+      toast({
+        title: "Hiba",
+        description: "Nem sikerült automatikusan betölteni a receptet.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getRecipe = async (category: string, ingredient: string) => {
     if (!selectedMealType) return;
 
@@ -325,12 +381,15 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   }
 
   const handleMealTypeSelect = (mealType: string) => {
+    console.log('🎯 Meal type kiválasztás (SingleRecipeApp):', mealType);
     setSelectedMealType(mealType);
     setShowIngredientSelection(false);
     setCurrentRecipe(null);
+    // Az automatikus receptgenerálás a useEffect-ben fog megtörténni
   };
 
   const handleGetRandomRecipe = async () => {
+    console.log('🎲 Manuális random recept kérés');
     if (selectedMealType) {
       setShowIngredientSelection(false);
       await getRecipe("", "");

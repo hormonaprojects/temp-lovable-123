@@ -39,16 +39,22 @@ export function MealTypeSelector({
 
   const handleMealTypeSelect = (mealType: string) => {
     console.log('🎯 Étkezési típus kiválasztva:', mealType);
+    
+    // ELŐSZÖR beállítjuk a meal type-ot
     onSelectMealType(mealType);
+    
+    // MAJD rögtön utána generálunk receptet a kiválasztott meal type-pal
+    // De ezt egy kis késéssel tesszük, hogy a state frissülhessen
+    setTimeout(() => {
+      console.log('🎲 Random recept generálás a kiválasztott meal type-pal:', mealType);
+      if (onGetRandomRecipe) {
+        onGetRandomRecipe();
+      }
+    }, 50); // Rövid késleltetés a state frissüléshez
+    
     setShowOptions(true);
     
-    // AZONNAL generálunk random receptet - nem kell késleltetés
-    console.log('🎲 AZONNALI random recept generálás...');
-    if (onGetRandomRecipe) {
-      onGetRandomRecipe();
-    }
-    
-    // Auto-scroll to options - ezt hagyjuk meg a UI élmény miatt
+    // Auto-scroll to options
     setTimeout(() => {
       const optionsSection = document.querySelector('[data-scroll-target="meal-options"]');
       if (optionsSection) {
