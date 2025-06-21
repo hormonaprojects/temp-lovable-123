@@ -13,7 +13,7 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
       <div className="w-full max-w-md">
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 sm:p-8 border border-white/20 shadow-2xl">
           <AuthHeader />
-          <AuthForm onSuccess={onSuccess} />
+          <AuthForm onLoginSuccess={onSuccess} />
         </div>
       </div>
     </div>
