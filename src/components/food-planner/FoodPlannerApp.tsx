@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -16,7 +15,6 @@ import { checkUserHasPreferences } from "@/services/foodPreferencesQueries";
 import { checkIsAdmin } from "@/services/adminQueries";
 import { getFavorites } from "@/services/favoritesQueries";
 import { HealthConditionsSetup } from "./HealthConditionsSetup";
-import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -39,13 +37,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
   const [favoritesCount, setFavoritesCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [preferencesCompleted, setPreferencesCompleted] = useState(false);
-
-  // Get logo URL from Supabase Storage
-  const getLogoUrl = () => {
-    const { data } = supabase.storage.from('logo').getPublicUrl('hormona_logo.png');
-    return data.publicUrl;
-  };
+  const [preferencesCompleted, setPreferencesCompleted] = useState(false); // Új flag a preferenciák befejezéséhez
 
   useEffect(() => {
     if (showPreferenceSetup) {
@@ -271,19 +263,10 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
         <div className="max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
           {/* Header Layout */}
           <div className="flex justify-between items-center">
-            {/* Logo and Brand */}
-            <div className="flex items-center gap-2 sm:gap-3 text-white flex-1 min-w-0">
-              <img 
-                src={getLogoUrl()} 
-                alt="Hormona Logo" 
-                className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-xl bg-white/20 p-2 backdrop-blur-sm shadow-lg border border-white/30"
-                onError={(e) => {
-                  // Fallback to emoji if logo fails to load
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
+            {/* Brand */}
+            <div className="text-white flex-1 min-w-0">
               <h1 className="text-base sm:text-xl md:text-2xl font-bold flex items-center gap-1 sm:gap-2 truncate">
-                <span className="hidden xs:inline">Ételtervező</span><span className="xs:hidden">Étel</span>
+                🍽️ <span className="hidden xs:inline">Ételtervező</span><span className="xs:hidden">Étel</span>
               </h1>
             </div>
             
