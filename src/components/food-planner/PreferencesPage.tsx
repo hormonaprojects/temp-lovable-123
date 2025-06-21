@@ -249,14 +249,14 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
 
         {/* Category Selection */}
         <Card className="bg-white/10 border-white/20 mb-8">
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center gap-2">
               <Utensils className="w-6 h-6 text-green-400" />
               Ételkategóriák
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
               {categories.map((category) => {
                 const stats = getStatsForCategory(category);
                 const isSelected = selectedCategory === category;
@@ -266,18 +266,18 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                     key={category}
                     onClick={() => handleCategorySelect(category)}
                     variant="outline"
-                    className={`h-auto p-4 flex-col gap-2 transition-all duration-200 ${
+                    className={`h-auto p-2 sm:p-3 flex-col gap-1 transition-all duration-200 text-xs sm:text-sm ${
                       isSelected
                         ? 'bg-purple-600/30 border-purple-400/50 text-white shadow-lg'
                         : 'bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30'
                     }`}
                   >
-                    <div className="font-semibold text-center leading-tight">{category}</div>
-                    <div className="flex gap-4 text-xs">
-                      <Badge className="bg-green-600/30 text-green-400 border-green-400/50">
+                    <div className="font-medium text-center leading-tight">{category}</div>
+                    <div className="flex gap-2 text-xs">
+                      <Badge className="bg-green-600/30 text-green-400 border-green-400/50 text-xs px-1 py-0">
                         ❤️ {stats.liked}
                       </Badge>
-                      <Badge className="bg-red-600/30 text-red-400 border-red-400/50">
+                      <Badge className="bg-red-600/30 text-red-400 border-red-400/50 text-xs px-1 py-0">
                         👎 {stats.disliked}
                       </Badge>
                     </div>

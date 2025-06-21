@@ -99,29 +99,29 @@ export function CategoryIngredientSelector({
       {/* Category Selection */}
       {availableCategories.length > 0 && (
         <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
-          <CardHeader>
-            <CardTitle className="text-white text-xl sm:text-2xl font-bold flex items-center gap-3">
-              <Utensils className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" />
+          <CardHeader className="pb-4">
+            <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
+              <Utensils className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
               Válassz kategóriát
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
               {availableCategories.map((category) => (
                 <Button
                   key={category}
                   onClick={() => handleCategorySelect(category)}
                   variant="outline"
-                  className={`h-auto p-4 sm:p-6 transition-all duration-300 ${
+                  className={`h-auto p-2 sm:p-3 transition-all duration-300 text-xs sm:text-sm ${
                     selectedCategory === category
                       ? 'bg-green-600/30 border-green-400/50 text-white shadow-lg transform scale-105'
                       : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40 hover:transform hover:scale-102'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="font-semibold text-sm sm:text-base mb-2">{category}</div>
-                    <Badge variant="secondary" className="bg-white/20 text-white/90">
-                      {foodData.getFilteredIngredients(category).length} alapanyag
+                    <div className="font-medium leading-tight mb-1">{category}</div>
+                    <Badge variant="secondary" className="bg-white/20 text-white/90 text-xs px-1 py-0">
+                      {foodData.getFilteredIngredients(category).length}
                     </Badge>
                   </div>
                 </Button>
@@ -134,13 +134,13 @@ export function CategoryIngredientSelector({
       {/* Ingredient Selection */}
       {selectedCategory && availableIngredients.length > 0 && (
         <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl" data-scroll-target="ingredients-selector">
-          <CardHeader>
-            <CardTitle className="text-white text-xl sm:text-2xl font-bold flex items-center gap-3">
-              <Search className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
+          <CardHeader className="pb-4">
+            <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
+              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
               Válassz alapanyagot ({selectedCategory})
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
               {availableIngredients.map((ingredient) => (
                 <Button

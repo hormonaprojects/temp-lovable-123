@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { LoadingChef } from "@/components/ui/LoadingChef";
@@ -21,6 +21,22 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, us
   const [fullScreenModalOpen, setFullScreenModalOpen] = useState(false);
   const { toast } = useToast();
   const { saveRating } = useSupabaseData(user?.id);
+
+  // Automatikus scroll az új recepthez
+  useEffect(() => {
+    if (recipe && !isLoading) {
+      setTimeout(() => {
+        const recipeElement = document.querySelector('.recipe-result');
+        if (recipeElement) {
+          recipeElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          });
+        }
+      }, 100);
+    }
+  }, [recipe, isLoading]);
 
   const handleRating = async (rating: number) => {
     if (!recipe || !user?.id) {
