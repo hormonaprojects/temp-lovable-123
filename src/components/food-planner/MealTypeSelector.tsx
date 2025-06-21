@@ -38,12 +38,17 @@ export function MealTypeSelector({
   const [showOptions, setShowOptions] = useState(false);
 
   const handleMealTypeSelect = (mealType: string) => {
+    console.log('🎯 Étkezési típus kiválasztva:', mealType);
     onSelectMealType(mealType);
     setShowOptions(true);
     
-    // Automatikusan generáljon random receptet
+    // MINDIG automatikusan generáljon random receptet az első kiválasztásnál is
+    console.log('🎲 Automatikus random recept generálás...');
     if (onGetRandomRecipe) {
-      onGetRandomRecipe();
+      // Kis késleltetés hogy a mealType frissüljön
+      setTimeout(() => {
+        onGetRandomRecipe();
+      }, 100);
     }
     
     // Auto-scroll to options
@@ -56,7 +61,7 @@ export function MealTypeSelector({
           inline: 'nearest'
         });
       }
-    }, 100);
+    }, 200);
   };
 
   const handleRandomRecipe = () => {

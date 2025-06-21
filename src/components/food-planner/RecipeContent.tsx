@@ -1,87 +1,124 @@
 
 import { Recipe } from "@/types/recipe";
-import { Clock, Users, Star } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Clock, Users } from "lucide-react";
 
 interface RecipeContentProps {
   recipe: Recipe;
-  compact?: boolean;
-  isFullScreen?: boolean;
 }
 
-export function RecipeContent({ recipe, compact = false, isFullScreen = false }: RecipeContentProps) {
-  const containerClass = compact 
-    ? "space-y-2" 
-    : "space-y-4 sm:space-y-6 cursor-pointer hover:bg-white/5 rounded-xl p-2 sm:p-4 transition-all duration-200";
+export function RecipeContent({ recipe }: RecipeContentProps) {
+  // Placeholder képek receptekhez
+  const getRecipeImage = (recipeName: string) => {
+    // Hash alapú kép kiválasztás a recept neve alapján
+    const imageOptions = [
+      'photo-1618160702438-9b02ab6515c9', // fekete és barna gyümölcs
+      'photo-1465146344425-f00d5f5c8f07', // narancs virágok
+      'photo-1721322800607-8c38375eef04'  // nappali
+    ];
+    
+    const hash = recipeName.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    
+    const imageIndex = Math.abs(hash) % imageOptions.length;
+    return `https://images.unsplash.com/${imageOptions[imageIndex]}?auto=format&fit=crop&w=600&q=80`;
+  };
 
-  const titleClass = compact
-    ? "text-lg font-bold text-white mb-2"
-    : isFullScreen 
-    ? "text-3xl sm:text-4xl font-bold text-white mb-4 sm:mb-6 text-center"
-    : "text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4 text-center";
+  const formatIngredients = (ingredients: string[]) => {
+    return ingredients
+      .filter(ingredient => ingredient && ingredient.trim() !== '')
+      .map(ingredient => ingredient.trim());
+  };
 
-  const metaClass = compact
-    ? "flex flex-wrap gap-2 text-xs"
-    : "flex flex-wrap justify-center gap-2 sm:gap-4 mb-4 sm:mb-6";
-
-  const ingredientsClass = compact
-    ? "text-sm"
-    : "mb-4 sm:mb-6";
-
-  const instructionsClass = compact
-    ? "text-sm"
-    : "";
+  const formatInstructions = (instructions: string) => {
+    if (!instructions) return [];
+    
+    // Számozott lépések keresése (1., 2., stb.)
+    const numberedSteps = instructions.split(/\d+\./).filter(step => step.trim());
+    if (numberedSteps.length > 1) {
+      return numberedSteps.map(step => step.trim()).filter(step => step);
+    }
+    
+    // Mondatok szétválasztása
+    const sentences = instructions.split(/[.!?]+/).filter(sentence => sentence.trim());
+    if (sentences.length > 1) {
+      return sentences.map(sentence => sentence.trim()).filter(sentence => sentence);
+    }
+    
+    // Ha nincs világos struktúra, az egészet egy lépésként visszaadjuk
+    return [instructions.trim()];
+  };
 
   return (
-    <div className={containerClass}>
-      <h2 className={titleClass}>
-        🍽️ {recipe.név}
-      </h2>
+    <div className="space-y-6">
+      {/* Recept címe és képe */}
+      <div className="text-center space-y-4">
+        <h2 className="text-2xl sm:text-3xl font-bold text-white flex items-center justify-center gap-2">
+          🍽️ {recipe.név}
+        </h2>
+        
+        {/* Recept kép */}
+        <div className="w-full max-w-md mx-auto">
+          <img
+            src={getRecipeImage(recipe.név)}
+            alt={recipe.név}
+            className="w-full h-48 sm:h-64 object-cover rounded-2xl shadow-lg"
+            onError={(e) => {
+              // Fallback kép ha a fő kép nem töltődik be
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?auto=format&fit=crop&w=600&q=80';
+            }}
+          />
+        </div>
 
-      {/* Recipe Meta Info */}
-      <div className={metaClass}>
-        {recipe.elkészítésiIdő && (
-          <Badge variant="secondary" className="bg-green-600/30 text-green-200 border-green-400/50">
-            <Clock className={compact ? "w-3 h-3 mr-1" : "w-4 h-4 mr-1"} />
-            {recipe.elkészítésiIdő}
-          </Badge>
-        )}
-        <Badge variant="secondary" className="bg-blue-600/30 text-blue-200 border-blue-400/50">
-          <Users className={compact ? "w-3 h-3 mr-1" : "w-4 h-4 mr-1"} />
-          4 adag
-        </Badge>
-        <Badge variant="secondary" className="bg-yellow-600/30 text-yellow-200 border-yellow-400/50">
-          <Star className={compact ? "w-3 h-3 mr-1" : "w-4 h-4 mr-1"} />
-          {recipe.kategória || 'Házi készítésű'}
-        </Badge>
+        {/* Főzési idő és adag */}
+        <div className="flex justify-center gap-4 sm:gap-6 text-white/80">
+          {recipe.főzésiIdő && (
+            <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-lg">
+              <Clock className="w-4 h-4" />
+              <span className="text-sm">{recipe.főzésiIdő}</span>
+            </div>
+          )}
+          {recipe.adagok && (
+            <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-lg">
+              <Users className="w-4 h-4" />
+              <span className="text-sm">{recipe.adagok}</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Ingredients */}
-      <div className={ingredientsClass}>
-        <h3 className={`font-semibold text-green-400 mb-2 ${compact ? 'text-sm' : isFullScreen ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl'}`}>
+      {/* Hozzávalók */}
+      <div className="bg-white/5 rounded-xl p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center gap-2">
           🥕 Hozzávalók:
         </h3>
-        <div className={`grid gap-1 ${compact ? 'text-xs' : isFullScreen ? 'grid-cols-1 sm:grid-cols-2 text-base sm:text-lg' : 'grid-cols-1 sm:grid-cols-2 text-sm sm:text-base'}`}>
-          {recipe.hozzávalók.map((ingredient, index) => (
-            <div key={index} className="text-white/90 flex items-center">
-              <span className="text-green-400 mr-2">•</span>
-              {ingredient}
+        <ul className="space-y-2">
+          {formatIngredients(recipe.hozzávalók).map((ingredient, index) => (
+            <li key={index} className="text-white/90 flex items-start gap-2">
+              <span className="text-yellow-400 mt-1">•</span>
+              <span>{ingredient}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Elkészítés */}
+      <div className="bg-white/5 rounded-xl p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center gap-2">
+          👨‍🍳 Elkészítés:
+        </h3>
+        <div className="space-y-3">
+          {formatInstructions(recipe.elkészítés).map((step, index) => (
+            <div key={index} className="flex gap-3">
+              <span className="bg-yellow-400 text-black text-sm font-bold px-2 py-1 rounded-full min-w-[24px] h-6 flex items-center justify-center">
+                {index + 1}
+              </span>
+              <p className="text-white/90 flex-1 leading-relaxed">{step}</p>
             </div>
           ))}
         </div>
       </div>
-
-      {/* Instructions */}
-      {recipe.elkészítés && (
-        <div className={instructionsClass}>
-          <h3 className={`font-semibold text-blue-400 mb-2 ${compact ? 'text-sm' : isFullScreen ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl'}`}>
-            👨‍🍳 Elkészítés:
-          </h3>
-          <div className={`text-white/90 whitespace-pre-line leading-relaxed ${compact ? 'text-xs' : isFullScreen ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
-            {recipe.elkészítés}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
