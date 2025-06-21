@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Utensils, Search } from "lucide-react";
 
 interface MealTypeData {
@@ -23,19 +24,25 @@ interface CategoryIngredientSelectorProps {
   selectedMealType: string;
   foodData: FoodData;
   onGetRecipe: (category: string, ingredient: string) => Promise<void>;
+  multipleIngredients?: boolean;
+  onGetMultipleRecipes?: (category: string, ingredients: string[]) => Promise<void>;
 }
 
 export function CategoryIngredientSelector({ 
   selectedMealType, 
   foodData, 
-  onGetRecipe 
+  onGetRecipe,
+  multipleIngredients = false,
+  onGetMultipleRecipes
 }: CategoryIngredientSelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedIngredient, setSelectedIngredient] = useState("");
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
     setSelectedIngredient("");
+    setSelectedIngredients([]);
     
     // Scroll to ingredients section after a short delay
     setTimeout(() => {
@@ -51,23 +58,38 @@ export function CategoryIngredientSelector({
   };
 
   const handleIngredientSelect = (ingredient: string) => {
-    setSelectedIngredient(ingredient);
-    
-    // Scroll to generate button after a short delay
-    setTimeout(() => {
-      const generateSection = document.querySelector('[data-scroll-target="generate-button"]');
-      if (generateSection) {
-        generateSection.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center',
-          inline: 'nearest'
-        });
-      }
-    }, 100);
+    if (multipleIngredients) {
+      setSelectedIngredients(prev => {
+        const isSelected = prev.includes(ingredient);
+        if (isSelected) {
+          return prev.filter(item => item !== ingredient);
+        } else {
+          return [...prev, ingredient];
+        }
+      });
+    } else {
+      setSelectedIngredient(ingredient);
+      
+      // Scroll to generate button after a short delay
+      setTimeout(() => {
+        const generateSection = document.querySelector('[data-scroll-target="generate-button"]');
+        if (generateSection) {
+          generateSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 100);
+    }
   };
 
   const handleGetRecipe = () => {
-    onGetRecipe(selectedCategory, selectedIngredient);
+    if (multipleIngredients && onGetMultipleRecipes) {
+      onGetMultipleRecipes(selectedCategory, selectedIngredients);
+    } else {
+      onGetRecipe(selectedCategory, selectedIngredient);
+    }
   };
 
   const getRandomRecipe = () => {
@@ -106,21 +128,23 @@ export function CategoryIngredientSelector({
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {availableCategories.map((category) => (
                 <Button
                   key={category}
                   onClick={() => handleCategorySelect(category)}
                   variant="outline"
-                  className={`h-auto p-2 sm:p-3 transition-all duration-300 text-xs sm:text-sm ${
+                  className={`h-auto p-3 sm:p-4 transition-all duration-300 text-sm sm:text-base ${
                     selectedCategory === category
                       ? 'bg-green-600/30 border-green-400/50 text-white shadow-lg transform scale-105'
                       : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40 hover:transform hover:scale-102'
                   }`}
                 >
-                  <div className="text-center">
-                    <div className="font-medium leading-tight mb-1">{category}</div>
-                    <Badge variant="secondary" className="bg-white/20 text-white/90 text-xs px-1 py-0">
+                  <div className="text-center w-full">
+                    <div className="font-medium leading-tight mb-2 text-center whitespace-normal break-words">
+                      {category}
+                    </div>
+                    <Badge variant="secondary" className="bg-white/20 text-white/90 text-xs px-2 py-1">
                       {foodData.getFilteredIngredients(category).length}
                     </Badge>
                   </div>
@@ -137,33 +161,59 @@ export function CategoryIngredientSelector({
           <CardHeader className="pb-4">
             <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
               <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-              Válassz alapanyagot ({selectedCategory})
+              {multipleIngredients ? 'Válassz alapanyagokat' : 'Válassz alapanyagot'} ({selectedCategory})
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
-              {availableIngredients.map((ingredient) => (
-                <Button
-                  key={ingredient}
-                  onClick={() => handleIngredientSelect(ingredient)}
-                  variant="outline"
-                  size="sm"
-                  className={`p-2 sm:p-3 h-auto transition-all duration-200 text-xs sm:text-sm ${
-                    selectedIngredient === ingredient
-                      ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-md transform scale-105'
-                      : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
-                  }`}
-                >
-                  {ingredient}
-                </Button>
-              ))}
+              {availableIngredients.map((ingredient) => {
+                const isSelected = multipleIngredients 
+                  ? selectedIngredients.includes(ingredient)
+                  : selectedIngredient === ingredient;
+
+                return (
+                  <div key={ingredient} className="relative">
+                    {multipleIngredients ? (
+                      <div
+                        className={`p-2 sm:p-3 h-auto transition-all duration-200 text-xs sm:text-sm border rounded cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-md'
+                            : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
+                        }`}
+                        onClick={() => handleIngredientSelect(ingredient)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={isSelected}
+                            className="pointer-events-none"
+                          />
+                          <span className="flex-1">{ingredient}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => handleIngredientSelect(ingredient)}
+                        variant="outline"
+                        size="sm"
+                        className={`p-2 sm:p-3 h-auto transition-all duration-200 text-xs sm:text-sm w-full ${
+                          isSelected
+                            ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-md transform scale-105'
+                            : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
+                        }`}
+                      >
+                        {ingredient}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Generate Recipe Button */}
-      {(selectedCategory || selectedIngredient) && (
+      {(selectedCategory || selectedIngredient || (multipleIngredients && selectedIngredients.length > 0)) && (
         <div className="text-center" data-scroll-target="generate-button">
           <Button
             onClick={handleGetRecipe}
@@ -171,7 +221,8 @@ export function CategoryIngredientSelector({
           >
             🍽️ Recept generálása
             {selectedCategory && ` (${selectedCategory})`}
-            {selectedIngredient && ` - ${selectedIngredient}`}
+            {!multipleIngredients && selectedIngredient && ` - ${selectedIngredient}`}
+            {multipleIngredients && selectedIngredients.length > 0 && ` - ${selectedIngredients.length} alapanyag`}
           </Button>
         </div>
       )}

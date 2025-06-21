@@ -256,7 +256,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {categories.map((category) => {
                 const stats = getStatsForCategory(category);
                 const isSelected = selectedCategory === category;
@@ -266,18 +266,20 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                     key={category}
                     onClick={() => handleCategorySelect(category)}
                     variant="outline"
-                    className={`h-auto p-2 sm:p-3 flex-col gap-1 transition-all duration-200 text-xs sm:text-sm ${
+                    className={`h-auto p-3 sm:p-4 flex-col gap-2 transition-all duration-200 text-sm sm:text-base ${
                       isSelected
                         ? 'bg-purple-600/30 border-purple-400/50 text-white shadow-lg'
                         : 'bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30'
                     }`}
                   >
-                    <div className="font-medium text-center leading-tight">{category}</div>
+                    <div className="font-medium text-center leading-tight whitespace-normal break-words w-full">
+                      {category}
+                    </div>
                     <div className="flex gap-2 text-xs">
-                      <Badge className="bg-green-600/30 text-green-400 border-green-400/50 text-xs px-1 py-0">
+                      <Badge className="bg-green-600/30 text-green-400 border-green-400/50 text-xs px-2 py-1">
                         ❤️ {stats.liked}
                       </Badge>
-                      <Badge className="bg-red-600/30 text-red-400 border-red-400/50 text-xs px-1 py-0">
+                      <Badge className="bg-red-600/30 text-red-400 border-red-400/50 text-xs px-2 py-1">
                         👎 {stats.disliked}
                       </Badge>
                     </div>
