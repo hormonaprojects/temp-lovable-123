@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Shuffle, Search, Layers } from "lucide-react";
+import { Clock, Shuffle, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FoodData {
@@ -89,21 +90,13 @@ export function MealTypeSelector({
               <Shuffle className="mr-2 h-4 w-4" />
               Véletlenszerű recept
             </Button>
-            
-            <Button
-              onClick={onShowIngredientSelection}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <Search className="mr-2 h-4 w-4" />
-              Alapanyag szerint (1 kategória)
-            </Button>
 
             <Button
               onClick={onShowMultiCategorySelection}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <Layers className="mr-2 h-4 w-4" />
-              Alapanyag szerint (több kategória)
+              Alapanyag szerint
             </Button>
           </div>
         )}

@@ -1,7 +1,7 @@
 
+
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
-import { CategoryIngredientSelector } from "./CategoryIngredientSelector";
 import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
 import { RecipeDisplay } from "./RecipeDisplay";
 import { MultiDayMealPlanGenerator } from "./MultiDayMealPlanGenerator";
@@ -37,7 +37,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [multiDayPlan, setMultiDayPlan] = useState<MultiDayMealPlan[]>([]);
   const [isMultiDayLoading, setIsMultiDayLoading] = useState(false);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
-  const [ingredientSelectionMode, setIngredientSelectionMode] = useState<'single' | 'multi'>('single');
   const [lastSearchParams, setLastSearchParams] = useState<{
     category: string;
     ingredient: string;
@@ -115,134 +114,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       toast({
         title: "Hiba",
         description: "Nem sikerült automatikusan betölteni a receptet.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getRecipe = async (category: string, ingredient: string) => {
-    if (!selectedMealType) return;
-
-    setIsLoading(true);
-    setCurrentRecipe(null);
-    
-    setLastSearchParams({ category, ingredient, mealType: selectedMealType });
-
-    try {
-      console.log('🔍 SZIGORÚ recept keresése preferenciákkal:', { selectedMealType, category, ingredient });
-      
-      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
-      
-      let foundRecipes = [];
-
-      if (category && ingredient) {
-        foundRecipes = getRecipesByCategory(category, ingredient, selectedMealType);
-        console.log(`🎯 SZIGORÚ specifikus keresés eredménye (preferenciákkal): ${foundRecipes.length} recept`);
-      } else if (category) {
-        foundRecipes = getRecipesByCategory(category, undefined, selectedMealType);
-        console.log(`🎯 SZIGORÚ kategória keresés eredménye (preferenciákkal): ${foundRecipes.length} recept`);
-      } else {
-        foundRecipes = getRecipesByMealType(selectedMealType);
-        console.log(`🎯 Random étkezési típus keresés eredménye (preferenciákkal prioritizálva): ${foundRecipes.length} recept`);
-      }
-
-      await minLoadingTime;
-
-      if (foundRecipes.length > 0) {
-        const randomIndex = Math.floor(Math.random() * foundRecipes.length);
-        const selectedSupabaseRecipe = foundRecipes[randomIndex];
-        const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
-        
-        setCurrentRecipe(standardRecipe);
-        
-        toast({
-          title: "Recept betöltve!",
-          description: `${standardRecipe.név} sikeresen betöltve az adatbázisból (preferenciáiddal).`,
-        });
-      } else {
-        let errorMessage = "";
-        if (category && ingredient) {
-          errorMessage = `Nincs "${ingredient}" alapanyaggal recept "${selectedMealType}" étkezéshez a "${category}" kategóriában (preferenciáid szerint).`;
-        } else if (category) {
-          errorMessage = `Nincs recept "${selectedMealType}" étkezéshez a "${category}" kategóriában (preferenciáid szerint).`;
-        } else {
-          errorMessage = `Nincs recept "${selectedMealType}" étkezéshez (preferenciáid szerint).`;
-        }
-        
-        toast({
-          title: "Nincs megfelelő recept",
-          description: errorMessage,
-          variant: "destructive"
-        });
-      }
-
-    } catch (error) {
-      console.error('❌ Hiba a recept kérésekor:', error);
-      toast({
-        title: "Hiba",
-        description: "Nem sikerült betölteni a receptet az adatbázisból.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getMultipleRecipes = async (category: string, ingredients: string[]) => {
-    if (!selectedMealType) return;
-
-    setIsLoading(true);
-    setCurrentRecipe(null);
-    
-    // Több alapanyag esetén a kategóriát és az első alapanyagot tároljuk
-    setLastSearchParams({ category, ingredient: ingredients.join(", "), mealType: selectedMealType });
-
-    try {
-      console.log('🔍 TÖBB alapanyaggal recept keresése:', { selectedMealType, category, ingredients });
-      
-      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Receptek keresése az összes megadott alapanyag alapján
-      let allFoundRecipes = [];
-      
-      for (const ingredient of ingredients) {
-        const foundRecipes = getRecipesByCategory(category, ingredient, selectedMealType);
-        allFoundRecipes.push(...foundRecipes);
-      }
-      
-      // Duplikátumok eltávolítása
-      const uniqueRecipes = allFoundRecipes.filter((recipe, index, self) =>
-        index === self.findIndex(r => r['Recept_Neve'] === recipe['Recept_Neve'])
-      );
-
-      await minLoadingTime;
-
-      if (uniqueRecipes.length > 0) {
-        const randomIndex = Math.floor(Math.random() * uniqueRecipes.length);
-        const selectedSupabaseRecipe = uniqueRecipes[randomIndex];
-        const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
-        
-        setCurrentRecipe(standardRecipe);
-        
-        toast({
-          title: "Recept betöltve!",
-          description: `${standardRecipe.név} sikeresen betöltve (${ingredients.length} alapanyag alapján).`,
-        });
-      } else {
-        toast({
-          title: "Nincs megfelelő recept",
-          description: `Nincs recept "${selectedMealType}" étkezéshez a kiválasztott alapanyagokkal.`,
-          variant: "destructive"
-        });
-      }
-
-    } catch (error) {
-      console.error('❌ Hiba a több alapanyagos recept kérésekor:', error);
-      toast({
-        title: "Hiba",
-        description: "Nem sikerült betölteni a receptet.",
         variant: "destructive"
       });
     } finally {
@@ -435,7 +306,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setMultiDayPlan([]);
     setViewMode('single');
     setShowIngredientSelection(false);
-    setIngredientSelectionMode('single');
     setLastSearchParams({ category: "", ingredient: "", mealType: "" });
   };
 
@@ -472,12 +342,11 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     console.log('🎲 Manuális random recept kérés');
     if (selectedMealType) {
       setShowIngredientSelection(false);
-      await getRecipe("", "");
+      await handleAutoGenerateRecipe();
     }
   };
 
-  const handleShowIngredientSelection = (mode: 'single' | 'multi' = 'single') => {
-    setIngredientSelectionMode(mode);
+  const handleShowIngredientSelection = () => {
     setShowIngredientSelection(true);
   };
 
@@ -528,27 +397,10 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
             onSelectMealType={handleMealTypeSelect}
             foodData={foodData}
             onGetRandomRecipe={handleGetRandomRecipe}
-            onShowIngredientSelection={() => handleShowIngredientSelection('single')}
-            onShowMultiCategorySelection={() => handleShowIngredientSelection('multi')}
+            onShowMultiCategorySelection={handleShowIngredientSelection}
           />
 
-          {selectedMealType && showIngredientSelection && ingredientSelectionMode === 'single' && (
-            <CategoryIngredientSelector
-              selectedMealType={selectedMealType}
-              foodData={foodData}
-              onGetRecipe={getRecipe}
-              multipleIngredients={true}
-              onGetMultipleRecipes={getMultipleRecipes}
-              getFavoriteForIngredient={(ingredient: string, category: string) => {
-                console.log('🔍 SingleRecipeApp - Kedvenc ellenőrzés:', { ingredient, category });
-                const result = getFavoriteForIngredient(ingredient, category);
-                console.log('✅ SingleRecipeApp - Kedvenc eredmény:', result);
-                return result;
-              }}
-            />
-          )}
-
-          {selectedMealType && showIngredientSelection && ingredientSelectionMode === 'multi' && (
+          {selectedMealType && showIngredientSelection && (
             <MultiCategoryIngredientSelector
               selectedMealType={selectedMealType}
               foodData={foodData}

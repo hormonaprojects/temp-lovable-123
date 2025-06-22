@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Utensils, Star, Heart, Plus, Minus } from "lucide-react";
+import { Utensils, Star, Heart, Plus, Minus, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FoodData {
@@ -37,6 +37,9 @@ export function MultiCategoryIngredientSelector({
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
 
   const availableCategories = Object.keys(foodData.categories);
+  
+  // Kategóriák amelyeknél csak 1 alapanyagot lehet választani
+  const singleSelectionCategories = ['Húsfélék', 'Halak'];
 
   const getSortedIngredients = (category: string): string[] => {
     const ingredients = foodData.getFilteredIngredients(category);
@@ -82,9 +85,20 @@ export function MultiCategoryIngredientSelector({
       );
       
       if (existingIndex > -1) {
+        // Eltávolítjuk az alapanyagot
         return prev.filter((_, index) => index !== existingIndex);
       } else {
-        return [...prev, newIngredient];
+        // Hozzáadjuk az alapanyagot
+        const isSingleSelectionCategory = singleSelectionCategories.includes(category);
+        
+        if (isSingleSelectionCategory) {
+          // Ha ez egy korlátozott kategória, eltávolítjuk a többi alapanyagot ebből a kategóriából
+          const filtered = prev.filter(ing => ing.category !== category);
+          return [...filtered, newIngredient];
+        } else {
+          // Normál esetben csak hozzáadjuk
+          return [...prev, newIngredient];
+        }
       }
     });
   };
@@ -93,6 +107,10 @@ export function MultiCategoryIngredientSelector({
     return selectedIngredients.some(
       ing => ing.ingredient === ingredient && ing.category === category
     );
+  };
+
+  const getSelectedCountForCategory = (category: string): number => {
+    return selectedIngredients.filter(ing => ing.category === category).length;
   };
 
   const handleGenerateRecipe = () => {
@@ -121,34 +139,52 @@ export function MultiCategoryIngredientSelector({
             Válassz kategóriákat:
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {availableCategories.map((category) => (
-              <div
-                key={category}
-                className={cn(
-                  "p-3 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:scale-105",
-                  selectedCategories.includes(category)
-                    ? "bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-purple-400 shadow-lg"
-                    : "bg-white/10 border-white/20 hover:bg-white/20"
-                )}
-                onClick={() => handleCategoryToggle(category)}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Checkbox
-                    checked={selectedCategories.includes(category)}
-                    onChange={() => {}}
-                    className="data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
-                  />
-                  {selectedCategories.includes(category) ? (
-                    <Minus className="w-4 h-4 text-purple-400" />
-                  ) : (
-                    <Plus className="w-4 h-4 text-white/60" />
+            {availableCategories.map((category) => {
+              const isSingleSelection = singleSelectionCategories.includes(category);
+              const selectedCount = getSelectedCountForCategory(category);
+              
+              return (
+                <div
+                  key={category}
+                  className={cn(
+                    "p-3 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:scale-105",
+                    selectedCategories.includes(category)
+                      ? "bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-purple-400 shadow-lg"
+                      : "bg-white/10 border-white/20 hover:bg-white/20"
+                  )}
+                  onClick={() => handleCategoryToggle(category)}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Checkbox
+                      checked={selectedCategories.includes(category)}
+                      onChange={() => {}}
+                      className="data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                    />
+                    {selectedCategories.includes(category) ? (
+                      <Minus className="w-4 h-4 text-purple-400" />
+                    ) : (
+                      <Plus className="w-4 h-4 text-white/60" />
+                    )}
+                    {isSingleSelection && (
+                      <AlertCircle className="w-4 h-4 text-amber-400" title="Csak 1 alapanyag választható" />
+                    )}
+                  </div>
+                  <p className="text-white text-sm font-medium text-center leading-tight">
+                    {category}
+                  </p>
+                  {isSingleSelection && (
+                    <p className="text-amber-300 text-xs text-center mt-1">
+                      Max 1 alapanyag
+                    </p>
+                  )}
+                  {selectedCount > 0 && (
+                    <Badge variant="secondary" className="w-full justify-center mt-2 bg-purple-500/20 text-purple-200">
+                      {selectedCount} kiválasztva
+                    </Badge>
                   )}
                 </div>
-                <p className="text-white text-sm font-medium text-center leading-tight">
-                  {category}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -171,6 +207,8 @@ export function MultiCategoryIngredientSelector({
         {/* Ingredients Selection for Each Category */}
         {selectedCategories.map((category) => {
           const categoryIngredients = getSortedIngredients(category);
+          const isSingleSelection = singleSelectionCategories.includes(category);
+          const selectedCount = getSelectedCountForCategory(category);
           
           return (
             <div key={category} className="space-y-4">
@@ -181,28 +219,38 @@ export function MultiCategoryIngredientSelector({
                 <Badge variant="outline" className="text-purple-300 border-purple-300">
                   {categoryIngredients.length} db
                 </Badge>
+                {isSingleSelection && (
+                  <Badge variant="outline" className="text-amber-300 border-amber-300">
+                    Max 1 választható
+                  </Badge>
+                )}
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-64 overflow-y-auto p-4 bg-white/5 rounded-xl border border-white/10">
                 {categoryIngredients.map((ingredient) => {
                   const isSelected = isIngredientSelected(ingredient, category);
                   const isFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(ingredient, category) : false;
+                  const isDisabled = isSingleSelection && selectedCount >= 1 && !isSelected;
 
                   return (
                     <div
                       key={`${category}-${ingredient}`}
                       className={cn(
-                        "relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:scale-105",
+                        "relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-300",
+                        isDisabled 
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:scale-105",
                         isSelected
                           ? "bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-purple-400 shadow-lg"
                           : "bg-white/10 border-white/20 hover:bg-white/20"
                       )}
-                      onClick={() => handleIngredientToggle(ingredient, category)}
+                      onClick={() => !isDisabled && handleIngredientToggle(ingredient, category)}
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <Checkbox
                           checked={isSelected}
                           onChange={() => {}}
+                          disabled={isDisabled}
                           className="data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
                         />
                         {isFavorite && (
