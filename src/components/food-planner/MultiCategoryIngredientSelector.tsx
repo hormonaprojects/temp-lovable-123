@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, X, Heart } from "lucide-react";
+import { Sparkles, X, Heart, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SelectedIngredient {
@@ -52,9 +52,14 @@ export function MultiCategoryIngredientSelector({
 
     const newIngredient = { category: selectedCategory, ingredient };
     setSelectedIngredients(prev => {
-      if (prev.find(item => item.ingredient === ingredient && item.category === selectedCategory)) {
-        return prev;
+      // Ha már ki van választva, távolítsuk el
+      const existingIndex = prev.findIndex(item => item.ingredient === ingredient && item.category === selectedCategory);
+      if (existingIndex !== -1) {
+        const newIngredients = [...prev];
+        newIngredients.splice(existingIndex, 1);
+        return newIngredients;
       }
+      // Ha nincs kiválasztva, adjuk hozzá
       return [...prev, newIngredient];
     });
   };
@@ -70,6 +75,10 @@ export function MultiCategoryIngredientSelector({
   const handleGenerateRecipe = async () => {
     if (selectedIngredients.length === 0) return;
     await onGetMultipleCategoryRecipes(selectedIngredients);
+  };
+
+  const isIngredientSelected = (ingredient: string) => {
+    return selectedIngredients.some(item => item.ingredient === ingredient && item.category === selectedCategory);
   };
 
   // Javított sorrendezés: kedvencek ELŐSZÖR, majd liked, majd neutral (disliked elrejtése)
@@ -197,14 +206,18 @@ export function MultiCategoryIngredientSelector({
               {getSortedIngredients(selectedCategory).map(ingredient => {
                 const isFavorite = getFavoriteForIngredient(ingredient, selectedCategory);
                 const preference = getPreferenceForIngredient ? getPreferenceForIngredient(ingredient, selectedCategory) : 'neutral';
+                const isSelected = isIngredientSelected(ingredient);
                 
-                console.log(`🎨 Renderelés: ${ingredient} - kedvenc: ${isFavorite}, preferencia: ${preference}`);
+                console.log(`🎨 Renderelés: ${ingredient} - kedvenc: ${isFavorite}, preferencia: ${preference}, kiválasztva: ${isSelected}`);
                 
                 let buttonClasses = cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative border-2"
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative border-2 min-h-[60px] flex items-center justify-center"
                 );
 
-                if (isFavorite) {
+                if (isSelected) {
+                  // Kiválasztott állapot - zöld háttér
+                  buttonClasses = cn(buttonClasses, "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg border-green-400 transform scale-105");
+                } else if (isFavorite) {
                   buttonClasses = cn(buttonClasses, "bg-pink-500/80 text-white hover:bg-pink-600 shadow-md border-pink-400");
                 } else if (preference === 'like') {
                   buttonClasses = cn(buttonClasses, "bg-green-500/60 text-white hover:bg-green-600/80 border-green-400");
@@ -218,10 +231,13 @@ export function MultiCategoryIngredientSelector({
                     onClick={() => addSelectedIngredient(ingredient)}
                     className={buttonClasses}
                   >
-                    {isFavorite && (
+                    {isSelected && (
+                      <Check className="absolute top-1 right-1 w-4 h-4 text-white bg-green-600 rounded-full p-0.5" />
+                    )}
+                    {isFavorite && !isSelected && (
                       <Heart className="absolute top-1 right-1 w-3 h-3 text-white fill-white" />
                     )}
-                    {ingredient}
+                    <span className="text-center">{ingredient}</span>
                   </button>
                 );
               })}
