@@ -1,10 +1,9 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Utensils, Star, Heart, Plus, Minus, AlertCircle, Check } from "lucide-react";
+import { Utensils, Star, Heart, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FoodData {
@@ -34,11 +33,27 @@ export function MultiCategoryIngredientSelector({
 }: MultiCategoryIngredientSelectorProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
+  
+  // Refs for scrolling
+  const categorySelectionRef = useRef<HTMLDivElement>(null);
+  const ingredientSectionRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   const availableCategories = Object.keys(foodData.categories);
   
   // Kategóriák amelyeknél csak 1 alapanyagot lehet választani
   const singleSelectionCategories = ['Húsfélék', 'Halak'];
+
+  // Smooth scroll function
+  const scrollToElement = (elementRef: React.RefObject<HTMLDivElement>, delay = 500) => {
+    setTimeout(() => {
+      elementRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      });
+    }, delay);
+  };
 
   const getSortedIngredients = (category: string): string[] => {
     const ingredients = foodData.getFilteredIngredients(category);
@@ -69,6 +84,9 @@ export function MultiCategoryIngredientSelector({
         setSelectedIngredients(prev => 
           prev.filter(ing => ing.category !== category)
         );
+      } else {
+        // Ha új kategóriát adunk hozzá, scrolloljunk az alapanyag választáshoz
+        scrollToElement(ingredientSectionRef);
       }
       
       return newCategories;
@@ -83,9 +101,10 @@ export function MultiCategoryIngredientSelector({
         ing => ing.ingredient === ingredient && ing.category === category
       );
       
+      let newIngredients;
       if (existingIndex > -1) {
         // Eltávolítjuk az alapanyagot
-        return prev.filter((_, index) => index !== existingIndex);
+        newIngredients = prev.filter((_, index) => index !== existingIndex);
       } else {
         // Hozzáadjuk az alapanyagot
         const isSingleSelectionCategory = singleSelectionCategories.includes(category);
@@ -93,12 +112,19 @@ export function MultiCategoryIngredientSelector({
         if (isSingleSelectionCategory) {
           // Ha ez egy korlátozott kategória, eltávolítjuk a többi alapanyagot ebből a kategóriából
           const filtered = prev.filter(ing => ing.category !== category);
-          return [...filtered, newIngredient];
+          newIngredients = [...filtered, newIngredient];
         } else {
           // Normál esetben csak hozzáadjuk
-          return [...prev, newIngredient];
+          newIngredients = [...prev, newIngredient];
         }
       }
+      
+      // Ha van kiválasztott alapanyag, scrolloljunk az összefoglalóhoz
+      if (newIngredients.length > 0) {
+        scrollToElement(summaryRef, 800);
+      }
+      
+      return newIngredients;
     });
   };
 
@@ -121,11 +147,13 @@ export function MultiCategoryIngredientSelector({
   const clearAllSelections = () => {
     setSelectedCategories([]);
     setSelectedIngredients([]);
+    // Scroll vissza a tetejére
+    scrollToElement(categorySelectionRef, 300);
   };
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
-      {/* Simplified Header */}
+      {/* Header */}
       <div className="text-center mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 flex items-center justify-center gap-2">
           <Utensils className="h-5 w-5 sm:h-6 w-6 text-purple-400" />
@@ -136,8 +164,8 @@ export function MultiCategoryIngredientSelector({
         </p>
       </div>
 
-      {/* Simplified Category Selection */}
-      <Card className="mb-6 bg-white/10 backdrop-blur-lg border-white/20 shadow-xl">
+      {/* Category Selection */}
+      <Card ref={categorySelectionRef} className="mb-6 bg-white/10 backdrop-blur-lg border-white/20 shadow-xl">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg text-white">1. Válassz kategóriákat:</CardTitle>
         </CardHeader>
@@ -196,78 +224,80 @@ export function MultiCategoryIngredientSelector({
       </Card>
 
       {/* Ingredients Selection for Each Category */}
-      {selectedCategories.map((category) => {
-        const categoryIngredients = getSortedIngredients(category);
-        const isSingleSelection = singleSelectionCategories.includes(category);
-        const selectedCount = getSelectedCountForCategory(category);
-        
-        return (
-          <Card key={category} className="mb-6 bg-white/10 backdrop-blur-lg border-white/20 shadow-xl">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg text-white flex items-center gap-2">
-                  2. {category} alapanyagok
-                  <Badge variant="outline" className="text-purple-300 border-purple-300 text-xs">
-                    {categoryIngredients.length} db
-                  </Badge>
-                </CardTitle>
-                {isSingleSelection && (
-                  <Badge className="bg-amber-500/20 text-amber-300 border border-amber-400/30 text-xs">
-                    Csak 1 választható
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 max-h-80 overflow-y-auto">
-                {categoryIngredients.map((ingredient) => {
-                  const isSelected = isIngredientSelected(ingredient, category);
-                  const isFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(ingredient, category) : false;
-                  const isDisabled = isSingleSelection && selectedCount >= 1 && !isSelected;
+      <div ref={ingredientSectionRef}>
+        {selectedCategories.map((category) => {
+          const categoryIngredients = getSortedIngredients(category);
+          const isSingleSelection = singleSelectionCategories.includes(category);
+          const selectedCount = getSelectedCountForCategory(category);
+          
+          return (
+            <Card key={category} className="mb-6 bg-white/10 backdrop-blur-lg border-white/20 shadow-xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg text-white flex items-center gap-2">
+                    2. {category} alapanyagok
+                    <Badge variant="outline" className="text-purple-300 border-purple-300 text-xs">
+                      {categoryIngredients.length} db
+                    </Badge>
+                  </CardTitle>
+                  {isSingleSelection && (
+                    <Badge className="bg-amber-500/20 text-amber-300 border border-amber-400/30 text-xs">
+                      Csak 1 választható
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                  {categoryIngredients.map((ingredient) => {
+                    const isSelected = isIngredientSelected(ingredient, category);
+                    const isFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(ingredient, category) : false;
+                    const isDisabled = isSingleSelection && selectedCount >= 1 && !isSelected;
 
-                  return (
-                    <div
-                      key={`${category}-${ingredient}`}
-                      className={cn(
-                        "relative p-3 rounded-xl border-2 cursor-pointer transition-all duration-300",
-                        isDisabled 
-                          ? "opacity-40 cursor-not-allowed"
-                          : "hover:scale-105",
-                        isSelected
-                          ? "bg-gradient-to-br from-green-500/30 to-emerald-500/30 border-green-400 shadow-md"
-                          : "bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30"
-                      )}
-                      onClick={() => !isDisabled && handleIngredientToggle(ingredient, category)}
-                    >
-                      {/* Selection indicator */}
-                      <div className="absolute top-2 right-2">
-                        {isSelected && (
-                          <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
+                    return (
+                      <div
+                        key={`${category}-${ingredient}`}
+                        className={cn(
+                          "relative p-3 rounded-xl border-2 cursor-pointer transition-all duration-300",
+                          isDisabled 
+                            ? "opacity-40 cursor-not-allowed"
+                            : "hover:scale-105",
+                          isSelected
+                            ? "bg-gradient-to-br from-green-500/30 to-emerald-500/30 border-green-400 shadow-md"
+                            : "bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30"
                         )}
-                        {isFavorite && !isSelected && (
-                          <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
-                        )}
+                        onClick={() => !isDisabled && handleIngredientToggle(ingredient, category)}
+                      >
+                        {/* Selection indicator */}
+                        <div className="absolute top-2 right-2">
+                          {isSelected && (
+                            <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                          {isFavorite && !isSelected && (
+                            <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+                          )}
+                        </div>
+                        
+                        <div className="text-center">
+                          <p className="text-white text-xs sm:text-sm font-medium leading-tight break-words">
+                            {ingredient}
+                          </p>
+                        </div>
                       </div>
-                      
-                      <div className="text-center">
-                        <p className="text-white text-xs sm:text-sm font-medium leading-tight break-words">
-                          {ingredient}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-      {/* Selected Ingredients Summary */}
+      {/* Selected Ingredients Summary - Updated colors to match other cards */}
       {selectedIngredients.length > 0 && (
-        <Card className="mb-6 bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-lg border-blue-300/30 shadow-xl">
+        <Card ref={summaryRef} className="mb-6 bg-white/10 backdrop-blur-lg border-white/20 shadow-xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-medium text-lg">
