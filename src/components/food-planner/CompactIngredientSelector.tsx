@@ -1,11 +1,15 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, X, Heart } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SelectedIngredient {
   category: string;
@@ -13,7 +17,7 @@ interface SelectedIngredient {
 }
 
 interface CompactIngredientSelectorProps {
-  categories: Record<string, string[]>;
+  categories: { [key: string]: string[] };
   getFilteredIngredients: (category: string) => string[];
   onIngredientsChange: (ingredients: SelectedIngredient[]) => void;
   getFavoriteForIngredient?: (ingredient: string, category: string) => boolean;
@@ -27,240 +31,185 @@ export function CompactIngredientSelector({
   getFavoriteForIngredient,
   getPreferenceForIngredient
 }: CompactIngredientSelectorProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const availableCategories = Object.keys(categories);
-  
-  // Szűrt és rendezett alapanyagok lekérése
-  const getFilteredAndSortedIngredients = (category: string): string[] => {
-    const allIngredients = getFilteredIngredients(category);
-    
-    // Szűrjük ki a "dislike" alapanyagokat
-    const filteredIngredients = allIngredients.filter(ingredient => {
-      if (getPreferenceForIngredient) {
-        const preference = getPreferenceForIngredient(ingredient, category);
-        return preference !== 'dislike';
-      }
-      return true;
-    });
-    
-    // Rendezzük preferenciák szerint
-    return filteredIngredients.sort((a, b) => {
-      const aIsFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(a, category) : false;
-      const bIsFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(b, category) : false;
-      const aPreference = getPreferenceForIngredient ? getPreferenceForIngredient(a, category) : 'neutral';
-      const bPreference = getPreferenceForIngredient ? getPreferenceForIngredient(b, category) : 'neutral';
-      
-      // Első prioritás: kedvencek
-      if (aIsFavorite && !bIsFavorite) return -1;
-      if (!aIsFavorite && bIsFavorite) return 1;
-      
-      // Ha mindkettő kedvenc vagy mindkettő nem kedvenc
-      if (!aIsFavorite && !bIsFavorite) {
-        // Második prioritás: liked alapanyagok
-        if (aPreference === 'like' && bPreference !== 'like') return -1;
-        if (aPreference !== 'like' && bPreference === 'like') return 1;
-      }
-      
-      // Harmadik prioritás: ábécé sorrend
-      return a.localeCompare(b, 'hu');
-    });
-  };
-
-  const availableIngredients = selectedCategory ? getFilteredAndSortedIngredients(selectedCategory) : [];
+  useEffect(() => {
+    onIngredientsChange(selectedIngredients);
+  }, [selectedIngredients, onIngredientsChange]);
 
   const handleIngredientToggle = (ingredient: string) => {
-    const newSelection = { category: selectedCategory, ingredient };
-    const isAlreadySelected = selectedIngredients.some(
-      item => item.category === selectedCategory && item.ingredient === ingredient
-    );
+    if (!selectedCategory) return;
 
-    let newSelectedIngredients;
-    if (isAlreadySelected) {
-      newSelectedIngredients = selectedIngredients.filter(
-        item => !(item.category === selectedCategory && item.ingredient === ingredient)
+    setSelectedIngredients(prev => {
+      const existing = prev.find(item => 
+        item.ingredient === ingredient && item.category === selectedCategory
       );
-    } else {
-      newSelectedIngredients = [...selectedIngredients, newSelection];
-    }
 
-    setSelectedIngredients(newSelectedIngredients);
-    onIngredientsChange(newSelectedIngredients);
+      if (existing) {
+        return prev.filter(item => 
+          !(item.ingredient === ingredient && item.category === selectedCategory)
+        );
+      } else {
+        return [...prev, { category: selectedCategory, ingredient }];
+      }
+    });
   };
 
-  const removeIngredient = (index: number) => {
-    const newSelectedIngredients = selectedIngredients.filter((_, i) => i !== index);
-    setSelectedIngredients(newSelectedIngredients);
-    onIngredientsChange(newSelectedIngredients);
-  };
-
-  const clearAll = () => {
-    setSelectedIngredients([]);
-    onIngredientsChange([]);
-  };
-
-  if (!isOpen) {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-white/90 font-medium">🧄 Alapanyag szűrő</span>
-          <Button
-            onClick={() => setIsOpen(true)}
-            variant="outline"
-            size="sm"
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Hozzáadás
-          </Button>
-        </div>
-
-        {selectedIngredients.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {selectedIngredients.map((item, index) => {
-                const isFavorite = getFavoriteForIngredient 
-                  ? getFavoriteForIngredient(item.ingredient, item.category) 
-                  : false;
-                
-                return (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="bg-purple-500/20 text-white border-purple-400 flex items-center gap-1 px-2 py-1"
-                  >
-                    {isFavorite && <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />}
-                    <span className="text-xs text-purple-300">{item.category}:</span>
-                    {item.ingredient}
-                    <button
-                      onClick={() => removeIngredient(index)}
-                      className="ml-1 hover:bg-red-500/20 rounded-full p-0.5"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                );
-              })}
-            </div>
-            <Button
-              onClick={clearAll}
-              variant="ghost"
-              size="sm"
-              className="text-white/70 hover:text-white hover:bg-white/10 h-6 px-2 text-xs"
-            >
-              Összes törlése
-            </Button>
-          </div>
-        )}
-      </div>
+  const isIngredientSelected = (ingredient: string) => {
+    return selectedIngredients.some(item => 
+      item.ingredient === ingredient && item.category === selectedCategory
     );
-  }
+  };
+
+  const removeIngredient = (ingredient: string, category: string) => {
+    setSelectedIngredients(prev => 
+      prev.filter(item => !(item.ingredient === ingredient && item.category === category))
+    );
+  };
+
+  const getDisplayedIngredients = () => {
+    if (!selectedCategory) return [];
+    
+    let ingredients = getFilteredIngredients(selectedCategory);
+    
+    // Szűrjük ki a "nem szeretem" alapanyagokat
+    if (getPreferenceForIngredient) {
+      ingredients = ingredients.filter(ingredient => {
+        const preference = getPreferenceForIngredient(ingredient, selectedCategory);
+        return preference !== 'dislike';
+      });
+    }
+    
+    // Rendezzük a preferencia szerint: kedvenc, szeretem, semleges
+    return ingredients.sort((a, b) => {
+      const isFavoriteA = getFavoriteForIngredient?.(a, selectedCategory) || false;
+      const isFavoriteB = getFavoriteForIngredient?.(b, selectedCategory) || false;
+      
+      const preferenceA = getPreferenceForIngredient?.(a, selectedCategory) || 'neutral';
+      const preferenceB = getPreferenceForIngredient?.(b, selectedCategory) || 'neutral';
+      
+      // Kedvencek előre
+      if (isFavoriteA && !isFavoriteB) return -1;
+      if (!isFavoriteA && isFavoriteB) return 1;
+      
+      // Ha mindkettő kedvenc vagy egyik sem, akkor preferencia szerint
+      const preferenceOrder = { 'like': 0, 'neutral': 1, 'dislike': 2 };
+      return preferenceOrder[preferenceA] - preferenceOrder[preferenceB];
+    });
+  };
+
+  const getIngredientBadgeVariant = (ingredient: string) => {
+    if (!getPreferenceForIngredient) return 'outline';
+    
+    const isFavorite = getFavoriteForIngredient?.(ingredient, selectedCategory);
+    const preference = getPreferenceForIngredient(ingredient, selectedCategory);
+    
+    if (isFavorite) return 'default'; // Kedvenc = kék
+    if (preference === 'like') return 'secondary'; // Szeretem = szürke
+    return 'outline'; // Semleges = outline
+  };
+
+  const displayedIngredients = getDisplayedIngredients();
 
   return (
-    <div className="space-y-4 bg-white/5 rounded-lg p-4 border border-white/10">
-      <div className="flex items-center justify-between">
-        <span className="text-white font-medium">🧄 Alapanyag szűrő</span>
-        <Button
-          onClick={() => setIsOpen(false)}
-          variant="ghost"
-          size="sm"
-          className="text-white/70 hover:text-white"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
-
-      <div className="space-y-3">
+    <div className="space-y-3 sm:space-y-4">
+      {/* Kategória választó */}
+      <div className="space-y-2">
+        <label className="text-white/90 text-sm font-medium block">
+          🏷️ Alapanyag szűrő
+        </label>
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="bg-white/10 border-white/20 text-white">
+          <SelectTrigger className="w-full bg-white/10 border-white/20 text-white text-sm sm:text-base">
             <SelectValue placeholder="Válassz kategóriát..." />
           </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-600">
-            {availableCategories.map((category) => (
-              <SelectItem 
-                key={category} 
-                value={category}
-                className="text-white hover:bg-gray-700"
-              >
+          <SelectContent>
+            {Object.keys(categories).map((category) => (
+              <SelectItem key={category} value={category} className="text-sm sm:text-base">
                 {category}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-
-        {selectedCategory && availableIngredients.length > 0 && (
-          <div className="max-h-48 overflow-y-auto space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              {availableIngredients.map((ingredient) => {
-                const isSelected = selectedIngredients.some(
-                  item => item.category === selectedCategory && item.ingredient === ingredient
-                );
-                const isFavorite = getFavoriteForIngredient 
-                  ? getFavoriteForIngredient(ingredient, selectedCategory) 
-                  : false;
-                const preference = getPreferenceForIngredient 
-                  ? getPreferenceForIngredient(ingredient, selectedCategory) 
-                  : 'neutral';
-
-                return (
-                  <div
-                    key={ingredient}
-                    onClick={() => handleIngredientToggle(ingredient)}
-                    className={cn(
-                      "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all text-sm",
-                      isSelected 
-                        ? "bg-purple-500/30 border border-purple-400" 
-                        : isFavorite
-                        ? "bg-pink-500/20 border border-pink-400/40 hover:bg-pink-500/30"
-                        : preference === 'like'
-                        ? "bg-green-500/20 border border-green-400/40 hover:bg-green-500/30"
-                        : "bg-white/10 border border-white/20 hover:bg-white/20"
-                    )}
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      onChange={() => {}}
-                      className="data-[state=checked]:bg-purple-500"
-                    />
-                    {isFavorite && <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />}
-                    <span className="text-white text-xs leading-tight">{ingredient}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
+      {/* Kiválasztott alapanyagok megjelenítése */}
       {selectedIngredients.length > 0 && (
         <div className="space-y-2">
-          <span className="text-white/90 text-sm font-medium">Kiválasztva ({selectedIngredients.length}):</span>
-          <div className="flex flex-wrap gap-1">
-            {selectedIngredients.map((item, index) => {
-              const isFavorite = getFavoriteForIngredient 
-                ? getFavoriteForIngredient(item.ingredient, item.category) 
-                : false;
-              
-              return (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="bg-purple-500/20 text-white border-purple-400 flex items-center gap-1 text-xs px-2 py-1"
-                >
-                  {isFavorite && <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />}
-                  {item.ingredient}
-                  <button
-                    onClick={() => removeIngredient(index)}
-                    className="ml-1 hover:bg-red-500/20 rounded-full p-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              );
-            })}
+          <div className="flex items-center justify-between">
+            <span className="text-white/90 text-sm font-medium">
+              Kiválasztott alapanyagok ({selectedIngredients.length})
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-white/70 hover:text-white h-auto p-1"
+            >
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
           </div>
+          
+          <div className={`space-y-2 ${!isExpanded ? 'max-h-20 overflow-hidden' : ''}`}>
+            {selectedIngredients.map((item, index) => (
+              <div key={index} className="flex flex-wrap gap-1 sm:gap-2">
+                <Badge 
+                  variant="default" 
+                  className="text-xs bg-blue-500/80 hover:bg-blue-500 flex items-center gap-1"
+                >
+                  <span className="truncate max-w-[120px] sm:max-w-none">
+                    {item.ingredient} ({item.category})
+                  </span>
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-red-200" 
+                    onClick={() => removeIngredient(item.ingredient, item.category)}
+                  />
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Alapanyagok grid */}
+      {selectedCategory && displayedIngredients.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-white/90 text-sm font-medium block">
+            Elérhető alapanyagok ({displayedIngredients.length})
+          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {displayedIngredients.map((ingredient) => (
+              <Button
+                key={ingredient}
+                variant={isIngredientSelected(ingredient) ? "default" : getIngredientBadgeVariant(ingredient)}
+                size="sm"
+                onClick={() => handleIngredientToggle(ingredient)}
+                className={`
+                  text-xs sm:text-sm px-2 py-1 h-auto min-h-[32px] sm:min-h-[36px]
+                  ${isIngredientSelected(ingredient) 
+                    ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                    : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+                  }
+                  transition-colors duration-200 truncate
+                `}
+                title={ingredient}
+              >
+                <span className="truncate leading-tight">
+                  {ingredient}
+                  {getFavoriteForIngredient?.(ingredient, selectedCategory) && ' ⭐'}
+                </span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedCategory && displayedIngredients.length === 0 && (
+        <div className="text-center py-4">
+          <p className="text-white/60 text-sm">
+            Nincs elérhető alapanyag ebben a kategóriában (preferenciáid alapján)
+          </p>
         </div>
       )}
     </div>

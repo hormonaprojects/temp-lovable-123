@@ -55,25 +55,25 @@ export function IngredientSelectionSection({
   };
 
   return (
-    <Card className="bg-white/5 backdrop-blur-lg border-white/10 shadow-xl">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-bold text-white">
+    <Card className="bg-white/5 backdrop-blur-lg border-white/10 shadow-xl mx-2 sm:mx-0">
+      <CardHeader className="pb-3 sm:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
+        <CardTitle className="text-lg sm:text-xl font-bold text-white">
           🎯 Étkezésenkénti alapanyag szűrő ({selectedMeals.length} étkezés)
         </CardTitle>
-        <p className="text-white/80 text-sm">
+        <p className="text-white/80 text-xs sm:text-sm leading-relaxed">
           Válasszon alapanyagokat minden étkezéshez külön-külön. A generálás gombbal indíthatja az étrend készítését.
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6 pb-3 sm:pb-6">
         {selectedMeals.map((mealKey) => {
           const mealType = mealTypes.find(m => m.key === mealKey);
           if (!mealType) return null;
 
           return (
-            <div key={mealKey} className="bg-white/5 rounded-lg border border-white/10 p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">{mealType.emoji}</span>
-                <h3 className="text-lg font-semibold text-white">{mealType.label}</h3>
+            <div key={mealKey} className="bg-white/5 rounded-lg border border-white/10 p-3 sm:p-4">
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                <span className="text-xl sm:text-2xl">{mealType.emoji}</span>
+                <h3 className="text-base sm:text-lg font-semibold text-white">{mealType.label}</h3>
               </div>
               
               <CompactIngredientSelector

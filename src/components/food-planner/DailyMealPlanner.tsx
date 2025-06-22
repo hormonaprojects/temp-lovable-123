@@ -116,7 +116,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
   }
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto p-6">
+    <div className="space-y-4 sm:space-y-8 max-w-6xl mx-auto p-3 sm:p-6">
       <DailyMealHeader onToggleSingleRecipe={onToggleSingleRecipe} />
 
       <MealTypeCardSelector
