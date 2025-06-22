@@ -18,6 +18,7 @@ interface IngredientSelectionSectionProps {
   foodData: any;
   onGetMultipleCategoryRecipes: (mealIngredients: MealIngredients) => Promise<void>;
   getFavoriteForIngredient: (ingredient: string) => boolean;
+  getPreferenceForIngredient?: (ingredient: string, category: string) => 'like' | 'dislike' | 'neutral';
 }
 
 const mealTypes = [
@@ -33,7 +34,8 @@ export function IngredientSelectionSection({
   selectedMeals,
   foodData,
   onGetMultipleCategoryRecipes,
-  getFavoriteForIngredient
+  getFavoriteForIngredient,
+  getPreferenceForIngredient
 }: IngredientSelectionSectionProps) {
   const [mealIngredients, setMealIngredients] = useState<MealIngredients>({});
 
@@ -84,6 +86,7 @@ export function IngredientSelectionSection({
                 getFavoriteForIngredient={(ingredient: string, category: string) => 
                   getFavoriteForIngredient(ingredient)
                 }
+                getPreferenceForIngredient={getPreferenceForIngredient}
               />
             </div>
           );

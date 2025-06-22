@@ -33,7 +33,8 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     getFilteredIngredients,
     loading,
     getFavoriteForIngredient,
-    convertToStandardRecipe
+    convertToStandardRecipe,
+    userPreferences
   } = useSupabaseData(user?.id);
 
   const {
@@ -68,6 +69,15 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
 
   const handleMealIngredientsChange = async (mealIngredients: MealIngredients) => {
     await handleGetMultipleCategoryRecipes(mealIngredients);
+  };
+
+  // Preferencia keresés függvény
+  const getPreferenceForIngredient = (ingredient: string, category: string): 'like' | 'dislike' | 'neutral' => {
+    const preference = userPreferences.find(pref => 
+      pref.ingredient.toLowerCase() === ingredient.toLowerCase() &&
+      pref.category.toLowerCase() === category.toLowerCase()
+    );
+    return preference ? preference.preference : 'neutral';
   };
 
   // Transform categories to match FoodData interface
@@ -110,6 +120,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
         foodData={foodData}
         onGetMultipleCategoryRecipes={handleMealIngredientsChange}
         getFavoriteForIngredient={getFavoriteForIngredient}
+        getPreferenceForIngredient={getPreferenceForIngredient}
       />
 
       <MealPlanGenerationButton

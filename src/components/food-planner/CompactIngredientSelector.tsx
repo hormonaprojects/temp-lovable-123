@@ -17,20 +17,59 @@ interface CompactIngredientSelectorProps {
   getFilteredIngredients: (category: string) => string[];
   onIngredientsChange: (ingredients: SelectedIngredient[]) => void;
   getFavoriteForIngredient?: (ingredient: string, category: string) => boolean;
+  getPreferenceForIngredient?: (ingredient: string, category: string) => 'like' | 'dislike' | 'neutral';
 }
 
 export function CompactIngredientSelector({
   categories,
   getFilteredIngredients,
   onIngredientsChange,
-  getFavoriteForIngredient
+  getFavoriteForIngredient,
+  getPreferenceForIngredient
 }: CompactIngredientSelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   const availableCategories = Object.keys(categories);
-  const availableIngredients = selectedCategory ? getFilteredIngredients(selectedCategory) : [];
+  
+  // Szűrt és rendezett alapanyagok lekérése
+  const getFilteredAndSortedIngredients = (category: string): string[] => {
+    const allIngredients = getFilteredIngredients(category);
+    
+    // Szűrjük ki a "dislike" alapanyagokat
+    const filteredIngredients = allIngredients.filter(ingredient => {
+      if (getPreferenceForIngredient) {
+        const preference = getPreferenceForIngredient(ingredient, category);
+        return preference !== 'dislike';
+      }
+      return true;
+    });
+    
+    // Rendezzük preferenciák szerint
+    return filteredIngredients.sort((a, b) => {
+      const aIsFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(a, category) : false;
+      const bIsFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(b, category) : false;
+      const aPreference = getPreferenceForIngredient ? getPreferenceForIngredient(a, category) : 'neutral';
+      const bPreference = getPreferenceForIngredient ? getPreferenceForIngredient(b, category) : 'neutral';
+      
+      // Első prioritás: kedvencek
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      
+      // Ha mindkettő kedvenc vagy mindkettő nem kedvenc
+      if (!aIsFavorite && !bIsFavorite) {
+        // Második prioritás: liked alapanyagok
+        if (aPreference === 'like' && bPreference !== 'like') return -1;
+        if (aPreference !== 'like' && bPreference === 'like') return 1;
+      }
+      
+      // Harmadik prioritás: ábécé sorrend
+      return a.localeCompare(b, 'hu');
+    });
+  };
+
+  const availableIngredients = selectedCategory ? getFilteredAndSortedIngredients(selectedCategory) : [];
 
   const handleIngredientToggle = (ingredient: string) => {
     const newSelection = { category: selectedCategory, ingredient };
@@ -154,13 +193,16 @@ export function CompactIngredientSelector({
         {selectedCategory && availableIngredients.length > 0 && (
           <div className="max-h-48 overflow-y-auto space-y-2">
             <div className="grid grid-cols-2 gap-2">
-              {availableIngredients.slice(0, 12).map((ingredient) => {
+              {availableIngredients.map((ingredient) => {
                 const isSelected = selectedIngredients.some(
                   item => item.category === selectedCategory && item.ingredient === ingredient
                 );
                 const isFavorite = getFavoriteForIngredient 
                   ? getFavoriteForIngredient(ingredient, selectedCategory) 
                   : false;
+                const preference = getPreferenceForIngredient 
+                  ? getPreferenceForIngredient(ingredient, selectedCategory) 
+                  : 'neutral';
 
                 return (
                   <div
@@ -172,6 +214,8 @@ export function CompactIngredientSelector({
                         ? "bg-purple-500/30 border border-purple-400" 
                         : isFavorite
                         ? "bg-pink-500/20 border border-pink-400/40 hover:bg-pink-500/30"
+                        : preference === 'like'
+                        ? "bg-green-500/20 border border-green-400/40 hover:bg-green-500/30"
                         : "bg-white/10 border border-white/20 hover:bg-white/20"
                     )}
                   >
@@ -186,11 +230,6 @@ export function CompactIngredientSelector({
                 );
               })}
             </div>
-            {availableIngredients.length > 12 && (
-              <p className="text-white/70 text-xs text-center">
-                +{availableIngredients.length - 12} további alapanyag...
-              </p>
-            )}
           </div>
         )}
       </div>

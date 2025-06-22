@@ -52,6 +52,7 @@ export function useMealPlanGeneration({
     const searchNormalized = normalizeText(searchIngredient);
     return recipeIngredients.some(recipeIng => {
       const recipeIngNormalized = normalizeText(recipeIng);
+      // Javított keresés: exact match vagy contains
       return recipeIngNormalized.includes(searchNormalized) || searchNormalized.includes(recipeIngNormalized);
     });
   };
@@ -84,10 +85,11 @@ export function useMealPlanGeneration({
 
       // Minden kiválasztott étkezési típusra generálunk egy receptet
       for (const mealType of selectedMeals) {
-        console.log(`🔍 Recept generálása: ${mealType}`);
+        console.log(`\n🔍 Recept generálása: ${mealType}`);
         
         // Az aktuális étkezéshez tartozó alapanyagok
         const mealSpecificIngredients = mealIngredients[mealType] || [];
+        console.log(`📋 ${mealType} kiválasztott alapanyagok:`, mealSpecificIngredients);
         
         const mealTypeRecipes = getRecipesByMealType(mealType);
         console.log(`📋 ${mealType} étkezéshez tartozó receptek:`, mealTypeRecipes.length);
@@ -96,28 +98,30 @@ export function useMealPlanGeneration({
 
         if (mealSpecificIngredients.length > 0) {
           // Ha vannak kiválasztott alapanyagok ehhez az étkezéshez, szűrjük őket
+          console.log(`🎯 Szűrés ${mealSpecificIngredients.length} alapanyag alapján`);
+          
           validRecipes = mealTypeRecipes.filter(recipe => {
             const recipeIngredients = getAllRecipeIngredients(recipe);
-            console.log(`\n🔍 Recept vizsgálata (${mealType}): ${recipe['Recept_Neve']}`);
             
             // Ellenőrizzük, hogy MINDEN kiválasztott alapanyag szerepel-e a receptben
             const hasAllIngredients = mealSpecificIngredients.every(selectedIng => {
               const found = hasIngredient(recipeIngredients, selectedIng.ingredient);
-              console.log(`${found ? '✅' : '❌'} "${selectedIng.ingredient}" ${found ? 'MEGTALÁLVA' : 'HIÁNYZIK'}`);
+              console.log(`${found ? '✅' : '❌'} "${selectedIng.ingredient}" ${found ? 'MEGTALÁLVA' : 'HIÁNYZIK'} - ${recipe['Recept_Neve']}`);
               return found;
             });
             
             if (hasAllIngredients) {
               console.log(`✅ ✅ ✅ ELFOGADVA (${mealType}): "${recipe['Recept_Neve']}" TARTALMAZZA az ÖSSZES alapanyagot!`);
-            } else {
-              console.log(`❌ ❌ ❌ ELUTASÍTVA (${mealType}): "${recipe['Recept_Neve']}" NEM tartalmazza az összes alapanyagot!`);
             }
             
             return hasAllIngredients;
           });
+          
+          console.log(`🎯 Szűrés után ${validRecipes.length} recept maradt`);
         } else {
           // Ha nincsenek kiválasztott alapanyagok ehhez az étkezéshez, használjuk az összes receptet
           validRecipes = mealTypeRecipes;
+          console.log(`🎯 Nincs szűrés, minden recept használható: ${validRecipes.length}`);
         }
 
         if (validRecipes.length > 0) {
@@ -136,7 +140,7 @@ export function useMealPlanGeneration({
           newRecipes.push(recipeWithMeta);
           console.log(`✅ SIKERES TALÁLAT ${mealType}-hez: "${standardRecipe.név}"`);
         } else {
-          console.log(`❌ NINCS MEGFELELŐ RECEPT ${mealType}-hez`);
+          console.log(`❌ NINCS MEGFELELŐ RECEPT ${mealType}-hez a kiválasztott alapanyagokkal`);
           // Továbbra is folytatjuk a többi étkezési típussal
         }
       }
@@ -157,7 +161,7 @@ export function useMealPlanGeneration({
       } else {
         toast({
           title: "Nincs megfelelő recept",
-          description: "Nem található elegendő recept a kiválasztott étkezésekhez és alapanyagokhoz. Próbáljon más alapanyagokat vagy étkezési típusokat!",
+          description: "Nem található elegendő recept a kiválasztott étkezésekhez és alapanyagokhoz. Próbáljon kevesebb vagy más alapanyagokat!",
           variant: "destructive"
         });
       }
