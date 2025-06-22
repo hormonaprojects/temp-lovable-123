@@ -56,10 +56,10 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
   return (
     <div className="space-y-6">
       {/* Összegzés */}
-      <Card className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 backdrop-blur-lg border-purple-300/30 shadow-xl">
+      <Card className="bg-gradient-to-br from-indigo-600/90 to-purple-700/90 backdrop-blur-lg border-purple-300/30 shadow-xl">
         <CardHeader className="pb-4">
           <CardTitle className="text-2xl font-bold text-center text-white flex items-center justify-center gap-3">
-            <ChefHat className="w-8 h-8 text-purple-400" />
+            <ChefHat className="w-8 h-8 text-purple-300" />
             Napi Étrend Összegzés
           </CardTitle>
           <CardDescription className="text-center text-white/80">
@@ -68,21 +68,21 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white/10 rounded-lg p-3 text-center">
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center border border-white/30">
               <div className="text-2xl font-bold text-white">{Math.round(totalCalories)}</div>
-              <div className="text-white/70 text-sm">Kalória</div>
+              <div className="text-white/80 text-sm">Kalória</div>
             </div>
-            <div className="bg-white/10 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold text-blue-400">{Math.round(totalProtein)}g</div>
-              <div className="text-white/70 text-sm">Fehérje</div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center border border-white/30">
+              <div className="text-2xl font-bold text-blue-300">{Math.round(totalProtein)}g</div>
+              <div className="text-white/80 text-sm">Fehérje</div>
             </div>
-            <div className="bg-white/10 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold text-green-400">{Math.round(totalCarbs)}g</div>
-              <div className="text-white/70 text-sm">Szénhidrát</div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center border border-white/30">
+              <div className="text-2xl font-bold text-green-300">{Math.round(totalCarbs)}g</div>
+              <div className="text-white/80 text-sm">Szénhidrát</div>
             </div>
-            <div className="bg-white/10 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold text-yellow-400">{Math.round(totalFat)}g</div>
-              <div className="text-white/70 text-sm">Zsír</div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center border border-white/30">
+              <div className="text-2xl font-bold text-yellow-300">{Math.round(totalFat)}g</div>
+              <div className="text-white/80 text-sm">Zsír</div>
             </div>
           </div>
 
@@ -95,7 +95,11 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
                 const isExpanded = expandedRecipes.has(index);
                 
                 return (
-                  <div key={index} className={`rounded-lg border-2 ${mealTypeInfo?.color || 'bg-white/10 border-white/20'} p-4`}>
+                  <div 
+                    key={index} 
+                    className="bg-white/20 backdrop-blur-sm rounded-lg border border-white/30 p-4 hover:bg-white/25 transition-all cursor-pointer"
+                    onClick={() => toggleRecipeExpanded(index)}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{mealTypeInfo?.emoji || '🍽️'}</span>
@@ -103,24 +107,27 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
                           <h4 className="font-semibold text-white capitalize">
                             {mealTypeInfo?.label || recipe.mealType}
                           </h4>
-                          <p className="text-white/80 font-medium">{recipe.név}</p>
+                          <p className="text-white/90 font-medium">{recipe.név}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {recipe.elkészítésiIdő && (
-                          <Badge variant="outline" className="text-white border-white/30">
+                          <Badge variant="outline" className="text-white border-white/40 bg-white/10">
                             <Clock className="w-3 h-3 mr-1" />
                             {recipe.elkészítésiIdő}
                           </Badge>
                         )}
                         {recipe.adagok && (
-                          <Badge variant="outline" className="text-white border-white/30">
+                          <Badge variant="outline" className="text-white border-white/40 bg-white/10">
                             <Users className="w-3 h-3 mr-1" />
                             {recipe.adagok}
                           </Badge>
                         )}
                         <Button
-                          onClick={() => toggleRecipeExpanded(index)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleRecipeExpanded(index);
+                          }}
                           variant="ghost"
                           size="sm"
                           className="text-white hover:bg-white/20"
@@ -141,7 +148,7 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
                     </div>
 
                     {isExpanded && (
-                      <div className="mt-4 pt-4 border-t border-white/20">
+                      <div className="mt-4 pt-4 border-t border-white/20" onClick={(e) => e.stopPropagation()}>
                         <RecipeDisplay
                           recipe={recipe}
                           isLoading={false}
