@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { LoadingChef } from "@/components/ui/LoadingChef";
 import { ChefHat, Calendar, CalendarDays } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MultiDayMealPlan {
   day: number;
