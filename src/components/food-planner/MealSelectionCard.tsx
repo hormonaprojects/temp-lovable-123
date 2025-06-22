@@ -45,7 +45,7 @@ export function MealSelectionCard({
     const ingredients = getIngredientsByCategory(category);
     
     if (!getFavoriteForIngredient) {
-      return ingredients;
+      return ingredients.sort((a, b) => a.localeCompare(b));
     }
 
     // Sort ingredients: favorites first, then alphabetically
@@ -53,9 +53,11 @@ export function MealSelectionCard({
       const aIsFavorite = getFavoriteForIngredient(a);
       const bIsFavorite = getFavoriteForIngredient(b);
       
+      // If one is favorite and the other is not, favorite comes first
       if (aIsFavorite && !bIsFavorite) return -1;
       if (!aIsFavorite && bIsFavorite) return 1;
       
+      // If both are favorites or both are not favorites, sort alphabetically
       return a.localeCompare(b);
     });
   };
@@ -137,7 +139,7 @@ export function MealSelectionCard({
                   <SelectTrigger className="bg-white/10 border-white/20 text-white">
                     <SelectValue placeholder="Válassz alapanyagot..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-600">
+                  <SelectContent className="bg-gray-800 border-gray-600 max-h-60 overflow-y-auto">
                     <SelectItem value="no-ingredient" className="text-white hover:bg-gray-700">
                       Nincs megadva (random kategóriában)
                     </SelectItem>
@@ -149,9 +151,9 @@ export function MealSelectionCard({
                           value={ingredient}
                           className="text-white hover:bg-gray-700"
                         >
-                          <div className="flex items-center gap-2">
-                            {isFavorite && <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />}
-                            {ingredient}
+                          <div className="flex items-center gap-2 w-full">
+                            {isFavorite && <Heart className="w-3 h-3 text-pink-500 fill-pink-500 flex-shrink-0" />}
+                            <span className="flex-1">{ingredient}</span>
                           </div>
                         </SelectItem>
                       );

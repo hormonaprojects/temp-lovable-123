@@ -33,9 +33,11 @@ export function IngredientsGrid({
     const aIsFavorite = getFavoriteForIngredient(a);
     const bIsFavorite = getFavoriteForIngredient(b);
     
+    // If one is favorite and the other is not, favorite comes first
     if (aIsFavorite && !bIsFavorite) return -1;
     if (!aIsFavorite && bIsFavorite) return 1;
     
+    // If both are favorites or both are not favorites, sort alphabetically
     return a.localeCompare(b);
   });
 
