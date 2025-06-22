@@ -8,6 +8,7 @@ import { Recipe } from "@/types/recipe";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { LoadingChef } from "@/components/ui/LoadingChef";
+import { ChefHat, Calendar, CalendarDays } from "lucide-react";
 
 interface MultiDayMealPlan {
   day: number;
@@ -397,31 +398,64 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl">
           <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 sm:mb-4">🍽️ Ételtervező</h1>
           <p className="text-white/80 text-lg sm:text-xl px-4 leading-relaxed">
-            Válassz étkezést és készíts finom ételeket (preferenciáiddal)!
+            Válassz funkciót és kezdd el az ételek tervezését!
           </p>
         </div>
       </div>
 
-      {/* Modern Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-8 sm:mb-10 px-4">
-        <Button
-          onClick={resetForm}
-          className="bg-gradient-to-r from-red-500/80 to-pink-600/80 hover:from-red-600/90 hover:to-pink-700/90 backdrop-blur-sm border border-red-300/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 text-sm sm:text-base"
+      {/* Function Selection Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 sm:mb-10">
+        {/* Single Recipe Card */}
+        <div
+          onClick={() => setViewMode('single')}
+          className={cn(
+            "group cursor-pointer transition-all duration-300 hover:scale-105",
+            viewMode === 'single' ? "ring-4 ring-purple-400" : ""
+          )}
         >
-          🔄 Új választás
-        </Button>
-        <Button
-          onClick={() => setViewMode(viewMode === 'single' ? 'multi' : 'single')}
-          className="bg-gradient-to-r from-green-500/80 to-emerald-600/80 hover:from-green-600/90 hover:to-emerald-700/90 backdrop-blur-sm border border-green-300/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 text-sm sm:text-base"
-        >
-          {viewMode === 'single' ? '📅 Többnapos tervező' : '🍽️ Egy recept'}
-        </Button>
-        <Button
+          <div className={cn(
+            "bg-gradient-to-br rounded-2xl p-6 h-40 flex flex-col items-center justify-center text-center border shadow-xl transition-all duration-300",
+            viewMode === 'single' 
+              ? "from-purple-500/40 to-pink-500/40 border-purple-400 shadow-2xl" 
+              : "from-white/10 to-white/5 border-white/20 hover:from-white/20 hover:to-white/10"
+          )}>
+            <ChefHat className="h-12 w-12 text-white mb-3" />
+            <h3 className="text-white font-bold text-lg mb-2">Egy recept</h3>
+            <p className="text-white/70 text-sm">Generálj egy receptet alapanyagok alapján</p>
+          </div>
+        </div>
+
+        {/* Daily Planner Card */}
+        <div
           onClick={onToggleDailyPlanner}
-          className="bg-gradient-to-r from-purple-500/80 to-indigo-600/80 hover:from-purple-600/90 hover:to-indigo-700/90 backdrop-blur-sm border border-purple-300/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 text-sm sm:text-base"
+          className="group cursor-pointer transition-all duration-300 hover:scale-105"
         >
-          📅 Napi étrendtervező
-        </Button>
+          <div className="bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-2xl p-6 h-40 flex flex-col items-center justify-center text-center shadow-xl hover:from-white/20 hover:to-white/10 transition-all duration-300">
+            <Calendar className="h-12 w-12 text-white mb-3" />
+            <h3 className="text-white font-bold text-lg mb-2">Napi étrendtervező</h3>
+            <p className="text-white/70 text-sm">Tervezz egy teljes napot étkezésekkel</p>
+          </div>
+        </div>
+
+        {/* Multi-day Planner Card */}
+        <div
+          onClick={() => setViewMode('multi')}
+          className={cn(
+            "group cursor-pointer transition-all duration-300 hover:scale-105",
+            viewMode === 'multi' ? "ring-4 ring-green-400" : ""
+          )}
+        >
+          <div className={cn(
+            "bg-gradient-to-br rounded-2xl p-6 h-40 flex flex-col items-center justify-center text-center border shadow-xl transition-all duration-300",
+            viewMode === 'multi' 
+              ? "from-green-500/40 to-emerald-500/40 border-green-400 shadow-2xl" 
+              : "from-white/10 to-white/5 border-white/20 hover:from-white/20 hover:to-white/10"
+          )}>
+            <CalendarDays className="h-12 w-12 text-white mb-3" />
+            <h3 className="text-white font-bold text-lg mb-2">Többnapos tervező</h3>
+            <p className="text-white/70 text-sm">Készíts több napra szóló étrendet</p>
+          </div>
+        </div>
       </div>
 
       {viewMode === 'multi' ? (
