@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { saveUserPreferences } from "@/services/foodPreferencesQueries";
+import { addUserFavorite } from "@/services/userFavorites";
 import { PreferenceInfoModal } from "./PreferenceInfoModal";
 import { PreferenceHeader } from "./PreferenceHeader";
 import { IngredientsGrid } from "./IngredientsGrid";
@@ -191,12 +191,33 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
 
       console.log('💾 Mentendő preferenciák:', preferencesToSave);
 
+      // Mentjük a preferenciákat
       await saveUserPreferences(user.id, preferencesToSave);
       console.log('✅ Preferenciák sikeresen elmentve');
+
+      // Külön mentjük a kedvenceket az user_favorites táblába
+      const favoritesToSave = Object.entries(favorites)
+        .filter(([key, isFavorite]) => isFavorite)
+        .map(([key]) => {
+          const [category, ingredient] = key.split('-', 2);
+          return { category, ingredient };
+        });
+
+      console.log('💾 Mentendő kedvencek:', favoritesToSave);
+
+      // Kedvencek mentése egyenként
+      for (const favorite of favoritesToSave) {
+        const success = await addUserFavorite(user.id, favorite.category, favorite.ingredient);
+        if (success) {
+          console.log(`✅ Kedvenc mentve: ${favorite.ingredient} (${favorite.category})`);
+        } else {
+          console.log(`❌ Kedvenc mentése sikertelen: ${favorite.ingredient} (${favorite.category})`);
+        }
+      }
       
       toast({
-        title: "Preferenciák mentve! ✅",
-        description: `${preferencesToSave.length} preferencia sikeresen elmentve!`,
+        title: "Preferenciák és kedvencek mentve! ✅",
+        description: `${preferencesToSave.length} preferencia és ${favoritesToSave.length} kedvenc sikeresen elmentve!`,
       });
       
       // KRITIKUS: Mindig befejezzük a setup-ot és jelöljük befejezettnek
