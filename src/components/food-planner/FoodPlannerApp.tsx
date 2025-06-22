@@ -37,7 +37,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
   const [favoritesCount, setFavoritesCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [preferencesCompleted, setPreferencesCompleted] = useState(false); // Új flag a preferenciák befejezéséhez
+  const [preferencesCompleted, setPreferencesCompleted] = useState(false);
 
   useEffect(() => {
     if (showPreferenceSetup) {
@@ -116,7 +116,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
 
   const handlePreferenceSetupComplete = () => {
     setHasPreferences(true);
-    setPreferencesCompleted(true); // Jelöljük meg, hogy befejezték a preferenciákat
+    setPreferencesCompleted(true);
     setCurrentView('single');
     if (onPreferenceSetupComplete) {
       onPreferenceSetupComplete();
@@ -192,14 +192,12 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
         return (
           <SingleRecipeApp
             user={user}
-            onToggleDailyPlanner={() => setCurrentView('daily')}
           />
         );
       case 'daily':
         return (
           <DailyMealPlanner
             user={user}
-            onToggleSingleRecipe={() => setCurrentView('single')}
           />
         );
       case 'profile':
@@ -242,7 +240,6 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
         return (
           <SingleRecipeApp
             user={user}
-            onToggleDailyPlanner={() => setCurrentView('daily')}
           />
         );
     }

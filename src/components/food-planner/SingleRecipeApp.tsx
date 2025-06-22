@@ -297,7 +297,7 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
         {currentView === 'meal-selection' && (
           <>
             <MealTypeSelector
-              mealTypes={mealTypes}
+              mealTypes={Object.keys(mealTypes)}
               onMealTypeSelect={handleMealTypeSelect}
               selectedMealType={selectedMealType}
               isGenerating={isGenerating}
@@ -306,9 +306,9 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
             {currentRecipe && (
               <RecipeDisplay
                 recipe={convertToStandardRecipe(currentRecipe)}
-                onGetNewRecipe={getRandomRecipe}
-                isGenerating={isGenerating}
-                onSaveRating={saveRating}
+                isLoading={isGenerating}
+                onRegenerate={getRandomRecipe}
+                onNewRecipe={getRandomRecipe}
                 user={user}
                 getFavoriteForIngredient={getFavoriteForIngredient}
                 onFavoriteToggle={handleFavoriteToggle}
@@ -320,12 +320,13 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
         {currentView === 'category-selection' && (
           <CategoryIngredientSelector
             selectedMealType={selectedMealType}
-            selectedCategory={selectedCategory}
-            categories={categories}
-            getFilteredIngredients={getFilteredIngredients}
-            onCategorySelect={handleCategorySelect}
-            onIngredientSelect={handleIngredientSelect}
-            onBack={resetToMealSelection}
+            foodData={{
+              mealTypes,
+              categories,
+              getFilteredIngredients,
+              getRecipesByMealType
+            }}
+            onGetRecipe={handleIngredientSelect}
             getFavoriteForIngredient={getFavoriteForIngredient}
             isGenerating={isGenerating}
           />
@@ -335,7 +336,7 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
           <>
             {!selectedMealType ? (
               <MealTypeSelector
-                mealTypes={mealTypes}
+                mealTypes={Object.keys(mealTypes)}
                 onMealTypeSelect={(mealType) => {
                   setSelectedMealType(mealType);
                 }}
@@ -360,9 +361,9 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
             {currentRecipe && (
               <RecipeDisplay
                 recipe={convertToStandardRecipe(currentRecipe)}
-                onGetNewRecipe={getRandomRecipe}
-                isGenerating={isGenerating}
-                onSaveRating={saveRating}
+                isLoading={isGenerating}
+                onRegenerate={getRandomRecipe}
+                onNewRecipe={getRandomRecipe}
                 user={user}
                 getFavoriteForIngredient={getFavoriteForIngredient}
                 onFavoriteToggle={handleFavoriteToggle}
