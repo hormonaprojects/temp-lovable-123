@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,22 +100,20 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   };
 
   const handleCategorySelect = (category: string) => {
-    const isSelected = selectedCategory === category;
-    setSelectedCategory(isSelected ? "" : category);
+    // Egyszerűsített logika - mindig kiválasztjuk a kategóriát
+    setSelectedCategory(category);
     
-    // Ha kiválasztottunk egy kategóriát, görgessünk le az alapanyagokhoz
-    if (!isSelected) {
-      setTimeout(() => {
-        const ingredientsSection = document.querySelector('[data-scroll-target="category-ingredients"]');
-        if (ingredientsSection) {
-          ingredientsSection.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start',
-            inline: 'nearest'
-          });
-        }
-      }, 100);
-    }
+    // Görgessünk le az alapanyagokhoz
+    setTimeout(() => {
+      const ingredientsSection = document.querySelector('[data-scroll-target="category-ingredients"]');
+      if (ingredientsSection) {
+        ingredientsSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
   };
 
   const handlePreferenceUpdate = async (ingredient: string, category: string, preference: 'like' | 'dislike' | 'neutral') => {
@@ -313,7 +310,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
           </CardContent>
         </Card>
 
-        {/* Category Ingredient Selector - FONTOS: hideDisliked={false} */}
+        {/* Category Ingredient Selector - Egyetlen kattintásra megjelennek az alapanyagok */}
         {selectedCategory && (
           <div data-scroll-target="category-ingredients">
             <PreferencesCategorySelector
