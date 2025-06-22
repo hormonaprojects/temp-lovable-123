@@ -2,17 +2,15 @@
 import { SupabaseRecipe } from '@/types/supabase';
 import { UserPreference } from '../preferenceFilters';
 import { getRecipesByMealType } from './mealTypeFilters';
-import { filterRecipesByIngredient, filterRecipesByMultipleIngredients } from './ingredientFilters';
+import { filterRecipesByIngredient, filterRecipesByMultipleIngredients, getAllRecipeIngredients, hasIngredientMatch } from './ingredientFilters';
 import { filterRecipesByCategory } from './categoryFilters';
 
-// Re-export all filter functions
+// Re-export all filter functions from their respective modules
 export { 
-  getRecipesByMealType,
-  filterRecipesByIngredient,
-  filterRecipesByMultipleIngredients,
-  filterRecipesByCategory,
   getAllRecipeIngredients,
-  hasIngredientMatch
+  hasIngredientMatch,
+  filterRecipesByIngredient,
+  filterRecipesByMultipleIngredients
 } from './ingredientFilters';
 
 export { getRecipesByMealType } from './mealTypeFilters';

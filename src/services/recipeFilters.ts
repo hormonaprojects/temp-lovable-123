@@ -10,4 +10,4 @@ export {
   getRecipesByCategory,
   getAllRecipeIngredients,
   hasIngredientMatch
-} from './recipeFilters';
+} from './recipeFilters/index';
