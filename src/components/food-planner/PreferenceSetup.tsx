@@ -23,10 +23,15 @@ interface PreferenceState {
   [key: string]: 'like' | 'dislike' | 'neutral';
 }
 
+interface FavoriteState {
+  [key: string]: boolean;
+}
+
 export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   const [preferencesData, setPreferencesData] = useState<any[]>([]);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [preferences, setPreferences] = useState<PreferenceState>({});
+  const [favorites, setFavorites] = useState<FavoriteState>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(true);
@@ -122,9 +127,23 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     }));
   };
 
+  const handleFavoriteChange = (ingredient: string, isFavorite: boolean) => {
+    const key = `${categoryNames[currentCategoryIndex]}-${ingredient}`;
+    
+    setFavorites(prev => ({
+      ...prev,
+      [key]: isFavorite
+    }));
+  };
+
   const getPreferenceForIngredient = (ingredient: string): 'like' | 'dislike' | 'neutral' => {
     const key = `${categoryNames[currentCategoryIndex]}-${ingredient}`;
     return preferences[key] || 'neutral';
+  };
+
+  const getFavoriteForIngredient = (ingredient: string): boolean => {
+    const key = `${categoryNames[currentCategoryIndex]}-${ingredient}`;
+    return favorites[key] || false;
   };
 
   const handleNext = () => {
@@ -161,10 +180,12 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
         .filter(([key, preference]) => preference !== 'neutral')
         .map(([key, preference]) => {
           const [category, ingredient] = key.split('-', 2);
+          const favoriteKey = `${category}-${ingredient}`;
           return {
             category,
             ingredient,
-            preference
+            preference,
+            favorite: favorites[favoriteKey] || false
           };
         });
 
@@ -227,15 +248,15 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
       />
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-6 sm:p-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-4 sm:p-6">
           {/* Category Title */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <div className="text-center mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               {categoryNames[currentCategoryIndex]}
             </h2>
-            <p className="text-gray-600 text-lg">
-              Jelöld meg, hogy mely alapanyagokat szereted!
+            <p className="text-gray-600 text-sm sm:text-base">
+              Jelöld meg, hogy mely alapanyagokat szereted! Használd a szív gombot a kedvencekhez.
             </p>
           </div>
 
@@ -244,7 +265,9 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
             ingredients={currentIngredients}
             categoryName={categoryNames[currentCategoryIndex]}
             getPreferenceForIngredient={getPreferenceForIngredient}
+            getFavoriteForIngredient={getFavoriteForIngredient}
             onPreferenceChange={handlePreferenceChange}
+            onFavoriteChange={handleFavoriteChange}
           />
 
           {/* Navigation */}

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, ChevronLeft, Heart, Zap, Shield, AlertTriangle, Cookie } from "lucide-react";
+import { ChevronRight, ChevronLeft, Heart, Zap, Shield } from "lucide-react";
 import { saveUserHealthConditions } from "@/services/healthConditionsQueries";
 
 interface User {
@@ -18,7 +18,7 @@ interface HealthConditionsSetupProps {
   onBack: () => void;
 }
 
-type ConditionType = 'PCOS' | 'IR' | 'HASHIMOTO' | 'FOOD_ALLERGY' | 'FOOD_INTOLERANCE';
+type ConditionType = 'PCOS' | 'IR' | 'HASHIMOTO';
 
 export function HealthConditionsSetup({ user, onComplete, onBack }: HealthConditionsSetupProps) {
   const [selectedConditions, setSelectedConditions] = useState<ConditionType[]>([]);
@@ -46,20 +46,6 @@ export function HealthConditionsSetup({ user, onComplete, onBack }: HealthCondit
       description: 'Hashimoto pajzsmirigy betegség',
       icon: Shield,
       color: 'from-blue-500 to-indigo-600'
-    },
-    {
-      type: 'FOOD_ALLERGY' as ConditionType,
-      name: 'Ételallergia',
-      description: 'Van ételallergiám',
-      icon: AlertTriangle,
-      color: 'from-red-500 to-pink-600'
-    },
-    {
-      type: 'FOOD_INTOLERANCE' as ConditionType,
-      name: 'Ételintolerancia',
-      description: 'Van ételintoleranciám',
-      icon: Cookie,
-      color: 'from-purple-500 to-violet-600'
     }
   ];
 
@@ -107,7 +93,7 @@ export function HealthConditionsSetup({ user, onComplete, onBack }: HealthCondit
               <h1 className="text-2xl sm:text-3xl font-bold">Egészségügyi Állapotok</h1>
             </div>
             <p className="text-sm sm:text-base text-white/80">
-              Jelöld meg, ha van valamilyen hormonális problémád vagy ételallergiád/intoleranciád
+              Jelöld meg, ha van valamilyen hormonális problémád
             </p>
             <p className="text-xs sm:text-sm text-white/60 mt-2">
               Ezt az információt arra használjuk, hogy személyre szabott recepteket ajánljunk

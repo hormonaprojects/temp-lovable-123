@@ -1,21 +1,25 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Heart } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 
 interface IngredientCardProps {
   ingredient: string;
   preference: 'like' | 'dislike' | 'neutral';
+  favorite: boolean;
   index: number;
   onPreferenceChange: (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => void;
+  onFavoriteChange: (ingredient: string, isFavorite: boolean) => void;
 }
 
 export function IngredientCard({ 
   ingredient, 
   preference, 
+  favorite,
   index, 
-  onPreferenceChange 
+  onPreferenceChange,
+  onFavoriteChange 
 }: IngredientCardProps) {
   const getIngredientImage = (ingredient: string): string => {
     const normalizedIngredient = ingredient
@@ -41,6 +45,10 @@ export function IngredientCard({
     onPreferenceChange(ingredient, finalPreference);
   };
 
+  const handleFavoriteClick = () => {
+    onFavoriteChange(ingredient, !favorite);
+  };
+
   const jpgImageUrl = getIngredientImage(ingredient);
   const pngImageUrl = getPngImageUrl(ingredient);
 
@@ -51,18 +59,26 @@ export function IngredientCard({
         ${preference === 'like' ? 'bg-green-50 border-green-300 scale-110 shadow-lg ring-2 ring-green-200' : ''}
         ${preference === 'dislike' ? 'bg-red-50 border-red-300 scale-90 opacity-70 ring-2 ring-red-200' : ''}
         ${preference === 'neutral' ? 'bg-white border-gray-200 hover:shadow-md hover:border-purple-300' : ''}
+        ${favorite ? 'ring-2 ring-pink-300' : ''}
       `}
       style={{
         animationDelay: `${index * 0.1}s`
       }}
     >
-      <div className="p-4">
-        {/* Ingredient Image */}
-        <div className="w-full aspect-square mb-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
+      <div className="p-3">
+        {/* Favorite indicator */}
+        {favorite && (
+          <div className="absolute top-2 right-2 z-10">
+            <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+          </div>
+        )}
+        
+        {/* Ingredient Image - Smaller */}
+        <div className="w-full aspect-square mb-2 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
           <img
             src={jpgImageUrl}
             alt={ingredient}
-            className="w-full h-full object-cover rounded-xl"
+            className="w-full h-full object-cover rounded-lg"
             onError={(e) => {
               console.log('❌ JPG kép betöltési hiba, próbálkozás PNG-vel:', ingredient);
               (e.target as HTMLImageElement).src = pngImageUrl;
@@ -77,26 +93,26 @@ export function IngredientCard({
           />
         </div>
         
-        {/* Ingredient Name */}
-        <h3 className="text-sm font-semibold text-gray-800 text-center mb-3 truncate min-h-[1.25rem]">
+        {/* Ingredient Name - Smaller */}
+        <h3 className="text-xs font-semibold text-gray-800 text-center mb-2 truncate min-h-[1rem]">
           {ingredient}
         </h3>
         
-        {/* Preference Buttons */}
-        <div className="flex justify-center gap-2">
+        {/* Preference and Favorite Buttons - Smaller and more compact */}
+        <div className="flex justify-center gap-1">
           <Button
             onClick={() => handlePreferenceClick('like')}
             variant={preference === 'like' ? 'default' : 'outline'}
             size="sm"
             className={`
-              w-8 h-8 p-0 transition-all duration-200 rounded-full
+              w-6 h-6 p-0 transition-all duration-200 rounded-full
               ${preference === 'like' 
                 ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg' 
                 : 'hover:bg-green-50 hover:border-green-300 hover:text-green-600'
               }
             `}
           >
-            <ThumbsUp className="w-4 h-4" />
+            <ThumbsUp className="w-3 h-3" />
           </Button>
           
           <Button
@@ -104,14 +120,29 @@ export function IngredientCard({
             variant={preference === 'dislike' ? 'default' : 'outline'}
             size="sm"
             className={`
-              w-8 h-8 p-0 transition-all duration-200 rounded-full
+              w-6 h-6 p-0 transition-all duration-200 rounded-full
               ${preference === 'dislike' 
                 ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg' 
                 : 'hover:bg-red-50 hover:border-red-300 hover:text-red-600'
               }
             `}
           >
-            <ThumbsDown className="w-4 h-4" />
+            <ThumbsDown className="w-3 h-3" />
+          </Button>
+          
+          <Button
+            onClick={handleFavoriteClick}
+            variant={favorite ? 'default' : 'outline'}
+            size="sm"
+            className={`
+              w-6 h-6 p-0 transition-all duration-200 rounded-full
+              ${favorite 
+                ? 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-lg' 
+                : 'hover:bg-pink-50 hover:border-pink-300 hover:text-pink-600'
+              }
+            `}
+          >
+            <Heart className={`w-3 h-3 ${favorite ? 'fill-current' : ''}`} />
           </Button>
         </div>
       </div>
