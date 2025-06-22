@@ -1,5 +1,6 @@
 
 import { IngredientCard } from "./IngredientCard";
+import { sortIngredientsByPreference } from "@/services/ingredientSorting";
 
 interface IngredientsGridProps {
   ingredients: string[];
@@ -28,48 +29,12 @@ export function IngredientsGrid({
     );
   }
 
-  // EGYSÉGES sorrendezés: kedvencek ELŐSZÖR, majd liked, majd neutral (disliked elrejtése)
-  const sortedIngredients = [...ingredients]
-    .filter(ingredient => {
-      const preference = getPreferenceForIngredient(ingredient);
-      return preference !== 'dislike'; // Elrejtjük a disliked alapanyagokat
-    })
-    .sort((a, b) => {
-      const aIsFavorite = getFavoriteForIngredient(a);
-      const bIsFavorite = getFavoriteForIngredient(b);
-      const aPreference = getPreferenceForIngredient(a);
-      const bPreference = getPreferenceForIngredient(b);
-      
-      console.log(`🔍 IngredientsGrid - Sorrendezés: ${a} (kedvenc: ${aIsFavorite}, pref: ${aPreference}) vs ${b} (kedvenc: ${bIsFavorite}, pref: ${bPreference})`);
-      
-      // ELSŐ PRIORITÁS: kedvencek (rózsaszín szív) - MINDIG ELŐRE
-      if (aIsFavorite && !bIsFavorite) {
-        console.log(`✨ ${a} kedvenc, előre kerül`);
-        return -1;
-      }
-      if (!aIsFavorite && bIsFavorite) {
-        console.log(`✨ ${b} kedvenc, előre kerül`);
-        return 1;
-      }
-      
-      // MÁSODIK PRIORITÁS: Ha mindkettő kedvenc vagy mindkettő nem kedvenc, akkor preferencia szerint
-      if (aIsFavorite === bIsFavorite) {
-        // Liked alapanyagok következnek
-        if (aPreference === 'like' && bPreference !== 'like') {
-          console.log(`💚 ${a} liked, előre kerül`);
-          return -1;
-        }
-        if (aPreference !== 'like' && bPreference === 'like') {
-          console.log(`💚 ${b} liked, előre kerül`);
-          return 1;
-        }
-      }
-      
-      // HARMADIK PRIORITÁS: ábécé sorrend ugyanazon szinten
-      const result = a.localeCompare(b, 'hu');
-      console.log(`📝 Ábécé sorrend: ${a} vs ${b} = ${result}`);
-      return result;
-    });
+  // Centralizált sorrendezés használata
+  const sortedIngredients = sortIngredientsByPreference(
+    ingredients,
+    (ingredient) => getFavoriteForIngredient(ingredient),
+    (ingredient) => getPreferenceForIngredient(ingredient)
+  );
 
   console.log(`🎯 IngredientsGrid - Végső sorrendezett lista (${categoryName}):`, sortedIngredients);
 
