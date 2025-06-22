@@ -4,13 +4,11 @@ import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelect
 import { RecipeDisplay } from "./RecipeDisplay";
 import { MultiDayMealPlanGenerator } from "./MultiDayMealPlanGenerator";
 import { DailyMealPlanner } from "./DailyMealPlanner";
-import { Button } from "@/components/ui/button";
+import { FunctionSelector } from "./FunctionSelector";
 import { Recipe } from "@/types/recipe";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { LoadingChef } from "@/components/ui/LoadingChef";
-import { ChefHat, Calendar, CalendarDays } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface MultiDayMealPlan {
   day: number;
@@ -394,85 +392,22 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-2 sm:p-6">
+    <div className="max-w-6xl mx-auto p-3 sm:p-6">
       {/* Compact Hero Section */}
-      <div className="text-center mb-4 sm:mb-8">
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-3 sm:p-6 border border-white/20 shadow-2xl">
-          <h1 className="text-xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-3">🍽️ Ételtervező</h1>
+      <div className="text-center mb-6 sm:mb-8">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-white/20 shadow-2xl">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-3">🍽️ Ételtervező</h1>
           <p className="text-white/80 text-sm sm:text-lg md:text-xl px-2 leading-relaxed">
             Válassz funkciót és kezdd el az ételek tervezését!
           </p>
         </div>
       </div>
 
-      {/* Compact Function Selection Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:gap-6 mb-4 sm:mb-8">
-        {/* Single Recipe Card */}
-        <div
-          onClick={() => setViewMode('single')}
-          className={cn(
-            "group cursor-pointer transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105",
-            viewMode === 'single' ? "ring-2 sm:ring-4 ring-purple-400" : ""
-          )}
-        >
-          <div className={cn(
-            "bg-gradient-to-br rounded-xl sm:rounded-2xl p-3 sm:p-6 h-16 sm:h-40 flex flex-row sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center border shadow-xl transition-all duration-300",
-            viewMode === 'single' 
-              ? "from-purple-500/40 to-pink-500/40 border-purple-400 shadow-2xl" 
-              : "from-white/10 to-white/5 border-white/20 hover:from-white/20 hover:to-white/10"
-          )}>
-            <ChefHat className="h-8 w-8 sm:h-12 sm:w-12 text-white mr-3 sm:mr-0 sm:mb-3 flex-shrink-0" />
-            <div>
-              <h3 className="text-white font-bold text-base sm:text-lg mb-0 sm:mb-2">Egy recept</h3>
-              <p className="text-white/70 text-xs sm:text-sm hidden sm:block">Generálj egy receptet alapanyagok alapján</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Daily Planner Card */}
-        <div
-          onClick={() => setViewMode('daily')}
-          className={cn(
-            "group cursor-pointer transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105",
-            viewMode === 'daily' ? "ring-2 sm:ring-4 ring-blue-400" : ""
-          )}
-        >
-          <div className={cn(
-            "bg-gradient-to-br rounded-xl sm:rounded-2xl p-3 sm:p-6 h-16 sm:h-40 flex flex-row sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center border shadow-xl transition-all duration-300",
-            viewMode === 'daily' 
-              ? "from-blue-500/40 to-cyan-500/40 border-blue-400 shadow-2xl" 
-              : "from-white/10 to-white/5 border-white/20 hover:from-white/20 hover:to-white/10"
-          )}>
-            <Calendar className="h-8 w-8 sm:h-12 sm:w-12 text-white mr-3 sm:mr-0 sm:mb-3 flex-shrink-0" />
-            <div>
-              <h3 className="text-white font-bold text-base sm:text-lg mb-0 sm:mb-2">Napi étrendtervező</h3>
-              <p className="text-white/70 text-xs sm:text-sm hidden sm:block">Tervezz egy teljes napot étkezésekkel</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Multi-day Planner Card */}
-        <div
-          onClick={() => setViewMode('multi')}
-          className={cn(
-            "group cursor-pointer transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105",
-            viewMode === 'multi' ? "ring-2 sm:ring-4 ring-green-400" : ""
-          )}
-        >
-          <div className={cn(
-            "bg-gradient-to-br rounded-xl sm:rounded-2xl p-3 sm:p-6 h-16 sm:h-40 flex flex-row sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center border shadow-xl transition-all duration-300",
-            viewMode === 'multi' 
-              ? "from-green-500/40 to-emerald-500/40 border-green-400 shadow-2xl" 
-              : "from-white/10 to-white/5 border-white/20 hover:from-white/20 hover:to-white/10"
-          )}>
-            <CalendarDays className="h-8 w-8 sm:h-12 sm:w-12 text-white mr-3 sm:mr-0 sm:mb-3 flex-shrink-0" />
-            <div>
-              <h3 className="text-white font-bold text-base sm:text-lg mb-0 sm:mb-2">Többnapos tervező</h3>
-              <p className="text-white/70 text-xs sm:text-sm hidden sm:block">Készíts több napra szóló étrendet</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* New Function Selector */}
+      <FunctionSelector
+        selectedFunction={viewMode}
+        onFunctionSelect={setViewMode}
+      />
 
       {viewMode === 'multi' ? (
         <MultiDayMealPlanGenerator
