@@ -1,8 +1,9 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SelectedIngredient {
@@ -69,6 +70,22 @@ export function MultiCategoryIngredientSelector({
     await onGetMultipleCategoryRecipes(selectedIngredients);
   };
 
+  // Sort ingredients: favorites first, then alphabetically
+  const getSortedIngredients = (category: string) => {
+    const ingredients = foodData.getFilteredIngredients(category);
+    return [...ingredients].sort((a, b) => {
+      const aIsFavorite = getFavoriteForIngredient(a, category);
+      const bIsFavorite = getFavoriteForIngredient(b, category);
+      
+      // If one is favorite and the other is not, favorite comes first
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      
+      // If both are favorites or both are not favorites, sort alphabetically
+      return a.localeCompare(b);
+    });
+  };
+
   return (
     <Card className="mb-8 bg-white/5 backdrop-blur-lg border-white/10 shadow-2xl">
       <CardHeader className="pb-6">
@@ -95,7 +112,7 @@ export function MultiCategoryIngredientSelector({
                   <span className="text-purple-200 text-xs">({item.category})</span>
                   <button
                     onClick={() => removeSelectedIngredient(index)}
-                    className="ml-1 text-red-300 hover:text-red-100 bg-red-500/30 hover:bg-red-500/50 rounded-full p-1 transition-all duration-200"
+                    className="ml-1 text-white hover:text-red-200 bg-red-500/50 hover:bg-red-500/70 rounded-full p-1 transition-all duration-200"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -128,12 +145,12 @@ export function MultiCategoryIngredientSelector({
               {selectedCategory} alapanyagai
             </h3>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {foodData.getFilteredIngredients(selectedCategory).map(ingredient => {
+              {getSortedIngredients(selectedCategory).map(ingredient => {
                 const isFavorite = getFavoriteForIngredient(ingredient, selectedCategory);
                 const buttonClasses = cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative",
                   isFavorite
-                    ? "bg-yellow-500/80 text-white hover:bg-yellow-600 shadow-md"
+                    ? "bg-pink-500/80 text-white hover:bg-pink-600 shadow-md"
                     : "bg-white/10 text-white hover:bg-white/20"
                 );
 
@@ -143,6 +160,9 @@ export function MultiCategoryIngredientSelector({
                     onClick={() => addSelectedIngredient(ingredient)}
                     className={buttonClasses}
                   >
+                    {isFavorite && (
+                      <Heart className="absolute top-1 right-1 w-3 h-3 text-white fill-white" />
+                    )}
                     {ingredient}
                   </button>
                 );

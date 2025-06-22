@@ -3,6 +3,7 @@ import { MealTypeSelector } from "./MealTypeSelector";
 import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
 import { RecipeDisplay } from "./RecipeDisplay";
 import { MultiDayMealPlanGenerator } from "./MultiDayMealPlanGenerator";
+import { DailyMealPlanner } from "./DailyMealPlanner";
 import { Button } from "@/components/ui/button";
 import { Recipe } from "@/types/recipe";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +34,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [selectedMealType, setSelectedMealType] = useState("");
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<'single' | 'multi'>('single');
+  const [viewMode, setViewMode] = useState<'single' | 'daily' | 'multi'>('single');
   const [multiDayPlan, setMultiDayPlan] = useState<MultiDayMealPlan[]>([]);
   const [isMultiDayLoading, setIsMultiDayLoading] = useState(false);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
@@ -428,10 +429,18 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
 
         {/* Daily Planner Card */}
         <div
-          onClick={onToggleDailyPlanner}
-          className="group cursor-pointer transition-all duration-300 hover:scale-105"
+          onClick={() => setViewMode('daily')}
+          className={cn(
+            "group cursor-pointer transition-all duration-300 hover:scale-105",
+            viewMode === 'daily' ? "ring-4 ring-blue-400" : ""
+          )}
         >
-          <div className="bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-2xl p-6 h-40 flex flex-col items-center justify-center text-center shadow-xl hover:from-white/20 hover:to-white/10 transition-all duration-300">
+          <div className={cn(
+            "bg-gradient-to-br rounded-2xl p-6 h-40 flex flex-col items-center justify-center text-center border shadow-xl transition-all duration-300",
+            viewMode === 'daily' 
+              ? "from-blue-500/40 to-cyan-500/40 border-blue-400 shadow-2xl" 
+              : "from-white/10 to-white/5 border-white/20 hover:from-white/20 hover:to-white/10"
+          )}>
             <Calendar className="h-12 w-12 text-white mb-3" />
             <h3 className="text-white font-bold text-lg mb-2">Napi étrendtervező</h3>
             <p className="text-white/70 text-sm">Tervezz egy teljes napot étkezésekkel</p>
@@ -464,6 +473,11 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
           onGeneratePlan={generateMultiDayPlan}
           isLoading={isMultiDayLoading}
           mealPlan={multiDayPlan}
+        />
+      ) : viewMode === 'daily' ? (
+        <DailyMealPlanner
+          user={user}
+          onToggleSingleRecipe={() => setViewMode('single')}
         />
       ) : (
         <>
