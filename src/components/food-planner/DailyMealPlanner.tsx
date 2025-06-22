@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -273,7 +274,12 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
             onToggle={handleMealToggle}
             categories={Object.keys(categories)}
             getIngredientsByCategory={getFilteredIngredients}
-            getFavoriteForIngredient={getFavoriteForIngredient}
+            getFavoriteForIngredient={(ingredient: string, category: string) => {
+              console.log('🔍 Kedvenc ellenőrzés:', { ingredient, category });
+              const result = getFavoriteForIngredient(ingredient, category);
+              console.log('✅ Kedvenc eredmény:', result);
+              return result;
+            }}
             onGetRecipe={handleGetRecipe}
             onSelectionChange={handleSelectionChange}
             isGenerating={isGenerating}
