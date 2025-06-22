@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -331,9 +330,9 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
                 <CardContent className="pt-6">
                   <RecipeDisplay
                     recipe={recipe}
-                    onRating={handleRating}
-                    getFavoriteForIngredient={getFavoriteForIngredient}
-                    onFavoriteToggle={handleFavoriteToggle}
+                    isLoading={false}
+                    onRegenerate={() => {}}
+                    onNewRecipe={() => {}}
                     user={user}
                   />
                 </CardContent>
