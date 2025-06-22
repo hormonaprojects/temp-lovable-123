@@ -9,116 +9,6 @@ interface RecipeContentProps {
 }
 
 export function RecipeContent({ recipe, compact = false, isFullScreen = false }: RecipeContentProps) {
-  // Jobb recept képek kategóriák alapján
-  const getRecipeImage = (recipeName: string, category?: string) => {
-    // Kategória alapú képek
-    const categoryImages = {
-      'húsfélék': [
-        'photo-1555939594-58d7cb561ad1', // grilled meat
-        'photo-1544025162-d76694265947', // roasted chicken
-        'photo-1532636744-8306ee026f7d'  // beef steak
-      ],
-      'halak': [
-        'photo-1544943910-4c1dc44aab44', // grilled fish
-        'photo-1559847844-5315695dadae', // salmon
-        'photo-1565299624946-b28f40a0ca4b'  // fish dish
-      ],
-      'zöldségek': [
-        'photo-1512621776951-a57141f2eefd', // vegetable salad
-        'photo-1540420773420-3366772f4999', // vegetables
-        'photo-1525351484163-7529414344d8'  // green vegetables
-      ],
-      'tejtermékek': [
-        'photo-1506224772180-d75b3efbe9be', // dairy products
-        'photo-1486297678162-eb2a19b0a32b', // cheese
-        'photo-1628088062854-d1870b4553da'  // yogurt
-      ],
-      'gyümölcsök': [
-        'photo-1542838132-92c53300491e', // mixed fruits
-        'photo-1619566636858-adf3ef46400b', // fresh fruits
-        'photo-1490474418585-ba9bad8fd0ea'  // colorful fruits
-      ],
-      'gabonák': [
-        'photo-1586201375761-83865001e31c', // rice dish
-        'photo-1551326844-4df70f78d0e9', // pasta
-        'photo-1589367920969-ab8e050bbb04'  // grains
-      ],
-      'default': [
-        'photo-1565958011703-44f9829ba187', // colorful meal
-        'photo-1504674900247-0877df9cc836', // food spread
-        'photo-1493770348161-369560ae357d'  // delicious meal
-      ]
-    };
-
-    // Étkezés típus alapú képek
-    const mealTypeImages = {
-      'reggeli': [
-        'photo-1551218808-94e220e084d2', // breakfast
-        'photo-1484723091739-30a097e8f929', // pancakes
-        'photo-1533089860892-a7c6f0a88666'  // morning meal
-      ],
-      'ebéd': [
-        'photo-1565958011703-44f9829ba187', // lunch
-        'photo-1504674900247-0877df9cc836', // main dish
-        'photo-1546833999-b9f581a1996d'  // hearty meal
-      ],
-      'vacsora': [
-        'photo-1467003909585-2f8a72700288', // dinner
-        'photo-1493770348161-369560ae357d', // evening meal
-        'photo-1551218808-94e220e084d2'  // dinner spread
-      ],
-      'leves': [
-        'photo-1547592166-23ac45744acd', // soup bowl
-        'photo-1613478223719-2ab802602423', // vegetable soup
-        'photo-1588566565463-180a5dc2c3b9'  // hearty soup
-      ]
-    };
-
-    // Először étkezés típus alapján próbálkozunk
-    const recipeLower = recipeName.toLowerCase();
-    
-    if (recipeLower.includes('leves') || recipeLower.includes('soup')) {
-      const images = mealTypeImages['leves'];
-      return `https://images.unsplash.com/${images[0]}?auto=format&fit=crop&w=600&q=80`;
-    }
-    
-    if (recipeLower.includes('reggeli') || recipeLower.includes('breakfast')) {
-      const images = mealTypeImages['reggeli'];
-      return `https://images.unsplash.com/${images[0]}?auto=format&fit=crop&w=600&q=80`;
-    }
-
-    // Kategória alapján
-    if (category) {
-      const categoryKey = Object.keys(categoryImages).find(key => 
-        category.toLowerCase().includes(key.toLowerCase())
-      );
-      if (categoryKey && categoryImages[categoryKey as keyof typeof categoryImages]) {
-        const images = categoryImages[categoryKey as keyof typeof categoryImages];
-        return `https://images.unsplash.com/${images[0]}?auto=format&fit=crop&w=600&q=80`;
-      }
-    }
-
-    // Alapanyag alapján
-    if (recipeLower.includes('hús') || recipeLower.includes('csirke') || recipeLower.includes('pulyka')) {
-      const images = categoryImages['húsfélék'];
-      return `https://images.unsplash.com/${images[0]}?auto=format&fit=crop&w=600&q=80`;
-    }
-    
-    if (recipeLower.includes('hal') || recipeLower.includes('tonhal') || recipeLower.includes('lazac')) {
-      const images = categoryImages['halak'];
-      return `https://images.unsplash.com/${images[0]}?auto=format&fit=crop&w=600&q=80`;
-    }
-    
-    if (recipeLower.includes('zöldség') || recipeLower.includes('répa') || recipeLower.includes('paradicsom')) {
-      const images = categoryImages['zöldségek'];
-      return `https://images.unsplash.com/${images[0]}?auto=format&fit=crop&w=600&q=80`;
-    }
-
-    // Default kép
-    const defaultImages = categoryImages['default'];
-    return `https://images.unsplash.com/${defaultImages[0]}?auto=format&fit=crop&w=600&q=80`;
-  };
-
   const formatIngredients = (ingredients: string[]) => {
     return ingredients
       .filter(ingredient => ingredient && ingredient.trim() !== '')
@@ -177,29 +67,31 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
           🍽️ {recipe.név}
         </h2>
         
-        {/* Recept kép - javított padding és méretezés */}
-        <div className="w-full max-w-sm sm:max-w-md mx-auto px-2">
-          <img
-            src={getRecipeImage(recipe.név, recipe.kategória)}
-            alt={recipe.név}
-            className="w-full h-40 sm:h-48 md:h-64 object-cover rounded-xl sm:rounded-2xl shadow-lg"
-            onError={(e) => {
-              // Fallback kép ha a fő kép nem töltődik be
-              e.currentTarget.src = 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=600&q=80';
-            }}
-          />
-        </div>
+        {/* Recept kép - adatbázisból */}
+        {recipe.képUrl && (
+          <div className="w-full max-w-sm sm:max-w-md mx-auto px-4">
+            <img
+              src={recipe.képUrl}
+              alt={recipe.név}
+              className="w-full h-40 sm:h-48 md:h-64 object-cover rounded-xl sm:rounded-2xl shadow-lg"
+              onError={(e) => {
+                // Fallback kép ha a fő kép nem töltődik be
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=600&q=80';
+              }}
+            />
+          </div>
+        )}
 
-        {/* Főzési idő és adag - javított padding */}
-        <div className="flex justify-center gap-3 sm:gap-4 text-white/80 px-2">
+        {/* Főzési idő és adag */}
+        <div className="flex justify-center gap-3 sm:gap-4 text-white/80 px-4">
           {recipe.főzésiIdő && (
-            <div className="flex items-center gap-2 bg-white/10 px-2 sm:px-3 py-1 sm:py-2 rounded-lg">
+            <div className="flex items-center gap-2 bg-white/10 px-3 sm:px-4 py-2 rounded-lg">
               <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="text-xs sm:text-sm">{recipe.főzésiIdő}</span>
             </div>
           )}
           {recipe.adagok && (
-            <div className="flex items-center gap-2 bg-white/10 px-2 sm:px-3 py-1 sm:py-2 rounded-lg">
+            <div className="flex items-center gap-2 bg-white/10 px-3 sm:px-4 py-2 rounded-lg">
               <Users className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="text-xs sm:text-sm">{recipe.adagok}</span>
             </div>
@@ -207,8 +99,8 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
         </div>
       </div>
 
-      {/* Hozzávalók - javított padding */}
-      <div className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+      {/* Hozzávalók */}
+      <div className="bg-white/5 rounded-lg sm:rounded-xl p-4 sm:p-6 mx-4 sm:mx-0">
         <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
           🥕 Hozzávalók:
         </h3>
@@ -222,8 +114,8 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
         </ul>
       </div>
 
-      {/* Elkészítés - javított padding */}
-      <div className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+      {/* Elkészítés */}
+      <div className="bg-white/5 rounded-lg sm:rounded-xl p-4 sm:p-6 mx-4 sm:mx-0">
         <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
           👨‍🍳 Elkészítés:
         </h3>
