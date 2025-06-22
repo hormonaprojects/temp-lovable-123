@@ -37,6 +37,11 @@ export function useMealPlanGeneration({
       return;
     }
 
+    if (isGenerating) {
+      console.log('🔄 Generálás már folyamatban, kihagyjuk...');
+      return;
+    }
+
     console.log('🍽️ EGYSÉGES recept generálás indítása:', { selectedMeals, ingredients });
     setIsGenerating(true);
     setSelectedIngredients(ingredients);

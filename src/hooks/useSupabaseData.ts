@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SupabaseRecipe, MealTypeData } from '@/types/supabase';
 import { fetchCategories, fetchMealTypes, fetchRecipes, saveRecipeRating } from '@/services/supabaseQueries';
@@ -22,14 +23,7 @@ export function useSupabaseData(userId?: string) {
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (userId) {
-      loadUserPreferences();
-      loadUserFavorites();
-    }
-  }, [userId]);
-
-  const loadUserFavorites = async () => {
+  const loadUserFavorites = useCallback(async () => {
     if (!userId) return;
     
     try {
@@ -40,9 +34,9 @@ export function useSupabaseData(userId?: string) {
     } catch (error) {
       console.error('❌ Kedvencek betöltési hiba:', error);
     }
-  };
+  }, [userId]);
 
-  const loadUserPreferences = async () => {
+  const loadUserPreferences = useCallback(async () => {
     if (!userId) return;
     
     try {
@@ -53,7 +47,15 @@ export function useSupabaseData(userId?: string) {
     } catch (error) {
       console.error('❌ Preferenciák betöltési hiba:', error);
     }
-  };
+  }, [userId]);
+
+  // User specifikus adatok betöltése - csak akkor, ha változik a userId
+  useEffect(() => {
+    if (userId) {
+      loadUserPreferences();
+      loadUserFavorites();
+    }
+  }, [userId, loadUserPreferences, loadUserFavorites]);
 
   const loadData = async () => {
     try {
@@ -101,25 +103,25 @@ export function useSupabaseData(userId?: string) {
     }
   };
 
-  const getRecipesByMealTypeHandler = (mealType: string): SupabaseRecipe[] => {
+  const getRecipesByMealTypeHandler = useCallback((mealType: string): SupabaseRecipe[] => {
     return getRecipesByMealType(recipes, mealTypeRecipes, mealType, userPreferences);
-  };
+  }, [recipes, mealTypeRecipes, userPreferences]);
 
-  const getRecipesByCategoryHandler = (category: string, ingredient?: string, mealType?: string): SupabaseRecipe[] => {
+  const getRecipesByCategoryHandler = useCallback((category: string, ingredient?: string, mealType?: string): SupabaseRecipe[] => {
     return getRecipesByCategory(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
-  };
+  }, [recipes, mealTypeRecipes, categories, userPreferences]);
 
-  const getFilteredIngredients = (category: string): string[] => {
+  const getFilteredIngredients = useCallback((category: string): string[] => {
     const allIngredients = categories[category] || [];
     if (userPreferences.length === 0) return allIngredients;
     
     return filterIngredientsByPreferences(allIngredients, category, userPreferences);
-  };
+  }, [categories, userPreferences]);
 
-  const getRandomRecipe = (): SupabaseRecipe | null => {
+  const getRandomRecipe = useCallback((): SupabaseRecipe | null => {
     if (recipes.length === 0) return null;
     return recipes[Math.floor(Math.random() * recipes.length)];
-  };
+  }, [recipes]);
 
   const saveRating = async (recipeName: string, rating: number) => {
     if (!userId) {
@@ -137,12 +139,12 @@ export function useSupabaseData(userId?: string) {
     }
   };
 
-  const getFavoriteForIngredient = (ingredient: string, category?: string): boolean => {
+  const getFavoriteForIngredient = useCallback((ingredient: string, category?: string): boolean => {
     if (!category) {
       return userFavorites.some(fav => fav.ingredient === ingredient);
     }
     return isFavoriteIngredient(ingredient, category, userFavorites);
-  };
+  }, [userFavorites]);
 
   const handleFavoriteToggle = async (ingredient: string, category: string, isFavorite: boolean) => {
     if (!userId) return false;

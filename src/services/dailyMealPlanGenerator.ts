@@ -31,6 +31,16 @@ export const generateDailyMealPlan = async (
 ): Promise<GeneratedRecipe[]> => {
   console.log('🍽️ Napi étrend generálása:', { selectedMeals, ingredients, totalRecipes: recipes.length });
   
+  if (!recipes || recipes.length === 0) {
+    console.error('❌ Nincsenek receptek az adatbázisban!');
+    return [];
+  }
+
+  if (!mealTypeRecipes || Object.keys(mealTypeRecipes).length === 0) {
+    console.error('❌ Nincsenek étkezési típus adatok!');
+    return [];
+  }
+  
   const newRecipes: GeneratedRecipe[] = [];
   
   for (const mealType of selectedMeals) {
@@ -39,6 +49,11 @@ export const generateDailyMealPlan = async (
     // Étkezési típus alapján receptek lekérése
     const mealTypeFilteredRecipes = getRecipesByMealType(recipes, mealTypeRecipes, mealType);
     console.log(`📋 ${mealType} összes recepte:`, mealTypeFilteredRecipes.length, 'db');
+    
+    if (mealTypeFilteredRecipes.length === 0) {
+      console.log(`❌ NINCS RECEPT ${mealType}-hoz!`);
+      continue;
+    }
     
     let filteredRecipes = mealTypeFilteredRecipes;
     
@@ -56,6 +71,12 @@ export const generateDailyMealPlan = async (
       // Véletlenszerű recept kiválasztása a szűrt receptekből
       const randomIndex = Math.floor(Math.random() * filteredRecipes.length);
       const selectedSupabaseRecipe = filteredRecipes[randomIndex];
+      
+      if (!selectedSupabaseRecipe || !selectedSupabaseRecipe['Recept_Neve']) {
+        console.error(`❌ Hibás recept objektum ${mealType}-hoz:`, selectedSupabaseRecipe);
+        continue;
+      }
+      
       const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
       
       console.log(`🎲 Kiválasztott recept ${mealType}-hoz: "${selectedSupabaseRecipe['Recept_Neve']}"`);

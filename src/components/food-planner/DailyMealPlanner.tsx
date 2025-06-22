@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RefreshCw } from "lucide-react";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
 import { IngredientSelectionSection } from "./IngredientSelectionSection";
@@ -48,13 +48,18 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     convertToStandardRecipe
   });
 
-  // Kedvencek újratöltése amikor a komponens mountálódik
-  useEffect(() => {
+  // Kedvencek újratöltése amikor a komponens mountálódik - memoizált callback
+  const memoizedRefreshFavorites = useCallback(() => {
     if (user?.id) {
       console.log('🔄 Kedvencek újratöltése DailyMealPlanner-ben...');
       refreshFavorites();
     }
   }, [user?.id, refreshFavorites]);
+
+  // Csak egyszer hívjuk meg amikor a user változik
+  useEffect(() => {
+    memoizedRefreshFavorites();
+  }, [user?.id]); // Csak user?.id változáskor
 
   const handleMealToggle = (mealKey: string) => {
     setSelectedMeals(prev => {
@@ -74,16 +79,14 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     return recipes ? recipes.length : 0;
   };
 
-  // Transform categories to match FoodData interface
-  const transformedMealTypes = selectedMeals.reduce((acc, mealType) => {
-    acc[mealType] = {
-      categories: categories
-    };
-    return acc;
-  }, {} as { [key: string]: { categories: { [key: string]: string[] } } });
-
+  // Transform categories to match FoodData interface - memoizált
   const foodData = {
-    mealTypes: transformedMealTypes,
+    mealTypes: selectedMeals.reduce((acc, mealType) => {
+      acc[mealType] = {
+        categories: categories
+      };
+      return acc;
+    }, {} as { [key: string]: { categories: { [key: string]: string[] } } }),
     categories: categories,
     getFilteredIngredients: getFilteredIngredients,
     getRecipesByMealType: getRecipesByMealType
