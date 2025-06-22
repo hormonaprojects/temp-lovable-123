@@ -7,6 +7,10 @@ interface SelectedIngredient {
   ingredient: string;
 }
 
+interface MealIngredients {
+  [mealType: string]: SelectedIngredient[];
+}
+
 interface UseMealPlanGenerationProps {
   selectedMeals: string[];
   getRecipesByMealType: (mealType: string) => any[];
@@ -52,7 +56,7 @@ export function useMealPlanGeneration({
     });
   };
 
-  const handleGenerateMealPlan = async (ingredients: SelectedIngredient[] = []) => {
+  const handleGenerateMealPlan = async (mealIngredients: MealIngredients = {}) => {
     if (selectedMeals.length === 0) {
       toast({
         title: "Hiba",
@@ -67,9 +71,12 @@ export function useMealPlanGeneration({
       return;
     }
 
-    console.log('🍽️ Napi étrend generálás indítása:', { selectedMeals, ingredients });
+    console.log('🍽️ Napi étrend generálás indítása:', { selectedMeals, mealIngredients });
     setIsGenerating(true);
-    setSelectedIngredients(ingredients);
+    
+    // Összesítjük az összes kiválasztott alapanyagot a selectedIngredients state-hez
+    const allIngredients = Object.values(mealIngredients).flat();
+    setSelectedIngredients(allIngredients);
     
     try {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
@@ -79,35 +86,37 @@ export function useMealPlanGeneration({
       for (const mealType of selectedMeals) {
         console.log(`🔍 Recept generálása: ${mealType}`);
         
-        // Ugyanaz a logika, mint a SingleRecipeApp-ban
+        // Az aktuális étkezéshez tartozó alapanyagok
+        const mealSpecificIngredients = mealIngredients[mealType] || [];
+        
         const mealTypeRecipes = getRecipesByMealType(mealType);
         console.log(`📋 ${mealType} étkezéshez tartozó receptek:`, mealTypeRecipes.length);
 
         let validRecipes = [];
 
-        if (ingredients.length > 0) {
-          // Ha vannak kiválasztott alapanyagok, szűrjük őket
+        if (mealSpecificIngredients.length > 0) {
+          // Ha vannak kiválasztott alapanyagok ehhez az étkezéshez, szűrjük őket
           validRecipes = mealTypeRecipes.filter(recipe => {
             const recipeIngredients = getAllRecipeIngredients(recipe);
-            console.log(`\n🔍 Recept vizsgálata: ${recipe['Recept_Neve']}`);
+            console.log(`\n🔍 Recept vizsgálata (${mealType}): ${recipe['Recept_Neve']}`);
             
             // Ellenőrizzük, hogy MINDEN kiválasztott alapanyag szerepel-e a receptben
-            const hasAllIngredients = ingredients.every(selectedIng => {
+            const hasAllIngredients = mealSpecificIngredients.every(selectedIng => {
               const found = hasIngredient(recipeIngredients, selectedIng.ingredient);
               console.log(`${found ? '✅' : '❌'} "${selectedIng.ingredient}" ${found ? 'MEGTALÁLVA' : 'HIÁNYZIK'}`);
               return found;
             });
             
             if (hasAllIngredients) {
-              console.log(`✅ ✅ ✅ ELFOGADVA: "${recipe['Recept_Neve']}" TARTALMAZZA az ÖSSZES alapanyagot!`);
+              console.log(`✅ ✅ ✅ ELFOGADVA (${mealType}): "${recipe['Recept_Neve']}" TARTALMAZZA az ÖSSZES alapanyagot!`);
             } else {
-              console.log(`❌ ❌ ❌ ELUTASÍTVA: "${recipe['Recept_Neve']}" NEM tartalmazza az összes alapanyagot!`);
+              console.log(`❌ ❌ ❌ ELUTASÍTVA (${mealType}): "${recipe['Recept_Neve']}" NEM tartalmazza az összes alapanyagot!`);
             }
             
             return hasAllIngredients;
           });
         } else {
-          // Ha nincsenek kiválasztott alapanyagok, használjuk az összes receptet
+          // Ha nincsenek kiválasztott alapanyagok ehhez az étkezéshez, használjuk az összes receptet
           validRecipes = mealTypeRecipes;
         }
 
@@ -120,8 +129,8 @@ export function useMealPlanGeneration({
           const recipeWithMeta = {
             ...standardRecipe,
             mealType,
-            category: ingredients.length > 0 ? ingredients.map(ing => ing.category).join(", ") : "Minden kategória",
-            ingredient: ingredients.length > 0 ? ingredients.map(ing => ing.ingredient).join(", ") : "Minden alapanyag"
+            category: mealSpecificIngredients.length > 0 ? mealSpecificIngredients.map(ing => ing.category).join(", ") : "Minden kategória",
+            ingredient: mealSpecificIngredients.length > 0 ? mealSpecificIngredients.map(ing => ing.ingredient).join(", ") : "Minden alapanyag"
           };
           
           newRecipes.push(recipeWithMeta);
@@ -136,8 +145,9 @@ export function useMealPlanGeneration({
       setGeneratedRecipes(newRecipes);
       
       if (newRecipes.length > 0) {
-        const ingredientText = ingredients.length > 0 
-          ? ` a kiválasztott alapanyagokkal (${ingredients.map(ing => ing.ingredient).join(", ")})`
+        const totalIngredients = Object.values(mealIngredients).flat().length;
+        const ingredientText = totalIngredients > 0 
+          ? ` a kiválasztott alapanyagokkal (${totalIngredients} db)`
           : " preferenciáid alapján";
           
         toast({
@@ -164,14 +174,14 @@ export function useMealPlanGeneration({
     }
   };
 
-  const handleGetMultipleCategoryRecipes = async (ingredients: SelectedIngredient[]) => {
-    console.log('🔄 handleGetMultipleCategoryRecipes hívva:', ingredients);
-    await handleGenerateMealPlan(ingredients);
+  const handleGetMultipleCategoryRecipes = async (mealIngredients: MealIngredients) => {
+    console.log('🔄 handleGetMultipleCategoryRecipes hívva:', mealIngredients);
+    await handleGenerateMealPlan(mealIngredients);
   };
 
   const generateDailyMealPlanWithoutIngredients = async () => {
     console.log('🔄 generateDailyMealPlanWithoutIngredients hívva');
-    await handleGenerateMealPlan([]);
+    await handleGenerateMealPlan({});
   };
 
   return {

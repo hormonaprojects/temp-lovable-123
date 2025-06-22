@@ -19,6 +19,10 @@ interface SelectedIngredient {
   ingredient: string;
 }
 
+interface MealIngredients {
+  [mealType: string]: SelectedIngredient[];
+}
+
 export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlannerProps) {
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
@@ -62,6 +66,10 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     return recipes ? recipes.length : 0;
   };
 
+  const handleMealIngredientsChange = async (mealIngredients: MealIngredients) => {
+    await handleGetMultipleCategoryRecipes(mealIngredients);
+  };
+
   // Transform categories to match FoodData interface
   const foodData = {
     mealTypes: selectedMeals.reduce((acc, mealType) => {
@@ -100,7 +108,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
         showIngredientSelection={showIngredientSelection}
         selectedMeals={selectedMeals}
         foodData={foodData}
-        onGetMultipleCategoryRecipes={handleGetMultipleCategoryRecipes}
+        onGetMultipleCategoryRecipes={handleMealIngredientsChange}
         getFavoriteForIngredient={getFavoriteForIngredient}
       />
 
