@@ -199,7 +199,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
         return (
           <DailyMealPlanner
             user={user}
-            onBackToSingle={() => setCurrentView('single')}
+            onToggleSingleRecipe={() => setCurrentView('single')}
           />
         );
       case 'profile':
