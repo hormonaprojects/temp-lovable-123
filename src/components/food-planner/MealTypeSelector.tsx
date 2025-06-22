@@ -1,23 +1,19 @@
-
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ChefHat, Shuffle, Settings } from "lucide-react";
-
-interface MealTypeData {
-  [key: string]: {
-    categories: {
-      [key: string]: string[];
-    };
-  };
-}
+import { Button } from "@/components/ui/button";
+import { Clock, Shuffle, Search, Layers } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface FoodData {
-  mealTypes: MealTypeData;
-  categories: Record<string, string[]>;
+  mealTypes: { [key: string]: { categories: { [key: string]: string[] } } };
+  categories: { [key: string]: string[] };
   getFilteredIngredients: (category: string) => string[];
   getRecipesByMealType: (mealType: string) => any[];
+}
+
+interface MealType {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
 }
 
 interface MealTypeSelectorProps {
@@ -26,152 +22,92 @@ interface MealTypeSelectorProps {
   foodData: FoodData;
   onGetRandomRecipe?: () => void;
   onShowIngredientSelection?: () => void;
+  onShowMultiCategorySelection?: () => void;
 }
 
 export function MealTypeSelector({ 
   selectedMealType, 
   onSelectMealType, 
-  foodData,
+  foodData, 
   onGetRandomRecipe,
-  onShowIngredientSelection
+  onShowIngredientSelection,
+  onShowMultiCategorySelection
 }: MealTypeSelectorProps) {
-  const [showOptions, setShowOptions] = useState(false);
-
-  const handleMealTypeSelect = (mealType: string) => {
-    console.log('🎯 Étkezési típus kiválasztva:', mealType);
-    
-    // ELŐSZÖR beállítjuk a meal type-ot
-    onSelectMealType(mealType);
-    
-    // MAJD rögtön utána generálunk receptet a kiválasztott meal type-pal
-    // De ezt egy kis késéssel tesszük, hogy a state frissülhessen
-    setTimeout(() => {
-      console.log('🎲 Random recept generálás a kiválasztott meal type-pal:', mealType);
-      if (onGetRandomRecipe) {
-        onGetRandomRecipe();
-      }
-    }, 50); // Rövid késleltetés a state frissüléshez
-    
-    setShowOptions(true);
-    
-    // Auto-scroll to options
-    setTimeout(() => {
-      const optionsSection = document.querySelector('[data-scroll-target="meal-options"]');
-      if (optionsSection) {
-        optionsSection.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start',
-          inline: 'nearest'
-        });
-      }
-    }, 200);
-  };
-
-  const handleRandomRecipe = () => {
-    setShowOptions(false);
-    if (onGetRandomRecipe) {
-      onGetRandomRecipe();
-    }
-  };
-
-  const handleIngredientSelection = () => {
-    setShowOptions(false);
-    if (onShowIngredientSelection) {
-      onShowIngredientSelection();
-    }
-  };
-
-  // Reset options when meal type changes
-  useEffect(() => {
-    if (!selectedMealType) {
-      setShowOptions(false);
-    }
-  }, [selectedMealType]);
-
-  const mealTypeOptions = [
-    { key: "reggeli", label: "Reggeli", emoji: "🌅" },
-    { key: "tízórai", label: "Tízórai", emoji: "☕" },
-    { key: "ebéd", label: "Ebéd", emoji: "🍛" },
-    { key: "leves", label: "Leves", emoji: "🍲" },
-    { key: "uzsonna", label: "Uzsonna", emoji: "🥨" },
-    { key: "vacsora", label: "Vacsora", emoji: "🌙" }
+  const mealTypes: MealType[] = [
+    { id: "reggeli", name: "Reggeli", icon: "🍳" },
+    { id: "tízórai", name: "Tízórai", icon: "🍎" },
+    { id: "ebéd", name: "Ebéd", icon: "🍲" },
+    { id: "leves", name: "Leves", icon: "🥣" },
+    { id: "uzsonna", name: "Uzsonna", icon: "🥪" },
+    { id: "vacsora", name: "Vacsora", icon: "🥗" },
   ];
 
-  const getRecipeCount = (mealType: string) => {
-    return foodData.getRecipesByMealType(mealType).length;
+  const handleMealTypeSelect = (mealType: string) => {
+    onSelectMealType(mealType);
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Meal Type Selection */}
-      <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-white text-xl sm:text-2xl font-bold text-center flex items-center justify-center gap-2">
-            <ChefHat className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400" />
-            Válassz étkezési típust
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            {mealTypeOptions.map((mealType) => {
-              const recipeCount = getRecipeCount(mealType.key);
-              const isSelected = selectedMealType === mealType.key;
-              
-              return (
-                <Button
-                  key={mealType.key}
-                  onClick={() => handleMealTypeSelect(mealType.key)}
-                  className={`py-4 sm:py-6 text-sm sm:text-lg font-semibold rounded-xl transition-all duration-300 min-h-[80px] sm:min-h-[120px] flex flex-col items-center justify-center border-2 ${
-                    isSelected
-                      ? 'bg-yellow-400 text-black hover:bg-yellow-300 shadow-lg scale-105 border-yellow-300'
-                      : 'bg-white/20 text-white hover:bg-white/30 hover:scale-102 border-white/30'
-                  }`}
-                >
-                  <div className="text-center">
-                    <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">
-                      {mealType.emoji}
-                    </div>
-                    <div className="text-xs sm:text-sm font-medium leading-tight">{mealType.label}</div>
-                    <Badge variant="secondary" className="bg-white/30 text-white/90 text-xs mt-1">
-                      {recipeCount}
-                    </Badge>
-                  </div>
-                </Button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Options after meal type selection */}
-      {selectedMealType && showOptions && (
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl" data-scroll-target="meal-options">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-white text-lg sm:text-xl font-bold text-center">
-              Mit szeretnél csinálni?
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button
-                onClick={handleRandomRecipe}
-                className="bg-gradient-to-r from-green-500/80 to-emerald-600/80 hover:from-green-600/90 hover:to-emerald-700/90 backdrop-blur-sm border border-green-300/20 text-white px-6 py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <Shuffle className="w-5 h-5" />
-                Új random recept generálása
-              </Button>
-              
-              <Button
-                onClick={handleIngredientSelection}
-                className="bg-gradient-to-r from-blue-500/80 to-indigo-600/80 hover:from-blue-600/90 hover:to-indigo-700/90 backdrop-blur-sm border border-blue-300/20 text-white px-6 py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <Settings className="w-5 h-5" />
-                Alapanyagok kiválasztása
-              </Button>
+    <Card className="mb-8 bg-white/5 backdrop-blur-lg border-white/10 shadow-2xl">
+      <CardHeader className="pb-6">
+        <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
+          <Clock className="h-6 w-6 text-purple-400" />
+          Étkezés típusa
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {mealTypes.map((mealType) => (
+            <div
+              key={mealType.id}
+              className={cn(
+                "group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105",
+                selectedMealType === mealType.id
+                  ? "ring-4 ring-purple-400 shadow-2xl"
+                  : "hover:shadow-xl"
+              )}
+              onClick={() => handleMealTypeSelect(mealType.id)}
+            >
+              <div className={cn(
+                "p-6 h-32 flex flex-col items-center justify-center text-center transition-all duration-300",
+                selectedMealType === mealType.id
+                  ? "bg-gradient-to-br from-purple-500/40 to-pink-500/40 border-purple-400"
+                  : "bg-white/10 hover:bg-white/20"
+              )}>
+                <div className="text-3xl mb-2">{mealType.icon}</div>
+                <h3 className="text-white font-semibold text-sm">{mealType.name}</h3>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          ))}
+        </div>
+
+        {selectedMealType && (
+          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
+            <Button
+              onClick={onGetRandomRecipe}
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Shuffle className="mr-2 h-4 w-4" />
+              Véletlenszerű recept
+            </Button>
+            
+            <Button
+              onClick={onShowIngredientSelection}
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Search className="mr-2 h-4 w-4" />
+              Alapanyag szerint (1 kategória)
+            </Button>
+
+            <Button
+              onClick={onShowMultiCategorySelection}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Layers className="mr-2 h-4 w-4" />
+              Alapanyag szerint (több kategória)
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

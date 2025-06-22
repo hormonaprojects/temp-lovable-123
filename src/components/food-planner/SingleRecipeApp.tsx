@@ -17,6 +17,11 @@ interface MultiDayMealPlan {
   };
 }
 
+interface SelectedIngredient {
+  category: string;
+  ingredient: string;
+}
+
 interface SingleRecipeAppProps {
   user: any;
   onToggleDailyPlanner: () => void;
@@ -30,6 +35,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [multiDayPlan, setMultiDayPlan] = useState<MultiDayMealPlan[]>([]);
   const [isMultiDayLoading, setIsMultiDayLoading] = useState(false);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
+  const [ingredientSelectionMode, setIngredientSelectionMode] = useState<'single' | 'multi'>('single');
   const [lastSearchParams, setLastSearchParams] = useState<{
     category: string;
     ingredient: string;
@@ -242,6 +248,67 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     }
   };
 
+  const getMultipleCategoryRecipes = async (selectedIngredients: SelectedIngredient[]) => {
+    if (!selectedMealType || selectedIngredients.length === 0) return;
+
+    setIsLoading(true);
+    setCurrentRecipe(null);
+    
+    // Több kategóriás alapanyagok esetén
+    const ingredientsText = selectedIngredients.map(ing => `${ing.ingredient} (${ing.category})`).join(", ");
+    setLastSearchParams({ category: "Több kategória", ingredient: ingredientsText, mealType: selectedMealType });
+
+    try {
+      console.log('🔍 TÖBB KATEGÓRIÁS alapanyaggal recept keresése:', { selectedMealType, selectedIngredients });
+      
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Receptek keresése az összes megadott alapanyag alapján kategóriánként
+      let allFoundRecipes = [];
+      
+      for (const item of selectedIngredients) {
+        const foundRecipes = getRecipesByCategory(item.category, item.ingredient, selectedMealType);
+        allFoundRecipes.push(...foundRecipes);
+      }
+      
+      // Duplikátumok eltávolítása
+      const uniqueRecipes = allFoundRecipes.filter((recipe, index, self) =>
+        index === self.findIndex(r => r['Recept_Neve'] === recipe['Recept_Neve'])
+      );
+
+      await minLoadingTime;
+
+      if (uniqueRecipes.length > 0) {
+        const randomIndex = Math.floor(Math.random() * uniqueRecipes.length);
+        const selectedSupabaseRecipe = uniqueRecipes[randomIndex];
+        const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
+        
+        setCurrentRecipe(standardRecipe);
+        
+        toast({
+          title: "Recept betöltve!",
+          description: `${standardRecipe.név} sikeresen betöltve (${selectedIngredients.length} alapanyag több kategóriából).`,
+        });
+      } else {
+        toast({
+          title: "Nincs megfelelő recept",
+          description: `Nincs recept "${selectedMealType}" étkezéshez a kiválasztott alapanyagokkal több kategóriából.`,
+          variant: "destructive"
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ Hiba a több kategóriás recept kérésekor:', error);
+      toast({
+        title: "Hiba",
+        description: "Nem sikerült betölteni a receptet.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const generateMultiDayPlan = async (days: number): Promise<MultiDayMealPlan[]> => {
     setIsMultiDayLoading(true);
     
@@ -366,6 +433,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setMultiDayPlan([]);
     setViewMode('single');
     setShowIngredientSelection(false);
+    setIngredientSelectionMode('single');
     setLastSearchParams({ category: "", ingredient: "", mealType: "" });
   };
 
@@ -406,7 +474,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     }
   };
 
-  const handleShowIngredientSelection = () => {
+  const handleShowIngredientSelection = (mode: 'single' | 'multi' = 'single') => {
+    setIngredientSelectionMode(mode);
     setShowIngredientSelection(true);
   };
 
@@ -457,10 +526,11 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
             onSelectMealType={handleMealTypeSelect}
             foodData={foodData}
             onGetRandomRecipe={handleGetRandomRecipe}
-            onShowIngredientSelection={handleShowIngredientSelection}
+            onShowIngredientSelection={() => handleShowIngredientSelection('single')}
+            onShowMultiCategorySelection={() => handleShowIngredientSelection('multi')}
           />
 
-          {selectedMealType && showIngredientSelection && (
+          {selectedMealType && showIngredientSelection && ingredientSelectionMode === 'single' && (
             <CategoryIngredientSelector
               selectedMealType={selectedMealType}
               foodData={foodData}
@@ -471,6 +541,20 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
                 console.log('🔍 SingleRecipeApp - Kedvenc ellenőrzés:', { ingredient, category });
                 const result = getFavoriteForIngredient(ingredient, category);
                 console.log('✅ SingleRecipeApp - Kedvenc eredmény:', result);
+                return result;
+              }}
+            />
+          )}
+
+          {selectedMealType && showIngredientSelection && ingredientSelectionMode === 'multi' && (
+            <MultiCategoryIngredientSelector
+              selectedMealType={selectedMealType}
+              foodData={foodData}
+              onGetMultipleCategoryRecipes={getMultipleCategoryRecipes}
+              getFavoriteForIngredient={(ingredient: string, category: string) => {
+                console.log('🔍 SingleRecipeApp - Multi kategória kedvenc ellenőrzés:', { ingredient, category });
+                const result = getFavoriteForIngredient(ingredient, category);
+                console.log('✅ SingleRecipeApp - Multi kategória kedvenc eredmény:', result);
                 return result;
               }}
             />
