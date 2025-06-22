@@ -52,8 +52,8 @@ export function useMealPlanGeneration({
     const searchNormalized = normalizeText(searchIngredient);
     return recipeIngredients.some(recipeIng => {
       const recipeIngNormalized = normalizeText(recipeIng);
-      // Javított keresés: exact match vagy contains
-      return recipeIngNormalized.includes(searchNormalized) || searchNormalized.includes(recipeIngNormalized);
+      // SZIGORÚBB keresés: csak akkor fogadjuk el, ha ténylegesen tartalmazza
+      return recipeIngNormalized.includes(searchNormalized);
     });
   };
 
@@ -97,11 +97,13 @@ export function useMealPlanGeneration({
         let validRecipes = [];
 
         if (mealSpecificIngredients.length > 0) {
-          // Ha vannak kiválasztott alapanyagok ehhez az étkezéshez, szűrjük őket
-          console.log(`🎯 Szűrés ${mealSpecificIngredients.length} alapanyag alapján`);
+          // Ha vannak kiválasztott alapanyagok ehhez az étkezéshez, SZIGORÚAN szűrjük őket
+          console.log(`🎯 SZIGORÚ szűrés ${mealSpecificIngredients.length} alapanyag alapján`);
           
           validRecipes = mealTypeRecipes.filter(recipe => {
             const recipeIngredients = getAllRecipeIngredients(recipe);
+            console.log(`\n🔍 Recept vizsgálata: "${recipe['Recept_Neve']}"`);
+            console.log(`📝 Recept alapanyagai:`, recipeIngredients);
             
             // Ellenőrizzük, hogy MINDEN kiválasztott alapanyag szerepel-e a receptben
             const hasAllIngredients = mealSpecificIngredients.every(selectedIng => {
@@ -112,12 +114,14 @@ export function useMealPlanGeneration({
             
             if (hasAllIngredients) {
               console.log(`✅ ✅ ✅ ELFOGADVA (${mealType}): "${recipe['Recept_Neve']}" TARTALMAZZA az ÖSSZES alapanyagot!`);
+            } else {
+              console.log(`❌ ❌ ❌ ELUTASÍTVA (${mealType}): "${recipe['Recept_Neve']}" NEM tartalmazza az összes alapanyagot!`);
             }
             
             return hasAllIngredients;
           });
           
-          console.log(`🎯 Szűrés után ${validRecipes.length} recept maradt`);
+          console.log(`🎯 SZIGORÚ szűrés után ${validRecipes.length} recept maradt`);
         } else {
           // Ha nincsenek kiválasztott alapanyagok ehhez az étkezéshez, használjuk az összes receptet
           validRecipes = mealTypeRecipes;
@@ -179,7 +183,7 @@ export function useMealPlanGeneration({
   };
 
   const handleGetMultipleCategoryRecipes = async (mealIngredients: MealIngredients) => {
-    console.log('🔄 handleGetMultipleCategoryRecipes hívva:', mealIngredients);
+    console.log('🔄 handleGetMultipleCategoryRecipes hívva (MANUÁLIS gombnyomás):', mealIngredients);
     await handleGenerateMealPlan(mealIngredients);
   };
 

@@ -26,6 +26,7 @@ interface MealIngredients {
 export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlannerProps) {
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
+  const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>({});
 
   const {
     categories,
@@ -67,8 +68,18 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     return recipes ? recipes.length : 0;
   };
 
-  const handleMealIngredientsChange = async (mealIngredients: MealIngredients) => {
-    await handleGetMultipleCategoryRecipes(mealIngredients);
+  const handleMealIngredientsChange = (mealIngredients: MealIngredients) => {
+    console.log('🔄 Meal ingredients változás (csak state frissítés):', mealIngredients);
+    setCurrentMealIngredients(mealIngredients);
+    
+    // Frissítjük a selectedIngredients count-ot a gomb számára
+    const allIngredients = Object.values(mealIngredients).flat();
+    // Ez csak a UI frissítéshez kell, nem triggerel generálást
+  };
+
+  const handleGenerateMealPlan = async () => {
+    console.log('🎯 MANUÁLIS étrend generálás gombbal:', currentMealIngredients);
+    await handleGetMultipleCategoryRecipes(currentMealIngredients);
   };
 
   // Preferencia keresés függvény
@@ -118,16 +129,16 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
         showIngredientSelection={showIngredientSelection}
         selectedMeals={selectedMeals}
         foodData={foodData}
-        onGetMultipleCategoryRecipes={handleMealIngredientsChange}
+        onMealIngredientsChange={handleMealIngredientsChange}
         getFavoriteForIngredient={getFavoriteForIngredient}
         getPreferenceForIngredient={getPreferenceForIngredient}
       />
 
       <MealPlanGenerationButton
         selectedMeals={selectedMeals}
-        selectedIngredients={selectedIngredients}
+        selectedIngredients={Object.values(currentMealIngredients).flat()}
         isGenerating={isGenerating}
-        onGenerateMealPlan={generateDailyMealPlanWithoutIngredients}
+        onGenerateMealPlan={handleGenerateMealPlan}
       />
 
       <GeneratedMealPlan generatedRecipes={generatedRecipes} user={user} />

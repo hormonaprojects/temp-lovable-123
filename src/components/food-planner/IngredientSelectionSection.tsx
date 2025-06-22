@@ -16,7 +16,7 @@ interface IngredientSelectionSectionProps {
   showIngredientSelection: boolean;
   selectedMeals: string[];
   foodData: any;
-  onGetMultipleCategoryRecipes: (mealIngredients: MealIngredients) => Promise<void>;
+  onMealIngredientsChange: (mealIngredients: MealIngredients) => void;
   getFavoriteForIngredient: (ingredient: string) => boolean;
   getPreferenceForIngredient?: (ingredient: string, category: string) => 'like' | 'dislike' | 'neutral';
 }
@@ -33,7 +33,7 @@ export function IngredientSelectionSection({
   showIngredientSelection,
   selectedMeals,
   foodData,
-  onGetMultipleCategoryRecipes,
+  onMealIngredientsChange,
   getFavoriteForIngredient,
   getPreferenceForIngredient
 }: IngredientSelectionSectionProps) {
@@ -43,18 +43,15 @@ export function IngredientSelectionSection({
     return null;
   }
 
-  const handleIngredientsChange = async (mealType: string, ingredients: SelectedIngredient[]) => {
+  const handleIngredientsChange = (mealType: string, ingredients: SelectedIngredient[]) => {
     const newMealIngredients = {
       ...mealIngredients,
       [mealType]: ingredients
     };
     setMealIngredients(newMealIngredients);
     
-    // Automatikusan triggerelünk generálást, ha van legalább egy étkezéshez alapanyag
-    const hasAnyIngredients = Object.values(newMealIngredients).some(ingredients => ingredients.length > 0);
-    if (hasAnyIngredients) {
-      await onGetMultipleCategoryRecipes(newMealIngredients);
-    }
+    // Csak a state-et frissítjük, automatikus generálás nélkül
+    onMealIngredientsChange(newMealIngredients);
   };
 
   return (
@@ -64,7 +61,7 @@ export function IngredientSelectionSection({
           🎯 Étkezésenkénti alapanyag szűrő ({selectedMeals.length} étkezés)
         </CardTitle>
         <p className="text-white/80 text-sm">
-          Válasszon alapanyagokat minden étkezéshez külön-külön. Automatikusan frissül a kiválasztás után.
+          Válasszon alapanyagokat minden étkezéshez külön-külön. A generálás gombbal indíthatja az étrend készítését.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
