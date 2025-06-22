@@ -46,7 +46,13 @@ export function IngredientCard({
   };
 
   const handleFavoriteClick = () => {
-    onFavoriteChange(ingredient, !favorite);
+    const newFavoriteState = !favorite;
+    onFavoriteChange(ingredient, newFavoriteState);
+    
+    // If marking as favorite, automatically set to "like"
+    if (newFavoriteState) {
+      onPreferenceChange(ingredient, 'like');
+    }
   };
 
   const jpgImageUrl = getIngredientImage(ingredient);
@@ -65,11 +71,11 @@ export function IngredientCard({
         animationDelay: `${index * 0.1}s`
       }}
     >
-      <div className="p-3">
+      <div className="p-2">
         {/* Favorite indicator */}
         {favorite && (
-          <div className="absolute top-2 right-2 z-10">
-            <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+          <div className="absolute top-1 right-1 z-10">
+            <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />
           </div>
         )}
         
@@ -93,19 +99,19 @@ export function IngredientCard({
           />
         </div>
         
-        {/* Ingredient Name - Smaller */}
-        <h3 className="text-xs font-semibold text-gray-800 text-center mb-2 truncate min-h-[1rem]">
+        {/* Ingredient Name - Better visibility with word-break */}
+        <h3 className="text-xs font-semibold text-gray-800 text-center mb-2 leading-tight break-words hyphens-auto px-1 min-h-[2rem] flex items-center justify-center">
           {ingredient}
         </h3>
         
-        {/* Preference and Favorite Buttons - Smaller and more compact */}
+        {/* Preference and Favorite Buttons - Square shapes */}
         <div className="flex justify-center gap-1">
           <Button
             onClick={() => handlePreferenceClick('like')}
             variant={preference === 'like' ? 'default' : 'outline'}
             size="sm"
             className={`
-              w-6 h-6 p-0 transition-all duration-200 rounded-full
+              w-6 h-6 p-0 transition-all duration-200 rounded-sm
               ${preference === 'like' 
                 ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg' 
                 : 'hover:bg-green-50 hover:border-green-300 hover:text-green-600'
@@ -120,7 +126,7 @@ export function IngredientCard({
             variant={preference === 'dislike' ? 'default' : 'outline'}
             size="sm"
             className={`
-              w-6 h-6 p-0 transition-all duration-200 rounded-full
+              w-6 h-6 p-0 transition-all duration-200 rounded-sm
               ${preference === 'dislike' 
                 ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg' 
                 : 'hover:bg-red-50 hover:border-red-300 hover:text-red-600'
@@ -135,7 +141,7 @@ export function IngredientCard({
             variant={favorite ? 'default' : 'outline'}
             size="sm"
             className={`
-              w-6 h-6 p-0 transition-all duration-200 rounded-full
+              w-6 h-6 p-0 transition-all duration-200 rounded-sm
               ${favorite 
                 ? 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-lg' 
                 : 'hover:bg-pink-50 hover:border-pink-300 hover:text-pink-600'
