@@ -72,12 +72,15 @@ export function MultiCategoryIngredientSelector({
     await onGetMultipleCategoryRecipes(selectedIngredients);
   };
 
-  // Enhanced sorting: favorites first, then liked, then neutral (hide disliked)
+  // Javított sorrendezés: kedvencek ELŐSZÖR, majd liked, majd neutral (disliked elrejtése)
   const getSortedIngredients = (category: string) => {
     const ingredients = foodData.getFilteredIngredients(category);
+    
+    console.log(`🔄 Sorrendezés előtt (${category}):`, ingredients);
+    
     return [...ingredients]
       .filter(ingredient => {
-        // Hide disliked ingredients if preference function is available
+        // Elrejtjük a disliked alapanyagokat
         if (getPreferenceForIngredient) {
           const preference = getPreferenceForIngredient(ingredient, category);
           return preference !== 'dislike';
@@ -88,25 +91,42 @@ export function MultiCategoryIngredientSelector({
         const aIsFavorite = getFavoriteForIngredient(a, category);
         const bIsFavorite = getFavoriteForIngredient(b, category);
         
-        // First priority: favorites (kedvencek)
-        if (aIsFavorite && !bIsFavorite) return -1;
-        if (!aIsFavorite && bIsFavorite) return 1;
+        console.log(`🔍 Összehasonlítás: ${a} (kedvenc: ${aIsFavorite}) vs ${b} (kedvenc: ${bIsFavorite})`);
         
-        // Second priority: liked ingredients (szeretett alapanyagok)
+        // ELSŐ PRIORITÁS: Kedvencek (rózsaszín szív)
+        if (aIsFavorite && !bIsFavorite) {
+          console.log(`✨ ${a} kedvenc, előre kerül`);
+          return -1;
+        }
+        if (!aIsFavorite && bIsFavorite) {
+          console.log(`✨ ${b} kedvenc, előre kerül`);
+          return 1;
+        }
+        
+        // Ha mindkettő kedvenc vagy mindkettő nem kedvenc, akkor preference szerint
         if (getPreferenceForIngredient) {
           const aPreference = getPreferenceForIngredient(a, category);
           const bPreference = getPreferenceForIngredient(b, category);
           
-          if (aPreference === 'like' && bPreference !== 'like') return -1;
-          if (aPreference !== 'like' && bPreference === 'like') return 1;
+          console.log(`🎯 Preferenciák: ${a} (${aPreference}) vs ${b} (${bPreference})`);
           
-          // Third priority: neutral ingredients
-          if (aPreference === 'neutral' && bPreference === 'dislike') return -1;
-          if (aPreference === 'dislike' && bPreference === 'neutral') return 1;
+          // MÁSODIK PRIORITÁS: Liked alapanyagok (ha nem kedvencek)
+          if (!aIsFavorite && !bIsFavorite) {
+            if (aPreference === 'like' && bPreference !== 'like') {
+              console.log(`💚 ${a} liked, előre kerül`);
+              return -1;
+            }
+            if (aPreference !== 'like' && bPreference === 'like') {
+              console.log(`💚 ${b} liked, előre kerül`);
+              return 1;
+            }
+          }
         }
         
-        // Fourth priority: alphabetical order for same preference level
-        return a.localeCompare(b);
+        // HARMADIK PRIORITÁS: Ábécé sorrend ugyanazon szinten
+        const result = a.localeCompare(b, 'hu');
+        console.log(`📝 Ábécé sorrend: ${a} vs ${b} = ${result}`);
+        return result;
       });
   };
 
@@ -177,6 +197,8 @@ export function MultiCategoryIngredientSelector({
               {getSortedIngredients(selectedCategory).map(ingredient => {
                 const isFavorite = getFavoriteForIngredient(ingredient, selectedCategory);
                 const preference = getPreferenceForIngredient ? getPreferenceForIngredient(ingredient, selectedCategory) : 'neutral';
+                
+                console.log(`🎨 Renderelés: ${ingredient} - kedvenc: ${isFavorite}, preferencia: ${preference}`);
                 
                 let buttonClasses = cn(
                   "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative border-2"

@@ -28,11 +28,11 @@ export function IngredientsGrid({
     );
   }
 
-  // Enhanced sorting: favorites first, then liked, then neutral (hide disliked)
+  // Javított sorrendezés: kedvencek ELŐSZÖR, majd liked, majd neutral (disliked elrejtése)
   const sortedIngredients = [...ingredients]
     .filter(ingredient => {
       const preference = getPreferenceForIngredient(ingredient);
-      return preference !== 'dislike'; // Hide disliked ingredients
+      return preference !== 'dislike'; // Elrejtjük a disliked alapanyagokat
     })
     .sort((a, b) => {
       const aIsFavorite = getFavoriteForIngredient(a);
@@ -40,21 +40,38 @@ export function IngredientsGrid({
       const aPreference = getPreferenceForIngredient(a);
       const bPreference = getPreferenceForIngredient(b);
       
-      // First priority: favorites (kedvencek)
-      if (aIsFavorite && !bIsFavorite) return -1;
-      if (!aIsFavorite && bIsFavorite) return 1;
+      console.log(`🔍 Sorrendezés: ${a} (kedvenc: ${aIsFavorite}, pref: ${aPreference}) vs ${b} (kedvenc: ${bIsFavorite}, pref: ${bPreference})`);
       
-      // Second priority: liked ingredients (szeretett alapanyagok)
-      if (aPreference === 'like' && bPreference !== 'like') return -1;
-      if (aPreference !== 'like' && bPreference === 'like') return 1;
+      // ELSŐ PRIORITÁS: kedvencek (rózsaszín szív)
+      if (aIsFavorite && !bIsFavorite) {
+        console.log(`✨ ${a} kedvenc, előre kerül`);
+        return -1;
+      }
+      if (!aIsFavorite && bIsFavorite) {
+        console.log(`✨ ${b} kedvenc, előre kerül`);
+        return 1;
+      }
       
-      // Third priority: neutral ingredients
-      if (aPreference === 'neutral' && bPreference === 'dislike') return -1;
-      if (aPreference === 'dislike' && bPreference === 'neutral') return 1;
+      // Ha mindkettő kedvenc vagy mindkettő nem kedvenc, akkor preferencia szerint
+      if (!aIsFavorite && !bIsFavorite) {
+        // MÁSODIK PRIORITÁS: liked alapanyagok (zöld színű)
+        if (aPreference === 'like' && bPreference !== 'like') {
+          console.log(`💚 ${a} liked, előre kerül`);
+          return -1;
+        }
+        if (aPreference !== 'like' && bPreference === 'like') {
+          console.log(`💚 ${b} liked, előre kerül`);
+          return 1;
+        }
+      }
       
-      // Fourth priority: alphabetical order for same preference level
-      return a.localeCompare(b);
+      // HARMADIK PRIORITÁS: ábécé sorrend ugyanazon szinten
+      const result = a.localeCompare(b, 'hu');
+      console.log(`📝 Ábécé sorrend: ${a} vs ${b} = ${result}`);
+      return result;
     });
+
+  console.log(`🎯 Végső sorrendezett lista (${categoryName}):`, sortedIngredients);
 
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 mb-8">
