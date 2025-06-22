@@ -1,26 +1,19 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Star, Heart, Home } from "lucide-react";
-import { RecipeDisplay } from "./RecipeDisplay";
-import { MealSelectionCard } from "./MealSelectionCard";
+import { RefreshCw, Star } from "lucide-react";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
 import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
+import { DailyMealHeader } from "./DailyMealHeader";
+import { GeneratedMealPlan } from "./GeneratedMealPlan";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { generateDailyMealPlan } from "@/services/dailyMealPlanGenerator";
 
 interface DailyMealPlannerProps {
   user: any;
   onToggleSingleRecipe: () => void;
-}
-
-interface MealSelections {
-  [key: string]: {
-    category: string;
-    ingredient: string;
-  };
 }
 
 interface SelectedIngredient {
@@ -30,7 +23,6 @@ interface SelectedIngredient {
 
 export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlannerProps) {
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
-  const [mealSelections, setMealSelections] = useState<MealSelections>({});
   const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
@@ -39,15 +31,13 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
 
   const {
     categories,
-    getRecipesByCategory,
+    getRecipesByMealType,
     getFilteredIngredients,
     convertToStandardRecipe,
     saveRating,
     loading,
     getFavoriteForIngredient,
-    handleFavoriteToggle,
-    refreshFavorites,
-    getRecipesByMealType
+    refreshFavorites
   } = useSupabaseData(user?.id);
 
   // Kedvencek újratöltése amikor a komponens mountálódik
@@ -58,14 +48,6 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     }
   }, [user?.id, refreshFavorites]);
 
-  const mealTypes = [
-    { key: 'reggeli', label: 'Reggeli', emoji: '🍳' },
-    { key: 'tízórai', label: 'Tízórai', emoji: '🥪' },
-    { key: 'ebéd', label: 'Ebéd', emoji: '🍽️' },
-    { key: 'uzsonna', label: 'Uzsonna', emoji: '🧁' },
-    { key: 'vacsora', label: 'Vacsora', emoji: '🌮' }
-  ];
-
   const handleMealToggle = (mealKey: string) => {
     setSelectedMeals(prev => {
       const newSelectedMeals = prev.includes(mealKey) 
@@ -74,6 +56,12 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       
       // Ha van kiválasztott étkezés, mutassuk az alapanyag szűrőt
       setShowIngredientSelection(newSelectedMeals.length > 0);
+      
+      // Reset generated recipes when meal selection changes
+      if (newSelectedMeals.length === 0) {
+        setGeneratedRecipes([]);
+        setSelectedIngredients([]);
+      }
       
       return newSelectedMeals;
     });
@@ -113,81 +101,12 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     setSelectedIngredients(ingredients);
     
     try {
-      console.log('🍽️ Napi étrend generálása alapanyagokkal:', { selectedMeals, ingredients });
-      
-      const newRecipes = [];
-      
-      for (const mealType of selectedMeals) {
-        // Ha vannak kiválasztott alapanyagok, azokat használjuk szűrésre
-        let foundRecipes = [];
-        
-        if (ingredients.length > 0) {
-          // Olyan recepteket keresünk, amelyek tartalmazzák a kiválasztott alapanyagokat
-          const mealTypeRecipes = getRecipesByMealType(mealType);
-          
-          const getAllRecipeIngredients = (recipe: any): string[] => {
-            return [
-              recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
-              recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
-              recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
-              recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
-              recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
-              recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
-            ].filter(Boolean).map(ing => ing?.toString() || '');
-          };
-
-          const normalizeText = (text: string): string => {
-            return text
-              .toLowerCase()
-              .normalize('NFD')
-              .replace(/[\u0300-\u036f]/g, '')
-              .replace(/[^\w\s]/g, '')
-              .trim();
-          };
-
-          const hasIngredient = (recipeIngredients: string[], searchIngredient: string): boolean => {
-            const searchNormalized = normalizeText(searchIngredient);
-            return recipeIngredients.some(recipeIng => {
-              const recipeIngNormalized = normalizeText(recipeIng);
-              return recipeIngNormalized.includes(searchNormalized) || searchNormalized.includes(recipeIngNormalized);
-            });
-          };
-
-          foundRecipes = mealTypeRecipes.filter(recipe => {
-            const recipeIngredients = getAllRecipeIngredients(recipe);
-            
-            // Ellenőrizzük, hogy legalább egy kiválasztott alapanyag szerepel-e a receptben
-            return ingredients.some(selectedIng => 
-              hasIngredient(recipeIngredients, selectedIng.ingredient)
-            );
-          });
-        } else {
-          // Ha nincs alapanyag kiválasztva, használjuk az alapértelmezett szűrést
-          foundRecipes = getRecipesByMealType(mealType);
-        }
-        
-        if (foundRecipes && foundRecipes.length > 0) {
-          const randomIndex = Math.floor(Math.random() * foundRecipes.length);
-          const selectedSupabaseRecipe = foundRecipes[randomIndex];
-          const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
-          
-          // Meghatározzuk az alapanyagokat a receptből
-          const mainIngredients = [
-            selectedSupabaseRecipe['Hozzavalo_1'],
-            selectedSupabaseRecipe['Hozzavalo_2'],
-            selectedSupabaseRecipe['Hozzavalo_3']
-          ].filter(Boolean);
-          
-          newRecipes.push({
-            ...standardRecipe,
-            mealType,
-            category: ingredients.length > 0 ? "alapanyag alapú" : "automatikus",
-            ingredient: ingredients.length > 0 
-              ? ingredients.map(ing => ing.ingredient).join(", ") 
-              : mainIngredients[0] || "vegyes alapanyagok"
-          });
-        }
-      }
+      const newRecipes = await generateDailyMealPlan(
+        selectedMeals,
+        ingredients,
+        getRecipesByMealType,
+        convertToStandardRecipe
+      );
       
       setGeneratedRecipes(newRecipes);
       
@@ -203,7 +122,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       } else {
         toast({
           title: "Nincs megfelelő recept",
-          description: "Nem található elegendő recept a kiválasztott étkezésekhez és alapanyagokhoz.",
+          description: "Nem található elegendő recept a kiválasztott étkezésekhez és alapanyagokhoz. Próbáljon más alapanyagokat vagy étkezési típusokat!",
           variant: "destructive"
         });
       }
@@ -220,24 +139,8 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     }
   };
 
-  const generateDailyMealPlan = async () => {
-    await handleGetMultipleCategoryRecipes(selectedIngredients);
-  };
-
-  const handleRating = async (recipeName: string, rating: number) => {
-    const success = await saveRating(recipeName, rating);
-    if (success) {
-      toast({
-        title: "Értékelés mentve!",
-        description: `${recipeName} értékelése: ${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}`,
-      });
-    } else {
-      toast({
-        title: "Hiba",
-        description: "Nem sikerült menteni az értékelést.",
-        variant: "destructive"
-      });
-    }
+  const generateDailyMealPlanWithoutIngredients = async () => {
+    await handleGetMultipleCategoryRecipes([]);
   };
 
   if (loading) {
@@ -253,35 +156,14 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto p-6">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <Button
-            onClick={onToggleSingleRecipe}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Home className="h-4 w-4" />
-            Vissza a főmenübe
-          </Button>
-        </div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Napi Étrend Tervező
-        </h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Válassza ki az étkezési típusokat és opcionálisan alapanyagokat, majd generáljon egy teljes napi étrendet.
-        </p>
-      </div>
+      <DailyMealHeader onToggleSingleRecipe={onToggleSingleRecipe} />
 
-      {/* Meal Type Selection */}
       <MealTypeCardSelector
         selectedMeals={selectedMeals}
         onMealToggle={handleMealToggle}
         getRecipeCount={getRecipeCount}
       />
 
-      {/* Compact Ingredient Selection */}
       {showIngredientSelection && selectedMeals.length > 0 && (
         <Card className="bg-white/5 backdrop-blur-lg border-white/10 shadow-xl">
           <CardHeader className="pb-4">
@@ -294,7 +176,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
           </CardHeader>
           <CardContent>
             <MultiCategoryIngredientSelector
-              selectedMealType={selectedMeals[0]} // Használjuk az első kiválasztott étkezést
+              selectedMealType={selectedMeals[0]}
               foodData={foodData}
               onGetMultipleCategoryRecipes={handleGetMultipleCategoryRecipes}
               getFavoriteForIngredient={getFavoriteForIngredient}
@@ -303,11 +185,10 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
         </Card>
       )}
 
-      {/* Generate Meal Plan Button (when no ingredients selected) */}
       {selectedMeals.length > 0 && selectedIngredients.length === 0 && (
         <div className="text-center">
           <Button
-            onClick={generateDailyMealPlan}
+            onClick={generateDailyMealPlanWithoutIngredients}
             disabled={isGenerating}
             size="lg"
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg transition-all duration-300"
@@ -327,42 +208,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
         </div>
       )}
 
-      {/* Generated Recipes */}
-      {generatedRecipes.length > 0 && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-center text-gray-800">
-            🍽️ Generált Napi Étrend
-          </h2>
-          <div className="grid gap-6">
-            {generatedRecipes.map((recipe, index) => (
-              <Card key={index} className="overflow-hidden border-2 border-purple-200 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-xl text-purple-800 capitalize flex items-center gap-2">
-                        {mealTypes.find(m => m.key === recipe.mealType)?.emoji} {recipe.mealType}
-                      </CardTitle>
-                      <CardDescription className="flex gap-2 mt-2">
-                        <Badge variant="secondary">{recipe.category}</Badge>
-                        <Badge variant="outline">{recipe.ingredient}</Badge>
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <RecipeDisplay
-                    recipe={recipe}
-                    isLoading={false}
-                    onRegenerate={() => {}}
-                    onNewRecipe={() => {}}
-                    user={user}
-                  />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+      <GeneratedMealPlan generatedRecipes={generatedRecipes} user={user} />
     </div>
   );
 }
