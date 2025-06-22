@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Utensils, Search, X } from "lucide-react";
+import { Utensils, Search, X, ChefHat } from "lucide-react";
 
 interface MealTypeData {
   [key: string]: {
@@ -121,33 +121,35 @@ export function CategoryIngredientSelector({
     : [];
 
   return (
-    <div className="space-y-6 sm:space-y-8" data-scroll-target="category-selector">
+    <div className="space-y-8 mt-8" data-scroll-target="category-selector">
       {/* Random Recipe Button */}
       <div className="text-center">
         <Button
           onClick={getRandomRecipe}
           className="bg-gradient-to-r from-yellow-500/80 to-orange-600/80 hover:from-yellow-600/90 hover:to-orange-700/90 backdrop-blur-sm border border-yellow-300/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 text-sm sm:text-base"
         >
-          🎲 Véletlenszerű recept ({selectedMealType})
+          <ChefHat className="w-5 h-5 mr-2" />
+          Véletlenszerű recept ({selectedMealType})
         </Button>
       </div>
 
       {/* Selected Ingredients Display */}
       {allSelectedIngredients.length > 0 && (
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+        <Card className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl border-white/30 shadow-2xl">
           <CardHeader className="pb-4">
-            <CardTitle className="text-white text-lg sm:text-xl font-bold">
+            <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
+              <Search className="w-5 h-5 text-blue-400" />
               Kiválasztott alapanyagok ({allSelectedIngredients.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
               {allSelectedIngredients.map((ingredient, index) => (
-                <Badge key={`${ingredient}-${index}`} variant="secondary" className="bg-blue-600/30 text-blue-200 border-blue-400/50 flex items-center gap-1">
+                <Badge key={`${ingredient}-${index}`} variant="secondary" className="bg-gradient-to-r from-blue-600/40 to-purple-600/40 text-blue-100 border-blue-400/50 flex items-center gap-1 px-3 py-1 text-sm hover:from-blue-600/50 hover:to-purple-600/50 transition-all duration-200">
                   {ingredient}
                   <button 
                     onClick={() => removeIngredient(ingredient)}
-                    className="ml-1 text-blue-200 hover:text-white"
+                    className="ml-1 text-blue-200 hover:text-white transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -158,41 +160,63 @@ export function CategoryIngredientSelector({
         </Card>
       )}
 
-      {/* Category Selection */}
+      {/* Category Selection - Modern Design */}
       {availableCategories.length > 0 && (
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
-              <Utensils className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
+        <Card className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl border-white/30 shadow-2xl">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-white text-xl sm:text-2xl font-bold flex items-center gap-3">
+              <Utensils className="w-6 h-6 text-green-400" />
               Válassz kategóriákat
             </CardTitle>
+            <p className="text-white/70 text-sm">Kattints a kategóriákra az alapanyagok megtekintéséhez</p>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {availableCategories.map((category) => {
                 const isSelected = selectedCategories.includes(category);
+                const ingredientCount = foodData.getFilteredIngredients(category).length;
                 
                 return (
                   <div
                     key={category}
-                    className={`p-2 sm:p-3 h-auto transition-all duration-300 text-xs sm:text-sm border rounded cursor-pointer ${
+                    className={`group relative overflow-hidden p-6 transition-all duration-300 text-sm border-2 rounded-2xl cursor-pointer transform hover:scale-105 ${
                       isSelected
-                        ? 'bg-green-600/30 border-green-400/50 text-white shadow-lg'
-                        : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
+                        ? 'bg-gradient-to-br from-green-500/30 to-emerald-600/30 border-green-400/60 text-white shadow-2xl scale-105'
+                        : 'bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white hover:from-white/20 hover:to-white/10 hover:border-white/40 shadow-lg'
                     }`}
                     onClick={() => handleCategoryToggle(category)}
                   >
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={isSelected}
-                        className="pointer-events-none"
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium leading-tight mb-1 text-center whitespace-normal break-words">
+                    {/* Background Effect */}
+                    <div className={`absolute inset-0 transition-opacity duration-300 ${
+                      isSelected ? 'opacity-20' : 'opacity-0 group-hover:opacity-10'
+                    } bg-gradient-to-br from-white to-transparent`} />
+                    
+                    <div className="relative z-10 flex items-center gap-3">
+                      <div className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                        isSelected 
+                          ? 'bg-green-400 border-green-400' 
+                          : 'border-white/40 group-hover:border-white/60'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold leading-tight mb-2 text-base">
                           {category}
                         </div>
-                        <Badge variant="secondary" className="bg-white/20 text-white/90 text-xs px-1 py-0.5">
-                          {foodData.getFilteredIngredients(category).length}
+                        <Badge 
+                          variant="secondary" 
+                          className={`text-xs px-2 py-1 ${
+                            isSelected 
+                              ? 'bg-white/20 text-green-100 border-green-300/30' 
+                              : 'bg-white/15 text-white/80 border-white/20'
+                          }`}
+                        >
+                          {ingredientCount} alapanyag
                         </Badge>
                       </div>
                     </div>
@@ -210,16 +234,16 @@ export function CategoryIngredientSelector({
         const categorySelectedIngredients = selectedIngredients[category] || [];
 
         return (
-          <Card key={category} className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+          <Card key={category} className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl border-white/30 shadow-2xl">
             <CardHeader className="pb-4">
               <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
                 <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                 Alapanyagok - {category}
               </CardTitle>
               {categorySelectedIngredients.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-3">
                   {categorySelectedIngredients.map((ingredient) => (
-                    <Badge key={ingredient} variant="secondary" className="bg-blue-600/30 text-blue-200 border-blue-400/50">
+                    <Badge key={ingredient} variant="secondary" className="bg-gradient-to-r from-blue-600/40 to-purple-600/40 text-blue-100 border-blue-400/50 px-3 py-1">
                       {ingredient}
                     </Badge>
                   ))}
@@ -227,26 +251,33 @@ export function CategoryIngredientSelector({
               )}
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {availableIngredients.map((ingredient) => {
                   const isSelected = categorySelectedIngredients.includes(ingredient);
 
                   return (
                     <div key={ingredient} className="relative">
                       <div
-                        className={`p-2 sm:p-3 h-auto transition-all duration-200 text-xs sm:text-sm border rounded cursor-pointer ${
+                        className={`group p-3 transition-all duration-200 text-sm border-2 rounded-xl cursor-pointer transform hover:scale-105 ${
                           isSelected
-                            ? 'bg-blue-600/30 border-blue-400/50 text-white shadow-md'
-                            : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
+                            ? 'bg-gradient-to-br from-blue-500/30 to-purple-600/30 border-blue-400/60 text-white shadow-lg scale-105'
+                            : 'bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white hover:from-white/20 hover:to-white/10 hover:border-white/40 shadow-md'
                         }`}
                         onClick={() => handleIngredientToggle(category, ingredient)}
                       >
                         <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={isSelected}
-                            className="pointer-events-none"
-                          />
-                          <span className="flex-1 break-words">{ingredient}</span>
+                          <div className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all duration-200 ${
+                            isSelected 
+                              ? 'bg-blue-400 border-blue-400' 
+                              : 'border-white/40 group-hover:border-white/60'
+                          }`}>
+                            {isSelected && (
+                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                          <span className="flex-1 break-words font-medium">{ingredient}</span>
                         </div>
                       </div>
                     </div>
@@ -259,7 +290,7 @@ export function CategoryIngredientSelector({
       })}
 
       {/* Generate Recipe Button */}
-      <div className="text-center">
+      <div className="text-center pb-8">
         <Button
           onClick={handleGetRecipe}
           className="bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-700/90 hover:to-pink-700/90 backdrop-blur-sm border border-purple-300/20 text-white px-8 sm:px-12 py-4 sm:py-6 rounded-2xl font-bold text-base sm:text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
