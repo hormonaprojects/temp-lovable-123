@@ -95,10 +95,12 @@ export function useMealPlanGeneration({
   };
 
   const handleGetMultipleCategoryRecipes = async (ingredients: SelectedIngredient[]) => {
+    console.log('🔄 handleGetMultipleCategoryRecipes hívva:', ingredients);
     await handleGenerateMealPlan(ingredients);
   };
 
   const generateDailyMealPlanWithoutIngredients = async () => {
+    console.log('🔄 generateDailyMealPlanWithoutIngredients hívva');
     await handleGenerateMealPlan([]);
   };
 

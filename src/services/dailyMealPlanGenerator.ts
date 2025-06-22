@@ -29,7 +29,12 @@ export const generateDailyMealPlan = async (
   mealTypeRecipes: Record<string, string[]>,
   convertToStandardRecipe: (recipe: SupabaseRecipe) => any
 ): Promise<GeneratedRecipe[]> => {
-  console.log('🍽️ Napi étrend generálása:', { selectedMeals, ingredients, totalRecipes: recipes.length });
+  console.log('🍽️ Napi étrend generálása:', { 
+    selectedMeals, 
+    ingredients, 
+    totalRecipes: recipes.length,
+    mealTypeRecipesKeys: Object.keys(mealTypeRecipes)
+  });
   
   if (!recipes || recipes.length === 0) {
     console.error('❌ Nincsenek receptek az adatbázisban!');

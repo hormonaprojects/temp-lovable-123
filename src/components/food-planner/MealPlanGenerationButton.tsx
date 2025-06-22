@@ -15,7 +15,7 @@ export function MealPlanGenerationButton({
   isGenerating,
   onGenerateMealPlan
 }: MealPlanGenerationButtonProps) {
-  // Mutassa a gombot, ha van kiválasztott étkezés
+  // Mindig mutassa a gombot, ha van kiválasztott étkezés
   if (selectedMeals.length === 0) {
     return null;
   }
@@ -23,12 +23,21 @@ export function MealPlanGenerationButton({
   const ingredientCount = selectedIngredients?.length || 0;
   const buttonText = ingredientCount > 0 
     ? `Étrend generálása (${selectedMeals.length} étkezés, ${ingredientCount} alapanyag)`
-    : `Étrend generálása alapanyagok nélkül (${selectedMeals.length} étkezés)`;
+    : `Étrend generálása (${selectedMeals.length} étkezés)`;
+
+  console.log('🎯 MealPlanGenerationButton render:', {
+    selectedMeals: selectedMeals.length,
+    ingredientCount,
+    buttonText
+  });
 
   return (
     <div className="text-center">
       <Button
-        onClick={onGenerateMealPlan}
+        onClick={() => {
+          console.log('🎯 Étrend generálása gomb megnyomva');
+          onGenerateMealPlan();
+        }}
         disabled={isGenerating}
         size="lg"
         className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg transition-all duration-300"
