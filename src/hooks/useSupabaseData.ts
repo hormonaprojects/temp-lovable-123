@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SupabaseRecipe, MealTypeData } from '@/types/supabase';
@@ -18,10 +17,6 @@ export function useSupabaseData(userId?: string) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const [userFavorites, setUserFavorites] = useState<UserFavorite[]>([]);
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const loadUserFavorites = useCallback(async () => {
     if (!userId) return;
@@ -57,7 +52,7 @@ export function useSupabaseData(userId?: string) {
     }
   }, [userId, loadUserPreferences, loadUserFavorites]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       console.log('🔄 Valódi adatok betöltése Supabase-ből...');
       
@@ -101,7 +96,11 @@ export function useSupabaseData(userId?: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getRecipesByMealTypeHandler = useCallback((mealType: string): SupabaseRecipe[] => {
     return getRecipesByMealType(recipes, mealTypeRecipes, mealType, userPreferences);
@@ -173,6 +172,7 @@ export function useSupabaseData(userId?: string) {
     categories,
     mealTypes,
     recipes,
+    mealTypeRecipes,
     userPreferences,
     loading,
     getRecipesByMealType: getRecipesByMealTypeHandler,

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
 import { IngredientSelectionSection } from "./IngredientSelectionSection";
@@ -29,8 +29,6 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     getFilteredIngredients,
     loading,
     getFavoriteForIngredient,
-    recipes,
-    mealTypes,
     convertToStandardRecipe
   } = useSupabaseData(user?.id);
 
@@ -42,8 +40,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     generateDailyMealPlanWithoutIngredients
   } = useMealPlanGeneration({
     selectedMeals,
-    recipes,
-    mealTypes,
+    getRecipesByMealType,
     convertToStandardRecipe
   });
 
