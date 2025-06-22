@@ -28,7 +28,7 @@ export function IngredientsGrid({
     );
   }
 
-  // Javított sorrendezés: kedvencek ELŐSZÖR, majd liked, majd neutral (disliked elrejtése)
+  // EGYSÉGES sorrendezés: kedvencek ELŐSZÖR, majd liked, majd neutral (disliked elrejtése)
   const sortedIngredients = [...ingredients]
     .filter(ingredient => {
       const preference = getPreferenceForIngredient(ingredient);
@@ -40,9 +40,9 @@ export function IngredientsGrid({
       const aPreference = getPreferenceForIngredient(a);
       const bPreference = getPreferenceForIngredient(b);
       
-      console.log(`🔍 Sorrendezés: ${a} (kedvenc: ${aIsFavorite}, pref: ${aPreference}) vs ${b} (kedvenc: ${bIsFavorite}, pref: ${bPreference})`);
+      console.log(`🔍 IngredientsGrid - Sorrendezés: ${a} (kedvenc: ${aIsFavorite}, pref: ${aPreference}) vs ${b} (kedvenc: ${bIsFavorite}, pref: ${bPreference})`);
       
-      // ELSŐ PRIORITÁS: kedvencek (rózsaszín szív)
+      // ELSŐ PRIORITÁS: kedvencek (rózsaszín szív) - MINDIG ELŐRE
       if (aIsFavorite && !bIsFavorite) {
         console.log(`✨ ${a} kedvenc, előre kerül`);
         return -1;
@@ -52,9 +52,9 @@ export function IngredientsGrid({
         return 1;
       }
       
-      // Ha mindkettő kedvenc vagy mindkettő nem kedvenc, akkor preferencia szerint
-      if (!aIsFavorite && !bIsFavorite) {
-        // MÁSODIK PRIORITÁS: liked alapanyagok (zöld színű)
+      // MÁSODIK PRIORITÁS: Ha mindkettő kedvenc vagy mindkettő nem kedvenc, akkor preferencia szerint
+      if (aIsFavorite === bIsFavorite) {
+        // Liked alapanyagok következnek
         if (aPreference === 'like' && bPreference !== 'like') {
           console.log(`💚 ${a} liked, előre kerül`);
           return -1;
@@ -71,7 +71,7 @@ export function IngredientsGrid({
       return result;
     });
 
-  console.log(`🎯 Végső sorrendezett lista (${categoryName}):`, sortedIngredients);
+  console.log(`🎯 IngredientsGrid - Végső sorrendezett lista (${categoryName}):`, sortedIngredients);
 
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 mb-8">

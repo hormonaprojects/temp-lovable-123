@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,11 +89,11 @@ export function MultiCategoryIngredientSelector({
     return selectedIngredients.some(item => item.ingredient === ingredient && item.category === selectedCategory);
   };
 
-  // Javított sorrendezés: kedvencek ELŐSZÖR, majd liked, majd neutral (disliked elrejtése)
+  // EGYSÉGES sorrendezés: kedvencek ELŐSZÖR, majd liked, majd neutral (disliked elrejtése)
   const getSortedIngredients = (category: string) => {
     const ingredients = foodData.getFilteredIngredients(category);
     
-    console.log(`🔄 Sorrendezés előtt (${category}):`, ingredients);
+    console.log(`🔄 MultiCategoryIngredientSelector - Sorrendezés előtt (${category}):`, ingredients);
     
     return [...ingredients]
       .filter(ingredient => {
@@ -107,9 +108,9 @@ export function MultiCategoryIngredientSelector({
         const aIsFavorite = getFavoriteForIngredient(a, category);
         const bIsFavorite = getFavoriteForIngredient(b, category);
         
-        console.log(`🔍 Összehasonlítás: ${a} (kedvenc: ${aIsFavorite}) vs ${b} (kedvenc: ${bIsFavorite})`);
+        console.log(`🔍 MultiCategoryIngredientSelector - Összehasonlítás: ${a} (kedvenc: ${aIsFavorite}) vs ${b} (kedvenc: ${bIsFavorite})`);
         
-        // ELSŐ PRIORITÁS: Kedvencek (rózsaszín szív)
+        // ELSŐ PRIORITÁS: Kedvencek (rózsaszín szív) - MINDIG ELŐRE
         if (aIsFavorite && !bIsFavorite) {
           console.log(`✨ ${a} kedvenc, előre kerül`);
           return -1;
@@ -119,23 +120,21 @@ export function MultiCategoryIngredientSelector({
           return 1;
         }
         
-        // Ha mindkettő kedvenc vagy mindkettő nem kedvenc, akkor preference szerint
-        if (getPreferenceForIngredient) {
+        // MÁSODIK PRIORITÁS: Ha mindkettő kedvenc vagy mindkettő nem kedvenc, akkor preferencia szerint
+        if (getPreferenceForIngredient && aIsFavorite === bIsFavorite) {
           const aPreference = getPreferenceForIngredient(a, category);
           const bPreference = getPreferenceForIngredient(b, category);
           
           console.log(`🎯 Preferenciák: ${a} (${aPreference}) vs ${b} (${bPreference})`);
           
-          // MÁSODIK PRIORITÁS: Liked alapanyagok (ha nem kedvencek)
-          if (!aIsFavorite && !bIsFavorite) {
-            if (aPreference === 'like' && bPreference !== 'like') {
-              console.log(`💚 ${a} liked, előre kerül`);
-              return -1;
-            }
-            if (aPreference !== 'like' && bPreference === 'like') {
-              console.log(`💚 ${b} liked, előre kerül`);
-              return 1;
-            }
+          // Liked alapanyagok következnek (ha nem kedvencek)
+          if (aPreference === 'like' && bPreference !== 'like') {
+            console.log(`💚 ${a} liked, előre kerül`);
+            return -1;
+          }
+          if (aPreference !== 'like' && bPreference === 'like') {
+            console.log(`💚 ${b} liked, előre kerül`);
+            return 1;
           }
         }
         
@@ -215,8 +214,9 @@ export function MultiCategoryIngredientSelector({
                 const preference = getPreferenceForIngredient ? getPreferenceForIngredient(ingredient, selectedCategory) : 'neutral';
                 const isSelected = isIngredientSelected(ingredient);
                 
-                console.log(`🎨 Renderelés: ${ingredient} - kedvenc: ${isFavorite}, preferencia: ${preference}, kiválasztva: ${isSelected}`);
+                console.log(`🎨 MultiCategoryIngredientSelector - Renderelés: ${ingredient} - kedvenc: ${isFavorite}, preferencia: ${preference}, kiválasztva: ${isSelected}`);
                 
+                // EGYSÉGES stílusok prioritás szerint
                 let buttonClasses = cn(
                   "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative border-2 min-h-[60px] flex items-center justify-center"
                 );
@@ -225,10 +225,13 @@ export function MultiCategoryIngredientSelector({
                   // Kiválasztott állapot - zöld háttér
                   buttonClasses = cn(buttonClasses, "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg border-green-400 transform scale-105");
                 } else if (isFavorite) {
-                  buttonClasses = cn(buttonClasses, "bg-pink-500/80 text-white hover:bg-pink-600 shadow-md border-pink-400");
+                  // KEDVENC = rózsaszín háttér (LEGMAGASABB PRIORITÁS)
+                  buttonClasses = cn(buttonClasses, "bg-gradient-to-r from-pink-500/80 to-rose-500/80 text-white hover:from-pink-600/90 hover:to-rose-600/90 shadow-md border-pink-400");
                 } else if (preference === 'like') {
-                  buttonClasses = cn(buttonClasses, "bg-green-500/60 text-white hover:bg-green-600/80 border-green-400");
+                  // SZERETEM = zöld háttér (MÁSODIK PRIORITÁS)
+                  buttonClasses = cn(buttonClasses, "bg-gradient-to-r from-green-500/60 to-emerald-500/60 text-white hover:from-green-600/80 hover:to-emerald-600/80 border-green-400");
                 } else {
+                  // SEMLEGES = alapértelmezett
                   buttonClasses = cn(buttonClasses, "bg-white/10 text-white hover:bg-white/20 border-white/20 hover:border-white/40");
                 }
 
@@ -241,8 +244,9 @@ export function MultiCategoryIngredientSelector({
                     {isSelected && (
                       <Check className="absolute top-1 right-1 w-4 h-4 text-white bg-green-600 rounded-full p-0.5" />
                     )}
+                    {/* EGYSÉGES kedvenc jelölés - RÓZSASZÍN SZÍV */}
                     {isFavorite && !isSelected && (
-                      <Heart className="absolute top-1 right-1 w-3 h-3 text-white fill-white" />
+                      <Heart className="absolute top-1 right-1 w-4 h-4 text-white fill-white drop-shadow-sm" />
                     )}
                     <span className="text-center">{ingredient}</span>
                   </button>

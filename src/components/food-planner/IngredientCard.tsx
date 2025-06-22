@@ -58,28 +58,39 @@ export function IngredientCard({
   const jpgImageUrl = getIngredientImage(ingredient);
   const pngImageUrl = getPngImageUrl(ingredient);
 
+  // EGYSÉGES vizuális megjelenítés prioritások szerint
+  let cardClasses = "relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fadeInUp border-2 ";
+  
+  if (favorite) {
+    // KEDVENC = rózsaszín keret és háttér (LEGMAGASABB PRIORITÁS)
+    cardClasses += "bg-gradient-to-br from-pink-50 to-rose-50 border-pink-400 shadow-lg ring-2 ring-pink-300 scale-110";
+  } else if (preference === 'like') {
+    // SZERETEM = zöld keret és háttér (MÁSODIK PRIORITÁS)
+    cardClasses += "bg-gradient-to-br from-green-50 to-emerald-50 border-green-400 shadow-md ring-2 ring-green-200 scale-105";
+  } else if (preference === 'dislike') {
+    // NEM SZERETEM = piros keret és háttér (de ezek el vannak rejtve)
+    cardClasses += "bg-red-50 border-red-300 scale-90 opacity-70 ring-2 ring-red-200";
+  } else {
+    // SEMLEGES = alapértelmezett megjelenés
+    cardClasses += "bg-white border-gray-200 hover:shadow-md hover:border-purple-300";
+  }
+
   return (
     <Card
-      className={`
-        relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fadeInUp border-2
-        ${preference === 'like' ? 'bg-green-50 border-green-300 scale-110 shadow-lg ring-2 ring-green-200' : ''}
-        ${preference === 'dislike' ? 'bg-red-50 border-red-300 scale-90 opacity-70 ring-2 ring-red-200' : ''}
-        ${preference === 'neutral' ? 'bg-white border-gray-200 hover:shadow-md hover:border-purple-300' : ''}
-        ${favorite ? 'ring-2 ring-pink-300' : ''}
-      `}
+      className={cardClasses}
       style={{
         animationDelay: `${index * 0.1}s`
       }}
     >
       <div className="p-2">
-        {/* Favorite indicator */}
+        {/* EGYSÉGES kedvenc jelölés - RÓZSASZÍN SZÍV a jobb felső sarokban */}
         {favorite && (
           <div className="absolute top-1 right-1 z-10">
-            <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />
+            <Heart className="w-4 h-4 text-pink-500 fill-pink-500 drop-shadow-sm" />
           </div>
         )}
         
-        {/* Ingredient Image - Smaller */}
+        {/* Ingredient Image */}
         <div className="w-full aspect-square mb-2 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
           <img
             src={jpgImageUrl}
@@ -99,12 +110,12 @@ export function IngredientCard({
           />
         </div>
         
-        {/* Ingredient Name - Better visibility with word-break */}
+        {/* Ingredient Name */}
         <h3 className="text-xs font-semibold text-gray-800 text-center mb-2 leading-tight break-words hyphens-auto px-1 min-h-[2rem] flex items-center justify-center">
           {ingredient}
         </h3>
         
-        {/* Preference and Favorite Buttons - Square shapes */}
+        {/* Preference and Favorite Buttons */}
         <div className="flex justify-center gap-1">
           <Button
             onClick={() => handlePreferenceClick('like')}

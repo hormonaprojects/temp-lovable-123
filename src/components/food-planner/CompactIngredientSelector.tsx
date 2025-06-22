@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Heart } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -82,33 +82,59 @@ export function CompactIngredientSelector({
       });
     }
     
-    // Rendezzük a preferencia szerint: kedvenc, szeretem, semleges
+    // EGYSÉGES sorrendezés: kedvencek ELŐSZÖR, majd liked, majd neutral
     return ingredients.sort((a, b) => {
-      const isFavoriteA = getFavoriteForIngredient?.(a, selectedCategory) || false;
-      const isFavoriteB = getFavoriteForIngredient?.(b, selectedCategory) || false;
+      const aIsFavorite = getFavoriteForIngredient?.(a, selectedCategory) || false;
+      const bIsFavorite = getFavoriteForIngredient?.(b, selectedCategory) || false;
       
-      const preferenceA = getPreferenceForIngredient?.(a, selectedCategory) || 'neutral';
-      const preferenceB = getPreferenceForIngredient?.(b, selectedCategory) || 'neutral';
+      console.log(`🔍 CompactIngredientSelector - Sorrendezés: ${a} (kedvenc: ${aIsFavorite}) vs ${b} (kedvenc: ${bIsFavorite})`);
       
-      // Kedvencek előre
-      if (isFavoriteA && !isFavoriteB) return -1;
-      if (!isFavoriteA && isFavoriteB) return 1;
+      // ELSŐ PRIORITÁS: Kedvencek előre
+      if (aIsFavorite && !bIsFavorite) {
+        console.log(`✨ ${a} kedvenc, előre kerül`);
+        return -1;
+      }
+      if (!aIsFavorite && bIsFavorite) {
+        console.log(`✨ ${b} kedvenc, előre kerül`);
+        return 1;
+      }
       
-      // Ha mindkettő kedvenc vagy egyik sem, akkor preferencia szerint
-      const preferenceOrder = { 'like': 0, 'neutral': 1, 'dislike': 2 };
-      return preferenceOrder[preferenceA] - preferenceOrder[preferenceB];
+      // MÁSODIK PRIORITÁS: Ha mindkettő kedvenc vagy mindkettő nem kedvenc, akkor preferencia szerint
+      if (getPreferenceForIngredient && aIsFavorite === bIsFavorite) {
+        const aPreference = getPreferenceForIngredient(a, selectedCategory);
+        const bPreference = getPreferenceForIngredient(b, selectedCategory);
+        
+        console.log(`🎯 Preferenciák: ${a} (${aPreference}) vs ${b} (${bPreference})`);
+        
+        if (aPreference === 'like' && bPreference !== 'like') {
+          console.log(`💚 ${a} liked, előre kerül`);
+          return -1;
+        }
+        if (aPreference !== 'like' && bPreference === 'like') {
+          console.log(`💚 ${b} liked, előre kerül`);
+          return 1;
+        }
+      }
+      
+      // HARMADIK PRIORITÁS: Ábécé sorrend
+      return a.localeCompare(b, 'hu');
     });
   };
 
-  const getIngredientBadgeVariant = (ingredient: string) => {
-    if (!getPreferenceForIngredient) return 'outline';
+  const getIngredientButtonClass = (ingredient: string) => {
+    const isSelected = isIngredientSelected(ingredient);
+    const isFavorite = getFavoriteForIngredient?.(ingredient, selectedCategory) || false;
+    const preference = getPreferenceForIngredient?.(ingredient, selectedCategory) || 'neutral';
     
-    const isFavorite = getFavoriteForIngredient?.(ingredient, selectedCategory);
-    const preference = getPreferenceForIngredient(ingredient, selectedCategory);
-    
-    if (isFavorite) return 'default'; // Kedvenc = kék
-    if (preference === 'like') return 'secondary'; // Szeretem = szürke
-    return 'outline'; // Semleges = outline
+    if (isSelected) {
+      return 'bg-blue-500 hover:bg-blue-600 text-white border-blue-400';
+    } else if (isFavorite) {
+      return 'bg-gradient-to-r from-pink-500/80 to-rose-500/80 hover:from-pink-600/90 hover:to-rose-600/90 text-white border-pink-400';
+    } else if (preference === 'like') {
+      return 'bg-gradient-to-r from-green-500/60 to-emerald-500/60 hover:from-green-600/80 hover:to-emerald-600/80 text-white border-green-400';
+    } else {
+      return 'bg-white/10 hover:bg-white/20 text-white border-white/20';
+    }
   };
 
   const displayedIngredients = getDisplayedIngredients();
@@ -179,28 +205,31 @@ export function CompactIngredientSelector({
             Elérhető alapanyagok ({displayedIngredients.length})
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {displayedIngredients.map((ingredient) => (
-              <Button
-                key={ingredient}
-                variant={isIngredientSelected(ingredient) ? "default" : getIngredientBadgeVariant(ingredient)}
-                size="sm"
-                onClick={() => handleIngredientToggle(ingredient)}
-                className={`
-                  text-xs sm:text-sm px-2 py-1 h-auto min-h-[32px] sm:min-h-[36px]
-                  ${isIngredientSelected(ingredient) 
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-                    : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
-                  }
-                  transition-colors duration-200 truncate
-                `}
-                title={ingredient}
-              >
-                <span className="truncate leading-tight">
-                  {ingredient}
-                  {getFavoriteForIngredient?.(ingredient, selectedCategory) && ' ⭐'}
-                </span>
-              </Button>
-            ))}
+            {displayedIngredients.map((ingredient) => {
+              const isFavorite = getFavoriteForIngredient?.(ingredient, selectedCategory) || false;
+              const isSelected = isIngredientSelected(ingredient);
+              
+              return (
+                <Button
+                  key={ingredient}
+                  onClick={() => handleIngredientToggle(ingredient)}
+                  className={`
+                    text-xs sm:text-sm px-2 py-1 h-auto min-h-[32px] sm:min-h-[36px]
+                    transition-colors duration-200 truncate relative
+                    ${getIngredientButtonClass(ingredient)}
+                  `}
+                  title={ingredient}
+                >
+                  {/* EGYSÉGES kedvenc jelölés */}
+                  {isFavorite && !isSelected && (
+                    <Heart className="absolute top-0.5 right-0.5 w-3 h-3 text-white fill-white" />
+                  )}
+                  <span className="truncate leading-tight">
+                    {ingredient}
+                  </span>
+                </Button>
+              );
+            })}
           </div>
         </div>
       )}
