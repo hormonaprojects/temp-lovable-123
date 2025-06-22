@@ -6,30 +6,60 @@ export interface UserFavorite {
   user_id: string;
   category: string;
   ingredient: string;
+  created_at: string;
 }
 
+// Kedvencek betöltése
 export const getUserFavorites = async (userId: string): Promise<UserFavorite[]> => {
   const { data, error } = await supabase
-    .from('Ételpreferenciák')
+    .from('user_favorites')
     .select('*')
-    .eq('user_id', userId)
-    .eq('preference', 'like'); // Get only liked ingredients that could be favorites
+    .eq('user_id', userId);
 
   if (error) {
     console.error('❌ Kedvencek betöltési hiba:', error);
     return [];
   }
 
-  // For now, we'll consider 'like' preferences as potential favorites
-  // In a real implementation, you might want a separate favorites table
-  return (data || []).map(item => ({
-    id: item.id,
-    user_id: item.user_id,
-    category: item.category,
-    ingredient: item.ingredient
-  }));
+  return data || [];
 };
 
+// Kedvenc hozzáadása
+export const addUserFavorite = async (userId: string, category: string, ingredient: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('user_favorites')
+    .insert({
+      user_id: userId,
+      category,
+      ingredient
+    });
+
+  if (error) {
+    console.error('❌ Kedvenc hozzáadási hiba:', error);
+    return false;
+  }
+
+  return true;
+};
+
+// Kedvenc eltávolítása
+export const removeUserFavorite = async (userId: string, category: string, ingredient: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('user_favorites')
+    .delete()
+    .eq('user_id', userId)
+    .eq('category', category)
+    .eq('ingredient', ingredient);
+
+  if (error) {
+    console.error('❌ Kedvenc eltávolítási hiba:', error);
+    return false;
+  }
+
+  return true;
+};
+
+// Ellenőrzi, hogy kedvenc-e az alapanyag
 export const isFavoriteIngredient = (
   ingredient: string, 
   category: string, 

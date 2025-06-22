@@ -1,11 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, ThumbsDown, Minus } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Minus, Heart } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { FoodPreference } from "@/services/foodPreferencesQueries";
+import { getUserFavorites, addUserFavorite, removeUserFavorite, isFavoriteIngredient, UserFavorite } from "@/services/userFavorites";
 
 interface PreferencesCategorySelectorProps {
   category: string;
@@ -19,6 +19,7 @@ export function PreferencesCategorySelector({
   onPreferenceUpdate 
 }: PreferencesCategorySelectorProps) {
   const [ingredients, setIngredients] = useState<string[]>([]);
+  const [userFavorites, setUserFavorites] = useState<UserFavorite[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,6 +58,24 @@ export function PreferencesCategorySelector({
     }
   };
 
+  useEffect(() => {
+    loadUserFavorites();
+  }, [category]);
+
+  const loadUserFavorites = async () => {
+    try {
+      // Itt feltételezzük, hogy van egy userId a kontextusból vagy props-ból
+      // A gyakorlatban ezt át kell adni a komponensnek
+      const userId = userPreferences[0]?.user_id;
+      if (userId) {
+        const favorites = await getUserFavorites(userId);
+        setUserFavorites(favorites);
+      }
+    } catch (error) {
+      console.error('❌ Kedvencek betöltési hiba:', error);
+    }
+  };
+
   const getPreferenceForIngredient = (ingredient: string): 'like' | 'dislike' | 'neutral' => {
     const preference = userPreferences.find(p => 
       p.ingredient === ingredient && p.category === category
@@ -66,6 +85,28 @@ export function PreferencesCategorySelector({
 
   const handlePreferenceClick = async (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => {
     await onPreferenceUpdate(ingredient, category, preference);
+  };
+
+  const handleFavoriteToggle = async (ingredient: string) => {
+    const userId = userPreferences[0]?.user_id;
+    if (!userId) return;
+
+    const currentlyFavorite = isFavoriteIngredient(ingredient, category, userFavorites);
+    
+    try {
+      if (currentlyFavorite) {
+        await removeUserFavorite(userId, category, ingredient);
+      } else {
+        await addUserFavorite(userId, category, ingredient);
+        // Ha kedvencnek jelöljük, automatikusan "like" preferencet állítunk
+        if (getPreferenceForIngredient(ingredient) === 'neutral') {
+          await handlePreferenceClick(ingredient, 'like');
+        }
+      }
+      await loadUserFavorites();
+    } catch (error) {
+      console.error('❌ Kedvenc kezelési hiba:', error);
+    }
   };
 
   if (loading) {
@@ -88,6 +129,23 @@ export function PreferencesCategorySelector({
       </Card>
     );
   }
+
+  // Sort ingredients: favorites first, then by preference, then alphabetically
+  const sortedIngredients = [...ingredients].sort((a, b) => {
+    const aIsFavorite = isFavoriteIngredient(a, category, userFavorites);
+    const bIsFavorite = isFavoriteIngredient(b, category, userFavorites);
+    
+    if (aIsFavorite && !bIsFavorite) return -1;
+    if (!aIsFavorite && bIsFavorite) return 1;
+    
+    const aPreference = getPreferenceForIngredient(a);
+    const bPreference = getPreferenceForIngredient(b);
+    
+    if (aPreference === 'like' && bPreference !== 'like') return -1;
+    if (aPreference !== 'like' && bPreference === 'like') return 1;
+    
+    return a.localeCompare(b);
+  });
 
   const stats = {
     liked: ingredients.filter(ing => getPreferenceForIngredient(ing) === 'like').length,
@@ -128,8 +186,9 @@ export function PreferencesCategorySelector({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {ingredients.map((ingredient) => {
+            {sortedIngredients.map((ingredient) => {
               const preference = getPreferenceForIngredient(ingredient);
+              const isFavorite = isFavoriteIngredient(ingredient, category, userFavorites);
               return (
                 <div
                   key={ingredient}
@@ -139,10 +198,13 @@ export function PreferencesCategorySelector({
                       : preference === 'dislike'
                       ? 'bg-red-600/20 border-red-400/50'
                       : 'bg-white/5 border-white/20'
-                  }`}
+                  } ${isFavorite ? 'ring-2 ring-pink-300' : ''}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-white text-sm font-medium">{ingredient}</span>
+                    <div className="flex items-center gap-2">
+                      {isFavorite && <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />}
+                      <span className="text-white text-sm font-medium">{ingredient}</span>
+                    </div>
                     <div className="flex gap-1">
                       <Button
                         size="sm"
@@ -167,6 +229,18 @@ export function PreferencesCategorySelector({
                         }`}
                       >
                         <ThumbsDown className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleFavoriteToggle(ingredient)}
+                        className={`w-8 h-8 p-0 ${
+                          isFavorite
+                            ? 'bg-pink-600 text-white hover:bg-pink-700'
+                            : 'text-white/60 hover:text-pink-400 hover:bg-pink-600/20'
+                        }`}
+                      >
+                        <Heart className={`w-3 h-3 ${isFavorite ? 'fill-current' : ''}`} />
                       </Button>
                       {preference !== 'neutral' && (
                         <Button

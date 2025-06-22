@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SupabaseRecipe, MealTypeData } from '@/types/supabase';
@@ -7,6 +6,7 @@ import { processCategories, processMealTypes, createMealTypesDisplay } from '@/u
 import { convertToStandardRecipe } from '@/utils/recipeConverter';
 import { getRecipesByMealType, getRecipesByCategory } from '@/services/recipeFilters';
 import { getUserPreferences, filterIngredientsByPreferences, UserPreference } from '@/services/preferenceFilters';
+import { getUserFavorites, isFavoriteIngredient, UserFavorite, addUserFavorite, removeUserFavorite } from '@/services/userFavorites';
 
 export function useSupabaseData(userId?: string) {
   const [categories, setCategories] = useState<Record<string, string[]>>({});
@@ -16,6 +16,7 @@ export function useSupabaseData(userId?: string) {
   const [userPreferences, setUserPreferences] = useState<UserPreference[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [userFavorites, setUserFavorites] = useState<UserFavorite[]>([]);
 
   useEffect(() => {
     loadData();
@@ -24,8 +25,22 @@ export function useSupabaseData(userId?: string) {
   useEffect(() => {
     if (userId) {
       loadUserPreferences();
+      loadUserFavorites();
     }
   }, [userId]);
+
+  const loadUserFavorites = async () => {
+    if (!userId) return;
+    
+    try {
+      console.log('🔄 Felhasználói kedvencek betöltése...', userId);
+      const favorites = await getUserFavorites(userId);
+      setUserFavorites(favorites);
+      console.log('✅ Kedvencek betöltve:', favorites.length, 'db');
+    } catch (error) {
+      console.error('❌ Kedvencek betöltési hiba:', error);
+    }
+  };
 
   const loadUserPreferences = async () => {
     if (!userId) return;
@@ -124,6 +139,37 @@ export function useSupabaseData(userId?: string) {
     }
   };
 
+  const getFavoriteForIngredient = (ingredient: string, category?: string): boolean => {
+    if (!category) {
+      // Ha nincs kategória megadva, ellenőrizzük az összes kategóriában
+      return userFavorites.some(fav => fav.ingredient === ingredient);
+    }
+    return isFavoriteIngredient(ingredient, category, userFavorites);
+  };
+
+  const handleFavoriteToggle = async (ingredient: string, category: string, isFavorite: boolean) => {
+    if (!userId) return false;
+
+    try {
+      if (isFavorite) {
+        const success = await addUserFavorite(userId, category, ingredient);
+        if (success) {
+          await loadUserFavorites(); // Frissítjük a listát
+        }
+        return success;
+      } else {
+        const success = await removeUserFavorite(userId, category, ingredient);
+        if (success) {
+          await loadUserFavorites(); // Frissítjük a listát
+        }
+        return success;
+      }
+    } catch (error) {
+      console.error('❌ Kedvenc kezelési hiba:', error);
+      return false;
+    }
+  };
+
   return {
     categories,
     mealTypes,
@@ -137,6 +183,10 @@ export function useSupabaseData(userId?: string) {
     convertToStandardRecipe,
     saveRating,
     refetch: loadData,
-    refreshPreferences: loadUserPreferences
+    refreshPreferences: loadUserPreferences,
+    userFavorites,
+    getFavoriteForIngredient,
+    handleFavoriteToggle,
+    refreshFavorites: loadUserFavorites
   };
 }

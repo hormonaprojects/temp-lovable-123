@@ -49,8 +49,8 @@ export function IngredientCard({
     const newFavoriteState = !favorite;
     onFavoriteChange(ingredient, newFavoriteState);
     
-    // If marking as favorite, automatically set to "like"
-    if (newFavoriteState) {
+    // Ha kedvencnek jelöljük, automatikusan "like" preferencet állítunk
+    if (newFavoriteState && preference !== 'like') {
       onPreferenceChange(ingredient, 'like');
     }
   };

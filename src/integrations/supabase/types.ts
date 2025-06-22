@@ -347,6 +347,38 @@ export type Database = {
           },
         ]
       }
+      user_favorites: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          ingredient: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          ingredient: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          ingredient?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_overview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_health_conditions: {
         Row: {
           condition_type: string
