@@ -78,7 +78,7 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, us
 
   return (
     <>
-      <div className="recipe-result bg-white/10 backdrop-blur-sm rounded-2xl p-3 sm:p-8 mb-4 sm:mb-8 mx-2 sm:mx-0">
+      <div className="recipe-result bg-white/10 backdrop-blur-sm rounded-xl p-2 sm:p-4 mb-3 sm:mb-6 mx-1 sm:mx-0">
         <div onClick={() => setFullScreenModalOpen(true)}>
           <RecipeContent recipe={recipe} />
         </div>
