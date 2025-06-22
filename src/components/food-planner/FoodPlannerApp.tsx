@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SingleRecipeApp } from "./SingleRecipeApp";
@@ -198,6 +199,7 @@ export function FoodPlannerApp({ user, onLogout, showPreferenceSetup = false, on
         return (
           <DailyMealPlanner
             user={user}
+            onToggleSingleRecipe={() => setCurrentView('single')}
           />
         );
       case 'profile':

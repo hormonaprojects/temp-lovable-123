@@ -310,8 +310,6 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
                 onRegenerate={getRandomRecipe}
                 onNewRecipe={getRandomRecipe}
                 user={user}
-                getFavoriteForIngredient={getFavoriteForIngredient}
-                onFavoriteToggle={handleFavoriteToggle}
               />
             )}
           </>
@@ -365,8 +363,6 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
                 onRegenerate={getRandomRecipe}
                 onNewRecipe={getRandomRecipe}
                 user={user}
-                getFavoriteForIngredient={getFavoriteForIngredient}
-                onFavoriteToggle={handleFavoriteToggle}
               />
             )}
           </>
@@ -375,15 +371,7 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
         {currentView === 'daily-planner' && (
           <DailyMealPlanner
             user={user}
-            mealTypes={mealTypes}
-            categories={categories}
-            getRecipesByMealType={getRecipesByMealType}
-            getRecipesByCategory={getRecipesByCategory}
-            getFilteredIngredients={getFilteredIngredients}
-            convertToStandardRecipe={convertToStandardRecipe}
-            saveRating={saveRating}
-            getFavoriteForIngredient={getFavoriteForIngredient}
-            onFavoriteToggle={handleFavoriteToggle}
+            onToggleSingleRecipe={() => setCurrentView('meal-selection')}
           />
         )}
 
