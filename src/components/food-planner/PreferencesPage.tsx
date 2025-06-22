@@ -201,6 +201,29 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     };
   };
 
+  const getPreferenceForIngredient = (ingredient: string, category: string): 'like' | 'dislike' | 'neutral' => {
+    const preference = userPreferences.find(p => 
+      p.ingredient === ingredient && p.category === category
+    );
+    return preference?.preference || 'neutral';
+  };
+
+  const getFavoriteForIngredient = (ingredient: string, category: string): boolean => {
+    // For now, we don't have a separate favorites system in preferences page
+    // This is just a placeholder to match the interface
+    return false;
+  };
+
+  const handleFavoriteChange = (ingredient: string, category: string, isFavorite: boolean) => {
+    // For now, we don't handle favorites in preferences page
+    // This is just a placeholder to match the interface
+    console.log('Favorite change:', { ingredient, category, isFavorite });
+  };
+
+  const getFilteredIngredients = (category: string): string[] => {
+    return categoryIngredients[category] || [];
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -294,9 +317,12 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         {selectedCategory && (
           <div data-scroll-target="category-ingredients">
             <PreferencesCategorySelector
-              category={selectedCategory}
-              userPreferences={userPreferences}
-              onPreferenceUpdate={handlePreferenceUpdate}
+              categories={categoryIngredients}
+              getFilteredIngredients={getFilteredIngredients}
+              getPreferenceForIngredient={getPreferenceForIngredient}
+              getFavoriteForIngredient={getFavoriteForIngredient}
+              onPreferenceChange={handlePreferenceUpdate}
+              onFavoriteChange={handleFavoriteChange}
             />
           </div>
         )}
