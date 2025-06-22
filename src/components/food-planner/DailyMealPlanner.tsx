@@ -8,6 +8,7 @@ import { RefreshCw, Star, Heart, Home } from "lucide-react";
 import { RecipeDisplay } from "./RecipeDisplay";
 import { MealSelectionCard } from "./MealSelectionCard";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
+import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 
 interface DailyMealPlannerProps {
@@ -22,11 +23,18 @@ interface MealSelections {
   };
 }
 
+interface SelectedIngredient {
+  category: string;
+  ingredient: string;
+}
+
 export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlannerProps) {
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [mealSelections, setMealSelections] = useState<MealSelections>({});
   const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showIngredientSelection, setShowIngredientSelection] = useState(false);
+  const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
   const { toast } = useToast();
 
   const {
@@ -59,11 +67,16 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
   ];
 
   const handleMealToggle = (mealKey: string) => {
-    setSelectedMeals(prev => 
-      prev.includes(mealKey) 
+    setSelectedMeals(prev => {
+      const newSelectedMeals = prev.includes(mealKey) 
         ? prev.filter(m => m !== mealKey)
-        : [...prev, mealKey]
-    );
+        : [...prev, mealKey];
+      
+      // Ha van kiválasztott étkezés, mutassuk az alapanyag szűrőt
+      setShowIngredientSelection(newSelectedMeals.length > 0);
+      
+      return newSelectedMeals;
+    });
   };
 
   const getRecipeCount = (mealType: string) => {
@@ -71,7 +84,22 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     return recipes ? recipes.length : 0;
   };
 
-  const generateDailyMealPlan = async () => {
+  // Transform categories to match FoodData interface
+  const transformedMealTypes = selectedMeals.reduce((acc, mealType) => {
+    acc[mealType] = {
+      categories: categories
+    };
+    return acc;
+  }, {} as { [key: string]: { categories: { [key: string]: string[] } } });
+
+  const foodData = {
+    mealTypes: transformedMealTypes,
+    categories: categories,
+    getFilteredIngredients: getFilteredIngredients,
+    getRecipesByMealType: getRecipesByMealType
+  };
+
+  const handleGetMultipleCategoryRecipes = async (ingredients: SelectedIngredient[]) => {
     if (selectedMeals.length === 0) {
       toast({
         title: "Hiba",
@@ -82,15 +110,61 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     }
 
     setIsGenerating(true);
+    setSelectedIngredients(ingredients);
     
     try {
-      console.log('🍽️ Napi étrend generálása:', selectedMeals);
+      console.log('🍽️ Napi étrend generálása alapanyagokkal:', { selectedMeals, ingredients });
       
       const newRecipes = [];
       
       for (const mealType of selectedMeals) {
-        // Javított receptkeresés a felhasználó preferenciái alapján
-        const foundRecipes = getRecipesByMealType(mealType);
+        // Ha vannak kiválasztott alapanyagok, azokat használjuk szűrésre
+        let foundRecipes = [];
+        
+        if (ingredients.length > 0) {
+          // Olyan recepteket keresünk, amelyek tartalmazzák a kiválasztott alapanyagokat
+          const mealTypeRecipes = getRecipesByMealType(mealType);
+          
+          const getAllRecipeIngredients = (recipe: any): string[] => {
+            return [
+              recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
+              recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
+              recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
+              recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
+              recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
+              recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
+            ].filter(Boolean).map(ing => ing?.toString() || '');
+          };
+
+          const normalizeText = (text: string): string => {
+            return text
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/[^\w\s]/g, '')
+              .trim();
+          };
+
+          const hasIngredient = (recipeIngredients: string[], searchIngredient: string): boolean => {
+            const searchNormalized = normalizeText(searchIngredient);
+            return recipeIngredients.some(recipeIng => {
+              const recipeIngNormalized = normalizeText(recipeIng);
+              return recipeIngNormalized.includes(searchNormalized) || searchNormalized.includes(recipeIngNormalized);
+            });
+          };
+
+          foundRecipes = mealTypeRecipes.filter(recipe => {
+            const recipeIngredients = getAllRecipeIngredients(recipe);
+            
+            // Ellenőrizzük, hogy legalább egy kiválasztott alapanyag szerepel-e a receptben
+            return ingredients.some(selectedIng => 
+              hasIngredient(recipeIngredients, selectedIng.ingredient)
+            );
+          });
+        } else {
+          // Ha nincs alapanyag kiválasztva, használjuk az alapértelmezett szűrést
+          foundRecipes = getRecipesByMealType(mealType);
+        }
         
         if (foundRecipes && foundRecipes.length > 0) {
           const randomIndex = Math.floor(Math.random() * foundRecipes.length);
@@ -107,8 +181,10 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
           newRecipes.push({
             ...standardRecipe,
             mealType,
-            category: "automatikus",
-            ingredient: mainIngredients[0] || "vegyes alapanyagok"
+            category: ingredients.length > 0 ? "alapanyag alapú" : "automatikus",
+            ingredient: ingredients.length > 0 
+              ? ingredients.map(ing => ing.ingredient).join(", ") 
+              : mainIngredients[0] || "vegyes alapanyagok"
           });
         }
       }
@@ -116,14 +192,18 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       setGeneratedRecipes(newRecipes);
       
       if (newRecipes.length > 0) {
+        const ingredientText = ingredients.length > 0 
+          ? ` a kiválasztott alapanyagokkal (${ingredients.map(ing => ing.ingredient).join(", ")})`
+          : " a preferenciáid alapján";
+          
         toast({
           title: "Étrend elkészült!",
-          description: `${newRecipes.length} recept sikeresen generálva a preferenciáid alapján.`,
+          description: `${newRecipes.length} recept sikeresen generálva${ingredientText}.`,
         });
       } else {
         toast({
           title: "Nincs megfelelő recept",
-          description: "Nem található elegendő recept a kiválasztott étkezésekhez.",
+          description: "Nem található elegendő recept a kiválasztott étkezésekhez és alapanyagokhoz.",
           variant: "destructive"
         });
       }
@@ -138,6 +218,10 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const generateDailyMealPlan = async () => {
+    await handleGetMultipleCategoryRecipes(selectedIngredients);
   };
 
   const handleRating = async (recipeName: string, rating: number) => {
@@ -186,7 +270,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
           Napi Étrend Tervező
         </h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Válassza ki az étkezési típusokat és generáljon egy teljes napi étrendet a preferenciái alapján.
+          Válassza ki az étkezési típusokat és opcionálisan alapanyagokat, majd generáljon egy teljes napi étrendet.
         </p>
       </div>
 
@@ -197,8 +281,30 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
         getRecipeCount={getRecipeCount}
       />
 
-      {/* Generate Full Meal Plan Button */}
-      {selectedMeals.length > 0 && (
+      {/* Compact Ingredient Selection */}
+      {showIngredientSelection && selectedMeals.length > 0 && (
+        <Card className="bg-white/5 backdrop-blur-lg border-white/10 shadow-xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-bold text-white">
+              🧄 Opcionális alapanyag szűrő
+            </CardTitle>
+            <p className="text-white/80 text-sm">
+              Válasszon alapanyagokat több kategóriából a pontosabb receptekért (opcionális)
+            </p>
+          </CardHeader>
+          <CardContent>
+            <MultiCategoryIngredientSelector
+              selectedMealType={selectedMeals[0]} // Használjuk az első kiválasztott étkezést
+              foodData={foodData}
+              onGetMultipleCategoryRecipes={handleGetMultipleCategoryRecipes}
+              getFavoriteForIngredient={getFavoriteForIngredient}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Generate Meal Plan Button (when no ingredients selected) */}
+      {selectedMeals.length > 0 && selectedIngredients.length === 0 && (
         <div className="text-center">
           <Button
             onClick={generateDailyMealPlan}
@@ -214,7 +320,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
             ) : (
               <>
                 <Star className="mr-2 h-5 w-5" />
-                Teljes napi étrend generálása ({selectedMeals.length} étkezés)
+                Étrend generálása alapanyagok nélkül ({selectedMeals.length} étkezés)
               </>
             )}
           </Button>
