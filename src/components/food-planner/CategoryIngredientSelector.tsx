@@ -39,6 +39,14 @@ export function CategoryIngredientSelector({
   const [selectedIngredients, setSelectedIngredients] = useState<{[category: string]: string[]}>({});
   const [allSelectedIngredients, setAllSelectedIngredients] = useState<string[]>([]);
 
+  // Kategóriák ahol több alapanyag választható
+  const multipleSelectionCategories = [
+    'Zöldségek / Vegetáriánus',
+    'Gyümölcsök', 
+    'Tejtermékek',
+    'Olajok és Magvak'
+  ];
+
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories(prev => {
       const isSelected = prev.includes(category);
@@ -60,13 +68,23 @@ export function CategoryIngredientSelector({
   };
 
   const handleIngredientToggle = (category: string, ingredient: string) => {
+    const allowsMultiple = multipleSelectionCategories.includes(category);
+    
     setSelectedIngredients(prev => {
       const categoryIngredients = prev[category] || [];
       const isSelected = categoryIngredients.includes(ingredient);
       
-      const newCategoryIngredients = isSelected
-        ? categoryIngredients.filter(item => item !== ingredient)
-        : [...categoryIngredients, ingredient];
+      let newCategoryIngredients: string[];
+      
+      if (allowsMultiple) {
+        // Több alapanyag választható
+        newCategoryIngredients = isSelected
+          ? categoryIngredients.filter(item => item !== ingredient)
+          : [...categoryIngredients, ingredient];
+      } else {
+        // Csak egy alapanyag választható
+        newCategoryIngredients = isSelected ? [] : [ingredient];
+      }
       
       const newSelectedIngredients = {
         ...prev,
@@ -121,7 +139,7 @@ export function CategoryIngredientSelector({
     : [];
 
   return (
-    <div className="space-y-8 mt-8" data-scroll-target="category-selector">
+    <div className="space-y-8 mt-12" data-scroll-target="category-selector">
       {/* Random Recipe Button */}
       <div className="text-center">
         <Button
@@ -160,7 +178,7 @@ export function CategoryIngredientSelector({
         </Card>
       )}
 
-      {/* Category Selection - Modern Design */}
+      {/* Category Selection - Glassmorphism Design */}
       {availableCategories.length > 0 && (
         <Card className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl border-white/30 shadow-2xl">
           <CardHeader className="pb-6">
@@ -175,6 +193,7 @@ export function CategoryIngredientSelector({
               {availableCategories.map((category) => {
                 const isSelected = selectedCategories.includes(category);
                 const ingredientCount = foodData.getFilteredIngredients(category).length;
+                const allowsMultiple = multipleSelectionCategories.includes(category);
                 
                 return (
                   <div
@@ -182,7 +201,7 @@ export function CategoryIngredientSelector({
                     className={`group relative overflow-hidden p-6 transition-all duration-300 text-sm border-2 rounded-2xl cursor-pointer transform hover:scale-105 ${
                       isSelected
                         ? 'bg-gradient-to-br from-green-500/30 to-emerald-600/30 border-green-400/60 text-white shadow-2xl scale-105'
-                        : 'bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white hover:from-white/20 hover:to-white/10 hover:border-white/40 shadow-lg'
+                        : 'bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm border-white/20 text-white hover:from-white/20 hover:to-white/10 hover:border-white/40 shadow-lg'
                     }`}
                     onClick={() => handleCategoryToggle(category)}
                   >
@@ -208,16 +227,30 @@ export function CategoryIngredientSelector({
                         <div className="font-semibold leading-tight mb-2 text-base">
                           {category}
                         </div>
-                        <Badge 
-                          variant="secondary" 
-                          className={`text-xs px-2 py-1 ${
-                            isSelected 
-                              ? 'bg-white/20 text-green-100 border-green-300/30' 
-                              : 'bg-white/15 text-white/80 border-white/20'
-                          }`}
-                        >
-                          {ingredientCount} alapanyag
-                        </Badge>
+                        <div className="flex gap-2 flex-wrap">
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-xs px-2 py-1 ${
+                              isSelected 
+                                ? 'bg-white/20 text-green-100 border-green-300/30' 
+                                : 'bg-white/15 text-white/80 border-white/20'
+                            }`}
+                          >
+                            {ingredientCount} alapanyag
+                          </Badge>
+                          {!allowsMultiple && (
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs px-2 py-1 ${
+                                isSelected 
+                                  ? 'bg-orange-500/30 text-orange-200 border-orange-300/30' 
+                                  : 'bg-orange-600/20 text-orange-300 border-orange-400/30'
+                              }`}
+                            >
+                              1 választás
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -232,6 +265,7 @@ export function CategoryIngredientSelector({
       {selectedCategories.map((category) => {
         const availableIngredients = foodData.getFilteredIngredients(category);
         const categorySelectedIngredients = selectedIngredients[category] || [];
+        const allowsMultiple = multipleSelectionCategories.includes(category);
 
         return (
           <Card key={category} className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl border-white/30 shadow-2xl">
@@ -239,6 +273,11 @@ export function CategoryIngredientSelector({
               <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
                 <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                 Alapanyagok - {category}
+                {!allowsMultiple && (
+                  <Badge className="bg-orange-600/30 text-orange-200 border-orange-400/50 text-xs ml-2">
+                    Csak 1 választható
+                  </Badge>
+                )}
               </CardTitle>
               {categorySelectedIngredients.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
@@ -261,7 +300,7 @@ export function CategoryIngredientSelector({
                         className={`group p-3 transition-all duration-200 text-sm border-2 rounded-xl cursor-pointer transform hover:scale-105 ${
                           isSelected
                             ? 'bg-gradient-to-br from-blue-500/30 to-purple-600/30 border-blue-400/60 text-white shadow-lg scale-105'
-                            : 'bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white hover:from-white/20 hover:to-white/10 hover:border-white/40 shadow-md'
+                            : 'bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm border-white/20 text-white hover:from-white/20 hover:to-white/10 hover:border-white/40 shadow-md'
                         }`}
                         onClick={() => handleIngredientToggle(category, ingredient)}
                       >
