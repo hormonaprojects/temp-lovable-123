@@ -63,7 +63,7 @@ export function useMealPlanGeneration({
       if (newRecipes.length > 0) {
         const ingredientText = ingredients.length > 0 
           ? ` a kiválasztott alapanyagokkal (${ingredients.map(ing => ing.ingredient).join(", ")})`
-          : " a preferenciáid alapján";
+          : " preferenciáid alapján";
           
         toast({
           title: "Étrend elkészült!",

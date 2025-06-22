@@ -15,9 +15,15 @@ export function MealPlanGenerationButton({
   isGenerating,
   onGenerateMealPlan
 }: MealPlanGenerationButtonProps) {
-  if (selectedMeals.length === 0 || selectedIngredients.length > 0) {
+  // Mutassa a gombot, ha van kiválasztott étkezés
+  if (selectedMeals.length === 0) {
     return null;
   }
+
+  const ingredientCount = selectedIngredients?.length || 0;
+  const buttonText = ingredientCount > 0 
+    ? `Étrend generálása (${selectedMeals.length} étkezés, ${ingredientCount} alapanyag)`
+    : `Étrend generálása alapanyagok nélkül (${selectedMeals.length} étkezés)`;
 
   return (
     <div className="text-center">
@@ -35,7 +41,7 @@ export function MealPlanGenerationButton({
         ) : (
           <>
             <Star className="mr-2 h-5 w-5" />
-            Étrend generálása alapanyagok nélkül ({selectedMeals.length} étkezés)
+            {buttonText}
           </>
         )}
       </Button>

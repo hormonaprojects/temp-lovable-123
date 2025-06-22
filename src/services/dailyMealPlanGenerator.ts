@@ -1,6 +1,6 @@
 
 import { SupabaseRecipe } from '@/types/supabase';
-import { getRecipesByMealType, filterRecipesByMultipleIngredients } from './recipeFilters/index';
+import { getRecipesByMealType, filterRecipesByMultipleIngredients } from './recipeFilters';
 
 interface SelectedIngredient {
   category: string;
@@ -29,24 +29,23 @@ export const generateDailyMealPlan = async (
   mealTypeRecipes: Record<string, string[]>,
   convertToStandardRecipe: (recipe: SupabaseRecipe) => any
 ): Promise<GeneratedRecipe[]> => {
-  console.log('🍽️ Napi étrend generálása:', { selectedMeals, ingredients });
+  console.log('🍽️ Napi étrend generálása:', { selectedMeals, ingredients, totalRecipes: recipes.length });
   
   const newRecipes: GeneratedRecipe[] = [];
   
   for (const mealType of selectedMeals) {
     console.log(`\n🔍 ${mealType} receptek keresése...`);
     
-    // Étkezési típus alapján receptek lekérése a refactorált függvénnyel
+    // Étkezési típus alapján receptek lekérése
     const mealTypeFilteredRecipes = getRecipesByMealType(recipes, mealTypeRecipes, mealType);
     console.log(`📋 ${mealType} összes recepte:`, mealTypeFilteredRecipes.length, 'db');
     
     let filteredRecipes = mealTypeFilteredRecipes;
     
-    // Ha vannak kiválasztott alapanyagok, szűrjük a recepteket a refactorált függvénnyel
+    // Ha vannak kiválasztott alapanyagok, szűrjük a recepteket
     if (ingredients.length > 0) {
       console.log(`🎯 Szűrés alapanyagok alapján:`, ingredients.map(ing => ing.ingredient));
       
-      // A refactorált filterRecipesByMultipleIngredients függvényt használjuk
       const ingredientNames = ingredients.map(ing => ing.ingredient);
       filteredRecipes = filterRecipesByMultipleIngredients(mealTypeFilteredRecipes, ingredientNames);
     }
