@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
 import { CategoryIngredientSelector } from "./CategoryIngredientSelector";
+import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
 import { RecipeDisplay } from "./RecipeDisplay";
 import { MultiDayMealPlanGenerator } from "./MultiDayMealPlanGenerator";
 import { Button } from "@/components/ui/button";
