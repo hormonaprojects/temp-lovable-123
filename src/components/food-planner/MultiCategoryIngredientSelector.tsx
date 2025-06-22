@@ -72,7 +72,7 @@ export function MultiCategoryIngredientSelector({
     await onGetMultipleCategoryRecipes(selectedIngredients);
   };
 
-  // Sort ingredients: favorites first, then liked, then neutral (hide disliked)
+  // Enhanced sorting: favorites first, then liked, then neutral (hide disliked)
   const getSortedIngredients = (category: string) => {
     const ingredients = foodData.getFilteredIngredients(category);
     return [...ingredients]
@@ -88,20 +88,24 @@ export function MultiCategoryIngredientSelector({
         const aIsFavorite = getFavoriteForIngredient(a, category);
         const bIsFavorite = getFavoriteForIngredient(b, category);
         
-        // First priority: favorites
+        // First priority: favorites (kedvencek)
         if (aIsFavorite && !bIsFavorite) return -1;
         if (!aIsFavorite && bIsFavorite) return 1;
         
-        // Second priority: liked ingredients (if preference function is available)
+        // Second priority: liked ingredients (szeretett alapanyagok)
         if (getPreferenceForIngredient) {
           const aPreference = getPreferenceForIngredient(a, category);
           const bPreference = getPreferenceForIngredient(b, category);
           
           if (aPreference === 'like' && bPreference !== 'like') return -1;
           if (aPreference !== 'like' && bPreference === 'like') return 1;
+          
+          // Third priority: neutral ingredients
+          if (aPreference === 'neutral' && bPreference === 'dislike') return -1;
+          if (aPreference === 'dislike' && bPreference === 'neutral') return 1;
         }
         
-        // Third priority: alphabetical order for same preference level
+        // Fourth priority: alphabetical order for same preference level
         return a.localeCompare(b);
       });
   };

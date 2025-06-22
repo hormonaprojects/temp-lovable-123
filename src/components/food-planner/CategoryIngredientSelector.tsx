@@ -22,6 +22,7 @@ interface CategoryIngredientSelectorProps {
   multipleIngredients?: boolean;
   onGetMultipleRecipes?: (category: string, ingredients: string[]) => void;
   getFavoriteForIngredient?: (ingredient: string, category: string) => boolean;
+  getPreferenceForIngredient?: (ingredient: string, category: string) => 'like' | 'dislike' | 'neutral';
 }
 
 export function CategoryIngredientSelector({ 
@@ -30,7 +31,8 @@ export function CategoryIngredientSelector({
   onGetRecipe, 
   multipleIngredients = false,
   onGetMultipleRecipes,
-  getFavoriteForIngredient
+  getFavoriteForIngredient,
+  getPreferenceForIngredient
 }: CategoryIngredientSelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
@@ -41,22 +43,44 @@ export function CategoryIngredientSelector({
   const getSortedIngredients = (category: string): string[] => {
     const ingredients = foodData.getFilteredIngredients(category);
     
-    if (!getFavoriteForIngredient) {
+    if (!getFavoriteForIngredient && !getPreferenceForIngredient) {
       return ingredients.sort((a, b) => a.localeCompare(b));
     }
 
-    // Sort ingredients: favorites first, then alphabetically
-    return [...ingredients].sort((a, b) => {
-      const aIsFavorite = getFavoriteForIngredient(a, category);
-      const bIsFavorite = getFavoriteForIngredient(b, category);
-      
-      // If one is favorite and the other is not, favorite comes first
-      if (aIsFavorite && !bIsFavorite) return -1;
-      if (!aIsFavorite && bIsFavorite) return 1;
-      
-      // If both are favorites or both are not favorites, sort alphabetically
-      return a.localeCompare(b);
-    });
+    // Enhanced sorting: favorites first, then liked, then neutral (hide disliked)
+    return [...ingredients]
+      .filter(ingredient => {
+        // Hide disliked ingredients if preference function is available
+        if (getPreferenceForIngredient) {
+          const preference = getPreferenceForIngredient(ingredient, category);
+          return preference !== 'dislike';
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const aIsFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(a, category) : false;
+        const bIsFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(b, category) : false;
+        
+        // First priority: favorites (kedvencek)
+        if (aIsFavorite && !bIsFavorite) return -1;
+        if (!aIsFavorite && bIsFavorite) return 1;
+        
+        // Second priority: liked ingredients (szeretett alapanyagok)
+        if (getPreferenceForIngredient) {
+          const aPreference = getPreferenceForIngredient(a, category);
+          const bPreference = getPreferenceForIngredient(b, category);
+          
+          if (aPreference === 'like' && bPreference !== 'like') return -1;
+          if (aPreference !== 'like' && bPreference === 'like') return 1;
+          
+          // Third priority: neutral ingredients
+          if (aPreference === 'neutral' && bPreference === 'dislike') return -1;
+          if (aPreference === 'dislike' && bPreference === 'neutral') return 1;
+        }
+        
+        // Fourth priority: alphabetical order for same preference level
+        return a.localeCompare(b);
+      });
   };
 
   const availableIngredients = selectedCategory ? getSortedIngredients(selectedCategory) : [];
@@ -147,16 +171,26 @@ export function CategoryIngredientSelector({
                   : singleSelectedIngredient === ingredient;
                 
                 const isFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(ingredient, selectedCategory) : false;
+                const preference = getPreferenceForIngredient ? getPreferenceForIngredient(ingredient, selectedCategory) : 'neutral';
+
+                let cardClasses = cn(
+                  "relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:scale-105"
+                );
+
+                if (isSelected) {
+                  cardClasses = cn(cardClasses, "bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-purple-400 shadow-lg");
+                } else if (isFavorite) {
+                  cardClasses = cn(cardClasses, "bg-pink-500/20 border-pink-400/60 hover:bg-pink-500/30");
+                } else if (preference === 'like') {
+                  cardClasses = cn(cardClasses, "bg-green-500/20 border-green-400/60 hover:bg-green-500/30");
+                } else {
+                  cardClasses = cn(cardClasses, "bg-white/10 border-white/20 hover:bg-white/20");
+                }
 
                 return (
                   <div
                     key={ingredient}
-                    className={cn(
-                      "relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:scale-105",
-                      isSelected
-                        ? "bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-purple-400 shadow-lg"
-                        : "bg-white/10 border-white/20 hover:bg-white/20"
-                    )}
+                    className={cardClasses}
                     onClick={() => handleIngredientToggle(ingredient)}
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -219,4 +253,3 @@ export function CategoryIngredientSelector({
     </Card>
   );
 }
-

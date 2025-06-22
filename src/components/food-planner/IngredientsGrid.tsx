@@ -28,7 +28,7 @@ export function IngredientsGrid({
     );
   }
 
-  // Sort ingredients: favorites first, then liked, then neutral (hide disliked)
+  // Enhanced sorting: favorites first, then liked, then neutral (hide disliked)
   const sortedIngredients = [...ingredients]
     .filter(ingredient => {
       const preference = getPreferenceForIngredient(ingredient);
@@ -40,15 +40,19 @@ export function IngredientsGrid({
       const aPreference = getPreferenceForIngredient(a);
       const bPreference = getPreferenceForIngredient(b);
       
-      // First priority: favorites
+      // First priority: favorites (kedvencek)
       if (aIsFavorite && !bIsFavorite) return -1;
       if (!aIsFavorite && bIsFavorite) return 1;
       
-      // Second priority: liked ingredients
+      // Second priority: liked ingredients (szeretett alapanyagok)
       if (aPreference === 'like' && bPreference !== 'like') return -1;
       if (aPreference !== 'like' && bPreference === 'like') return 1;
       
-      // Third priority: alphabetical order for same preference level
+      // Third priority: neutral ingredients
+      if (aPreference === 'neutral' && bPreference === 'dislike') return -1;
+      if (aPreference === 'dislike' && bPreference === 'neutral') return 1;
+      
+      // Fourth priority: alphabetical order for same preference level
       return a.localeCompare(b);
     });
 
