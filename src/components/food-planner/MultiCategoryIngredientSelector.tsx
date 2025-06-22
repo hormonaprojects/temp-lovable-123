@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,13 +23,15 @@ interface MultiCategoryIngredientSelectorProps {
   foodData: FoodData;
   onGetMultipleCategoryRecipes: (ingredients: SelectedIngredient[]) => Promise<void>;
   getFavoriteForIngredient: (ingredient: string, category: string) => boolean;
+  getPreferenceForIngredient?: (ingredient: string, category: string) => 'like' | 'dislike' | 'neutral';
 }
 
 export function MultiCategoryIngredientSelector({
   selectedMealType,
   foodData,
   onGetMultipleCategoryRecipes,
-  getFavoriteForIngredient
+  getFavoriteForIngredient,
+  getPreferenceForIngredient
 }: MultiCategoryIngredientSelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
@@ -69,20 +72,38 @@ export function MultiCategoryIngredientSelector({
     await onGetMultipleCategoryRecipes(selectedIngredients);
   };
 
-  // Sort ingredients: favorites first, then liked, then neutral
+  // Sort ingredients: favorites first, then liked, then neutral (hide disliked)
   const getSortedIngredients = (category: string) => {
     const ingredients = foodData.getFilteredIngredients(category);
-    return [...ingredients].sort((a, b) => {
-      const aIsFavorite = getFavoriteForIngredient(a, category);
-      const bIsFavorite = getFavoriteForIngredient(b, category);
-      
-      // If one is favorite and the other is not, favorite comes first
-      if (aIsFavorite && !bIsFavorite) return -1;
-      if (!aIsFavorite && bIsFavorite) return 1;
-      
-      // If both are favorites or both are not favorites, sort alphabetically
-      return a.localeCompare(b);
-    });
+    return [...ingredients]
+      .filter(ingredient => {
+        // Hide disliked ingredients if preference function is available
+        if (getPreferenceForIngredient) {
+          const preference = getPreferenceForIngredient(ingredient, category);
+          return preference !== 'dislike';
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const aIsFavorite = getFavoriteForIngredient(a, category);
+        const bIsFavorite = getFavoriteForIngredient(b, category);
+        
+        // First priority: favorites
+        if (aIsFavorite && !bIsFavorite) return -1;
+        if (!aIsFavorite && bIsFavorite) return 1;
+        
+        // Second priority: liked ingredients (if preference function is available)
+        if (getPreferenceForIngredient) {
+          const aPreference = getPreferenceForIngredient(a, category);
+          const bPreference = getPreferenceForIngredient(b, category);
+          
+          if (aPreference === 'like' && bPreference !== 'like') return -1;
+          if (aPreference !== 'like' && bPreference === 'like') return 1;
+        }
+        
+        // Third priority: alphabetical order for same preference level
+        return a.localeCompare(b);
+      });
   };
 
   return (
@@ -151,12 +172,19 @@ export function MultiCategoryIngredientSelector({
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
               {getSortedIngredients(selectedCategory).map(ingredient => {
                 const isFavorite = getFavoriteForIngredient(ingredient, selectedCategory);
-                const buttonClasses = cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative border-2",
-                  isFavorite
-                    ? "bg-pink-500/80 text-white hover:bg-pink-600 shadow-md border-pink-400"
-                    : "bg-white/10 text-white hover:bg-white/20 border-white/20 hover:border-white/40"
+                const preference = getPreferenceForIngredient ? getPreferenceForIngredient(ingredient, selectedCategory) : 'neutral';
+                
+                let buttonClasses = cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative border-2"
                 );
+
+                if (isFavorite) {
+                  buttonClasses = cn(buttonClasses, "bg-pink-500/80 text-white hover:bg-pink-600 shadow-md border-pink-400");
+                } else if (preference === 'like') {
+                  buttonClasses = cn(buttonClasses, "bg-green-500/60 text-white hover:bg-green-600/80 border-green-400");
+                } else {
+                  buttonClasses = cn(buttonClasses, "bg-white/10 text-white hover:bg-white/20 border-white/20 hover:border-white/40");
+                }
 
                 return (
                   <button
