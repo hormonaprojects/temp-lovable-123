@@ -394,36 +394,38 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-3 sm:p-6">
-      {/* Modern Hero Section */}
-      <div className="text-center mb-8 sm:mb-10">
-        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl">
-          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 sm:mb-4">🍽️ Ételtervező</h1>
-          <p className="text-white/80 text-lg sm:text-xl px-4 leading-relaxed">
+    <div className="max-w-6xl mx-auto p-2 sm:p-6">
+      {/* Compact Hero Section */}
+      <div className="text-center mb-4 sm:mb-8">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-3 sm:p-6 border border-white/20 shadow-2xl">
+          <h1 className="text-xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-3">🍽️ Ételtervező</h1>
+          <p className="text-white/80 text-sm sm:text-lg md:text-xl px-2 leading-relaxed">
             Válassz funkciót és kezdd el az ételek tervezését!
           </p>
         </div>
       </div>
 
-      {/* Function Selection Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 sm:mb-10">
+      {/* Compact Function Selection Cards */}
+      <div className="grid grid-cols-1 gap-3 sm:gap-6 mb-4 sm:mb-8">
         {/* Single Recipe Card */}
         <div
           onClick={() => setViewMode('single')}
           className={cn(
-            "group cursor-pointer transition-all duration-300 hover:scale-105",
-            viewMode === 'single' ? "ring-4 ring-purple-400" : ""
+            "group cursor-pointer transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105",
+            viewMode === 'single' ? "ring-2 sm:ring-4 ring-purple-400" : ""
           )}
         >
           <div className={cn(
-            "bg-gradient-to-br rounded-2xl p-6 h-40 flex flex-col items-center justify-center text-center border shadow-xl transition-all duration-300",
+            "bg-gradient-to-br rounded-xl sm:rounded-2xl p-3 sm:p-6 h-16 sm:h-40 flex flex-row sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center border shadow-xl transition-all duration-300",
             viewMode === 'single' 
               ? "from-purple-500/40 to-pink-500/40 border-purple-400 shadow-2xl" 
               : "from-white/10 to-white/5 border-white/20 hover:from-white/20 hover:to-white/10"
           )}>
-            <ChefHat className="h-12 w-12 text-white mb-3" />
-            <h3 className="text-white font-bold text-lg mb-2">Egy recept</h3>
-            <p className="text-white/70 text-sm">Generálj egy receptet alapanyagok alapján</p>
+            <ChefHat className="h-8 w-8 sm:h-12 sm:w-12 text-white mr-3 sm:mr-0 sm:mb-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-white font-bold text-base sm:text-lg mb-0 sm:mb-2">Egy recept</h3>
+              <p className="text-white/70 text-xs sm:text-sm hidden sm:block">Generálj egy receptet alapanyagok alapján</p>
+            </div>
           </div>
         </div>
 
@@ -431,19 +433,21 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         <div
           onClick={() => setViewMode('daily')}
           className={cn(
-            "group cursor-pointer transition-all duration-300 hover:scale-105",
-            viewMode === 'daily' ? "ring-4 ring-blue-400" : ""
+            "group cursor-pointer transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105",
+            viewMode === 'daily' ? "ring-2 sm:ring-4 ring-blue-400" : ""
           )}
         >
           <div className={cn(
-            "bg-gradient-to-br rounded-2xl p-6 h-40 flex flex-col items-center justify-center text-center border shadow-xl transition-all duration-300",
+            "bg-gradient-to-br rounded-xl sm:rounded-2xl p-3 sm:p-6 h-16 sm:h-40 flex flex-row sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center border shadow-xl transition-all duration-300",
             viewMode === 'daily' 
               ? "from-blue-500/40 to-cyan-500/40 border-blue-400 shadow-2xl" 
               : "from-white/10 to-white/5 border-white/20 hover:from-white/20 hover:to-white/10"
           )}>
-            <Calendar className="h-12 w-12 text-white mb-3" />
-            <h3 className="text-white font-bold text-lg mb-2">Napi étrendtervező</h3>
-            <p className="text-white/70 text-sm">Tervezz egy teljes napot étkezésekkel</p>
+            <Calendar className="h-8 w-8 sm:h-12 sm:w-12 text-white mr-3 sm:mr-0 sm:mb-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-white font-bold text-base sm:text-lg mb-0 sm:mb-2">Napi étrendtervező</h3>
+              <p className="text-white/70 text-xs sm:text-sm hidden sm:block">Tervezz egy teljes napot étkezésekkel</p>
+            </div>
           </div>
         </div>
 
@@ -451,19 +455,21 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         <div
           onClick={() => setViewMode('multi')}
           className={cn(
-            "group cursor-pointer transition-all duration-300 hover:scale-105",
-            viewMode === 'multi' ? "ring-4 ring-green-400" : ""
+            "group cursor-pointer transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105",
+            viewMode === 'multi' ? "ring-2 sm:ring-4 ring-green-400" : ""
           )}
         >
           <div className={cn(
-            "bg-gradient-to-br rounded-2xl p-6 h-40 flex flex-col items-center justify-center text-center border shadow-xl transition-all duration-300",
+            "bg-gradient-to-br rounded-xl sm:rounded-2xl p-3 sm:p-6 h-16 sm:h-40 flex flex-row sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center border shadow-xl transition-all duration-300",
             viewMode === 'multi' 
               ? "from-green-500/40 to-emerald-500/40 border-green-400 shadow-2xl" 
               : "from-white/10 to-white/5 border-white/20 hover:from-white/20 hover:to-white/10"
           )}>
-            <CalendarDays className="h-12 w-12 text-white mb-3" />
-            <h3 className="text-white font-bold text-lg mb-2">Többnapos tervező</h3>
-            <p className="text-white/70 text-sm">Készíts több napra szóló étrendet</p>
+            <CalendarDays className="h-8 w-8 sm:h-12 sm:w-12 text-white mr-3 sm:mr-0 sm:mb-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-white font-bold text-base sm:text-lg mb-0 sm:mb-2">Többnapos tervező</h3>
+              <p className="text-white/70 text-xs sm:text-sm hidden sm:block">Készíts több napra szóló étrendet</p>
+            </div>
           </div>
         </div>
       </div>
