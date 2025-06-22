@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { MealTypeSelector } from "./MealTypeSelector";
@@ -232,6 +233,19 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
     );
   }
 
+  // Create foodData object that matches the expected interface
+  const foodData = {
+    mealTypes: {
+      ...Object.keys(mealTypes).reduce((acc, key) => {
+        acc[key] = { categories };
+        return acc;
+      }, {} as Record<string, { categories: Record<string, string[]> }>)
+    },
+    categories,
+    getFilteredIngredients,
+    getRecipesByMealType
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -297,10 +311,11 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
         {currentView === 'meal-selection' && (
           <>
             <MealTypeSelector
-              mealTypes={Object.keys(mealTypes)}
-              onMealTypeSelect={handleMealTypeSelect}
               selectedMealType={selectedMealType}
-              isGenerating={isGenerating}
+              onSelectMealType={handleMealTypeSelect}
+              foodData={foodData}
+              onGetRandomRecipe={getRandomRecipe}
+              onShowMultiCategorySelection={() => setCurrentView('multi-category-selection')}
             />
             
             {currentRecipe && (
@@ -318,12 +333,7 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
         {currentView === 'category-selection' && (
           <CategoryIngredientSelector
             selectedMealType={selectedMealType}
-            foodData={{
-              mealTypes,
-              categories,
-              getFilteredIngredients,
-              getRecipesByMealType
-            }}
+            foodData={foodData}
             onGetRecipe={handleIngredientSelect}
             getFavoriteForIngredient={getFavoriteForIngredient}
             isGenerating={isGenerating}
@@ -334,22 +344,16 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
           <>
             {!selectedMealType ? (
               <MealTypeSelector
-                mealTypes={Object.keys(mealTypes)}
-                onMealTypeSelect={(mealType) => {
+                selectedMealType={selectedMealType}
+                onSelectMealType={(mealType) => {
                   setSelectedMealType(mealType);
                 }}
-                selectedMealType={selectedMealType}
-                isGenerating={false}
+                foodData={foodData}
               />
             ) : (
               <MultiCategoryIngredientSelector
                 selectedMealType={selectedMealType}
-                foodData={{
-                  mealTypes,
-                  categories,
-                  getFilteredIngredients,
-                  getRecipesByMealType
-                }}
+                foodData={foodData}
                 onGetMultipleCategoryRecipes={handleGetMultipleCategoryRecipes}
                 getFavoriteForIngredient={getFavoriteForIngredient}
                 getPreferenceForIngredient={getPreferenceForIngredient}
