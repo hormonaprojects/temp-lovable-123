@@ -33,6 +33,19 @@ export function PreferenceInfoModal({ isOpen, onClose }: PreferenceInfoModalProp
             </div>
           </div>
 
+          {/* Kedvenc (Szív) */}
+          <div className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-pink-50 rounded-lg border border-pink-200">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-white fill-current" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-pink-800 mb-1 sm:mb-2 text-sm sm:text-base">Kedvenc</h3>
+              <p className="text-pink-700 text-xs sm:text-sm">
+                A szív gombbal jelölheted ki azokat az alapanyagokat, amelyek a kedvenceid. Ezek az alapanyagok a lista elején jelennek meg, és automatikusan "Szeretem" besorolást kapnak.
+              </p>
+            </div>
+          </div>
+
           {/* Nem szeretem / Allergia */}
           <div className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-red-50 rounded-lg border border-red-200">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -54,7 +67,7 @@ export function PreferenceInfoModal({ isOpen, onClose }: PreferenceInfoModalProp
             <div>
               <h3 className="font-semibold text-gray-800 mb-1 sm:mb-2 text-sm sm:text-base">Semleges / Nem tudom</h3>
               <p className="text-gray-700 text-xs sm:text-sm">
-                Ha nem jelölsz meg semmit egy alapanyagnál, azt semlegesnek tekintjük. Ezek az alapanyagok szerepelhetnek a receptekben, de nem fogunk aktívan keresni őket.
+                Ha nem jelölsz meg semmit egy alapanyagnál, azt semlegesnek tekintjük. Ezek az alapanyagok szerepelhetnek a receptekben, de nem fogjuk aktívan keresni őket.
               </p>
             </div>
           </div>
