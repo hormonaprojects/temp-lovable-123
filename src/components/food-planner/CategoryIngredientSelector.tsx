@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -153,7 +152,7 @@ export function CategoryIngredientSelector({
 
       {/* Selected Ingredients Display */}
       {allSelectedIngredients.length > 0 && (
-        <Card className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl border-white/30 shadow-2xl">
+        <Card className="bg-gradient-to-br from-violet-500 to-purple-600 border-violet-400 shadow-2xl">
           <CardHeader className="pb-4">
             <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
               <Search className="w-5 h-5 text-blue-400" />
@@ -178,9 +177,9 @@ export function CategoryIngredientSelector({
         </Card>
       )}
 
-      {/* Category Selection - Glassmorphism Design */}
+      {/* Category Selection - Purple Design */}
       {availableCategories.length > 0 && (
-        <Card className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl border-white/30 shadow-2xl">
+        <Card className="bg-gradient-to-br from-violet-500 to-purple-600 border-violet-400 shadow-2xl">
           <CardHeader className="pb-6">
             <CardTitle className="text-white text-xl sm:text-2xl font-bold flex items-center gap-3">
               <Utensils className="w-6 h-6 text-green-400" />
@@ -200,16 +199,11 @@ export function CategoryIngredientSelector({
                     key={category}
                     className={`group relative overflow-hidden p-6 transition-all duration-300 text-sm border-2 rounded-2xl cursor-pointer transform hover:scale-105 ${
                       isSelected
-                        ? 'bg-gradient-to-br from-green-500/30 to-emerald-600/30 border-green-400/60 text-white shadow-2xl scale-105'
-                        : 'bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm border-white/20 text-white hover:from-white/20 hover:to-white/10 hover:border-white/40 shadow-lg'
+                        ? 'bg-gradient-to-br from-green-500 to-emerald-600 border-green-400 text-white shadow-2xl scale-105'
+                        : 'bg-gradient-to-br from-purple-700 to-purple-800 border-purple-500 text-white hover:from-purple-600 hover:to-purple-700 hover:border-purple-400 shadow-lg'
                     }`}
                     onClick={() => handleCategoryToggle(category)}
                   >
-                    {/* Background Effect */}
-                    <div className={`absolute inset-0 transition-opacity duration-300 ${
-                      isSelected ? 'opacity-20' : 'opacity-0 group-hover:opacity-10'
-                    } bg-gradient-to-br from-white to-transparent`} />
-                    
                     <div className="relative z-10 flex items-center gap-3">
                       <div className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
                         isSelected 
@@ -268,7 +262,7 @@ export function CategoryIngredientSelector({
         const allowsMultiple = multipleSelectionCategories.includes(category);
 
         return (
-          <Card key={category} className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl border-white/30 shadow-2xl">
+          <Card key={category} className="bg-gradient-to-br from-violet-500 to-purple-600 border-violet-400 shadow-2xl">
             <CardHeader className="pb-4">
               <CardTitle className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
                 <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
@@ -299,8 +293,8 @@ export function CategoryIngredientSelector({
                       <div
                         className={`group p-3 transition-all duration-200 text-sm border-2 rounded-xl cursor-pointer transform hover:scale-105 ${
                           isSelected
-                            ? 'bg-gradient-to-br from-blue-500/30 to-purple-600/30 border-blue-400/60 text-white shadow-lg scale-105'
-                            : 'bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm border-white/20 text-white hover:from-white/20 hover:to-white/10 hover:border-white/40 shadow-md'
+                            ? 'bg-gradient-to-br from-blue-500 to-purple-600 border-blue-400 text-white shadow-lg scale-105'
+                            : 'bg-gradient-to-br from-purple-700 to-purple-800 border-purple-500 text-white hover:from-purple-600 hover:to-purple-700 hover:border-purple-400 shadow-md'
                         }`}
                         onClick={() => handleIngredientToggle(category, ingredient)}
                       >
