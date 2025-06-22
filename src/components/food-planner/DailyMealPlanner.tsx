@@ -89,7 +89,8 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     getRecipesByMealType: getRecipesByMealType
   };
 
-  const handleGetMultipleCategoryRecipes = async (ingredients: SelectedIngredient[]) => {
+  // EGYSÉGES recept generálási függvény
+  const handleGenerateMealPlan = async (ingredients: SelectedIngredient[] = []) => {
     if (selectedMeals.length === 0) {
       toast({
         title: "Hiba",
@@ -99,6 +100,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       return;
     }
 
+    console.log('🍽️ EGYSÉGES recept generálás indítása:', { selectedMeals, ingredients });
     setIsGenerating(true);
     setSelectedIngredients(ingredients);
     
@@ -108,6 +110,8 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       Object.keys(mealTypes).forEach(mealType => {
         mealTypeRecipes[mealType] = mealTypes[mealType] || [];
       });
+
+      console.log('📋 Mealtype receptek:', mealTypeRecipes);
 
       const newRecipes = await generateDailyMealPlan(
         selectedMeals,
@@ -148,8 +152,12 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     }
   };
 
+  const handleGetMultipleCategoryRecipes = async (ingredients: SelectedIngredient[]) => {
+    await handleGenerateMealPlan(ingredients);
+  };
+
   const generateDailyMealPlanWithoutIngredients = async () => {
-    await handleGetMultipleCategoryRecipes([]);
+    await handleGenerateMealPlan([]);
   };
 
   if (loading) {

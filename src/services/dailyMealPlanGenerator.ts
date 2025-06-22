@@ -1,6 +1,6 @@
 
 import { SupabaseRecipe } from '@/types/supabase';
-import { getRecipesByMealType, filterRecipesByMultipleIngredients } from './recipeFilters';
+import { getRecipesByMealType, filterRecipesByMultipleIngredients } from './recipeFilters/index';
 
 interface SelectedIngredient {
   category: string;
@@ -37,10 +37,10 @@ export const generateDailyMealPlan = async (
     console.log(`\n🔍 ${mealType} receptek keresése...`);
     
     // Étkezési típus alapján receptek lekérése a refactorált függvénnyel
-    const mealTypeRecipes_filtered = getRecipesByMealType(recipes, mealTypeRecipes, mealType);
-    console.log(`📋 ${mealType} összes recepte:`, mealTypeRecipes_filtered.length, 'db');
+    const mealTypeFilteredRecipes = getRecipesByMealType(recipes, mealTypeRecipes, mealType);
+    console.log(`📋 ${mealType} összes recepte:`, mealTypeFilteredRecipes.length, 'db');
     
-    let filteredRecipes = mealTypeRecipes_filtered;
+    let filteredRecipes = mealTypeFilteredRecipes;
     
     // Ha vannak kiválasztott alapanyagok, szűrjük a recepteket a refactorált függvénnyel
     if (ingredients.length > 0) {
@@ -48,7 +48,7 @@ export const generateDailyMealPlan = async (
       
       // A refactorált filterRecipesByMultipleIngredients függvényt használjuk
       const ingredientNames = ingredients.map(ing => ing.ingredient);
-      filteredRecipes = filterRecipesByMultipleIngredients(mealTypeRecipes_filtered, ingredientNames);
+      filteredRecipes = filterRecipesByMultipleIngredients(mealTypeFilteredRecipes, ingredientNames);
     }
     
     console.log(`📊 Szűrés után ${mealType}-hoz: ${filteredRecipes.length} recept`);
