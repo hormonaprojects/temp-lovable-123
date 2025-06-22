@@ -141,10 +141,10 @@ export function IngredientCard({
             variant={favorite ? 'default' : 'outline'}
             size="sm"
             className={`
-              w-6 h-6 p-0 transition-all duration-200 rounded-sm
+              w-6 h-6 p-0 transition-all duration-200 rounded-sm border-2
               ${favorite 
-                ? 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-lg' 
-                : 'hover:bg-pink-50 hover:border-pink-300 hover:text-pink-600'
+                ? 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-lg border-pink-400' 
+                : 'hover:bg-pink-50 hover:border-pink-300 hover:text-pink-600 border-pink-200'
               }
             `}
           >

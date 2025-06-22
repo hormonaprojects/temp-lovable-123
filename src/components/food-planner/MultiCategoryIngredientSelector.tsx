@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,7 +69,7 @@ export function MultiCategoryIngredientSelector({
     await onGetMultipleCategoryRecipes(selectedIngredients);
   };
 
-  // Sort ingredients: favorites first, then alphabetically
+  // Sort ingredients: favorites first, then liked, then neutral
   const getSortedIngredients = (category: string) => {
     const ingredients = foodData.getFilteredIngredients(category);
     return [...ingredients].sort((a, b) => {
@@ -112,7 +111,7 @@ export function MultiCategoryIngredientSelector({
                   <span className="text-purple-200 text-xs">({item.category})</span>
                   <button
                     onClick={() => removeSelectedIngredient(index)}
-                    className="ml-1 text-white hover:text-red-200 bg-red-500/50 hover:bg-red-500/70 rounded-full p-1 transition-all duration-200"
+                    className="ml-1 text-white hover:text-red-200 bg-red-500/60 hover:bg-red-500/80 rounded-full p-1 transition-all duration-200 border border-red-400/50"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -129,8 +128,13 @@ export function MultiCategoryIngredientSelector({
             {Object.keys(foodData.categories).map(category => (
               <Button
                 key={category}
-                variant={selectedCategory === category ? "default" : "secondary"}
                 onClick={() => handleCategorySelect(category)}
+                className={cn(
+                  "px-4 py-2 rounded-lg font-medium transition-all duration-300 border-2",
+                  selectedCategory === category
+                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white border-blue-400 shadow-lg transform scale-105"
+                    : "bg-gradient-to-r from-gray-600/80 to-gray-700/80 text-white border-gray-500/50 hover:from-gray-500/90 hover:to-gray-600/90 hover:border-gray-400/70 hover:shadow-md"
+                )}
               >
                 {category}
               </Button>
@@ -148,10 +152,10 @@ export function MultiCategoryIngredientSelector({
               {getSortedIngredients(selectedCategory).map(ingredient => {
                 const isFavorite = getFavoriteForIngredient(ingredient, selectedCategory);
                 const buttonClasses = cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative",
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative border-2",
                   isFavorite
-                    ? "bg-pink-500/80 text-white hover:bg-pink-600 shadow-md"
-                    : "bg-white/10 text-white hover:bg-white/20"
+                    ? "bg-pink-500/80 text-white hover:bg-pink-600 shadow-md border-pink-400"
+                    : "bg-white/10 text-white hover:bg-white/20 border-white/20 hover:border-white/40"
                 );
 
                 return (
