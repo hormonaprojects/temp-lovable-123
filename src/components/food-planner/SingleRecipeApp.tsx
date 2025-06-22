@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
 import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
@@ -54,7 +52,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     getFilteredIngredients,
     convertToStandardRecipe,
     getFavoriteForIngredient,
-    refreshFavorites
+    refreshFavorites,
+    recipes
   } = useSupabaseData(user.id);
 
   // Kedvencek újratöltése amikor a komponens mountálódik
@@ -127,7 +126,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setIsLoading(true);
     setCurrentRecipe(null);
     
-    // Több kategóriás alapanyagok esetén
     const ingredientsText = selectedIngredients.map(ing => `${ing.ingredient} (${ing.category})`).join(", ");
     setLastSearchParams({ category: "Több kategória", ingredient: ingredientsText, mealType: selectedMealType });
 
@@ -136,36 +134,80 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
       
-      // Receptek keresése az összes megadott alapanyag alapján kategóriánként
-      let allFoundRecipes = [];
+      // JAVÍTOTT logika: olyan recepteket keresünk, amelyek MINDEN kiválasztott alapanyagot tartalmazzák
+      const mealTypeRecipes = getRecipesByMealType(selectedMealType);
+      console.log(`📋 ${selectedMealType} étkezéshez tartozó receptek:`, mealTypeRecipes.length);
       
-      for (const item of selectedIngredients) {
-        const foundRecipes = getRecipesByCategory(item.category, item.ingredient, selectedMealType);
-        allFoundRecipes.push(...foundRecipes);
-      }
-      
-      // Duplikátumok eltávolítása
-      const uniqueRecipes = allFoundRecipes.filter((recipe, index, self) =>
-        index === self.findIndex(r => r['Recept_Neve'] === recipe['Recept_Neve'])
-      );
+      // Ellenőrizzük minden receptet, hogy tartalmazza-e az ÖSSZES kiválasztott alapanyagot
+      const getAllRecipeIngredients = (recipe: any): string[] => {
+        return [
+          recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
+          recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
+          recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
+          recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
+          recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
+          recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
+        ].filter(Boolean).map(ing => ing?.toString() || '');
+      };
+
+      const normalizeText = (text: string): string => {
+        return text
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^\w\s]/g, '')
+          .trim();
+      };
+
+      const hasIngredient = (recipeIngredients: string[], searchIngredient: string): boolean => {
+        const searchNormalized = normalizeText(searchIngredient);
+        return recipeIngredients.some(recipeIng => {
+          const recipeIngNormalized = normalizeText(recipeIng);
+          return recipeIngNormalized.includes(searchNormalized) || searchNormalized.includes(recipeIngNormalized);
+        });
+      };
+
+      const validRecipes = mealTypeRecipes.filter(recipe => {
+        const recipeIngredients = getAllRecipeIngredients(recipe);
+        console.log(`\n🔍 Recept vizsgálata: ${recipe['Recept_Neve']}`);
+        console.log(`📝 Hozzávalók:`, recipeIngredients);
+        
+        // Ellenőrizzük, hogy MINDEN kiválasztott alapanyag szerepel-e a receptben
+        const hasAllIngredients = selectedIngredients.every(selectedIng => {
+          const found = hasIngredient(recipeIngredients, selectedIng.ingredient);
+          console.log(`${found ? '✅' : '❌'} "${selectedIng.ingredient}" ${found ? 'MEGTALÁLVA' : 'HIÁNYZIK'}`);
+          return found;
+        });
+        
+        if (hasAllIngredients) {
+          console.log(`✅ ✅ ✅ ELFOGADVA: "${recipe['Recept_Neve']}" TARTALMAZZA az ÖSSZES kiválasztott alapanyagot!`);
+        } else {
+          console.log(`❌ ❌ ❌ ELUTASÍTVA: "${recipe['Recept_Neve']}" NEM tartalmazza az összes alapanyagot!`);
+        }
+        
+        return hasAllIngredients;
+      });
 
       await minLoadingTime;
 
-      if (uniqueRecipes.length > 0) {
-        const randomIndex = Math.floor(Math.random() * uniqueRecipes.length);
-        const selectedSupabaseRecipe = uniqueRecipes[randomIndex];
+      if (validRecipes.length > 0) {
+        const randomIndex = Math.floor(Math.random() * validRecipes.length);
+        const selectedSupabaseRecipe = validRecipes[randomIndex];
         const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
         
         setCurrentRecipe(standardRecipe);
+        
+        console.log(`✅ SIKERES TALÁLAT: "${standardRecipe.név}" receptben minden alapanyag megtalálható!`);
         
         toast({
           title: "Recept betöltve!",
           description: `${standardRecipe.név} sikeresen betöltve (${selectedIngredients.length} alapanyag több kategóriából).`,
         });
       } else {
+        console.log('❌ NINCS OLYAN RECEPT, ami minden kiválasztott alapanyagot tartalmazná!');
         toast({
           title: "Nincs megfelelő recept",
-          description: `Nincs recept "${selectedMealType}" étkezéshez a kiválasztott alapanyagokkal több kategóriából.`,
+          description: `Nincs olyan recept "${selectedMealType}" étkezéshez, amely minden kiválasztott alapanyagot tartalmazná.`,
           variant: "destructive"
         });
       }
@@ -200,7 +242,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
           meals: {}
         };
         
-        // Minden étkezési típusra generálunk egy receptet
         for (const mealType of mealTypesArray) {
           const foundRecipes = getRecipesByMealType(mealType);
           if (foundRecipes.length > 0) {
@@ -335,7 +376,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setSelectedMealType(mealType);
     setShowIngredientSelection(false);
     setCurrentRecipe(null);
-    // Az automatikus receptgenerálás a useEffect-ben fog megtörténni
   };
 
   const handleGetRandomRecipe = async () => {

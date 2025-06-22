@@ -59,7 +59,6 @@ export function useSupabaseData(userId?: string) {
     try {
       console.log('🔄 Valódi adatok betöltése Supabase-ből...');
       
-      // Adatok betöltése
       const [categoriesData, mealTypesData, recipesData] = await Promise.all([
         fetchCategories(),
         fetchMealTypes(),
@@ -72,7 +71,6 @@ export function useSupabaseData(userId?: string) {
         recipes: recipesData?.length || 0
       });
 
-      // Adatok feldolgozása
       const processedCategories = processCategories(categoriesData || []);
       const processedMealTypeRecipes = processMealTypes(mealTypesData || []);
       const processedMealTypes = createMealTypesDisplay(processedMealTypeRecipes);
@@ -141,7 +139,6 @@ export function useSupabaseData(userId?: string) {
 
   const getFavoriteForIngredient = (ingredient: string, category?: string): boolean => {
     if (!category) {
-      // Ha nincs kategória megadva, ellenőrizzük az összes kategóriában
       return userFavorites.some(fav => fav.ingredient === ingredient);
     }
     return isFavoriteIngredient(ingredient, category, userFavorites);
@@ -154,13 +151,13 @@ export function useSupabaseData(userId?: string) {
       if (isFavorite) {
         const success = await addUserFavorite(userId, category, ingredient);
         if (success) {
-          await loadUserFavorites(); // Frissítjük a listát
+          await loadUserFavorites();
         }
         return success;
       } else {
         const success = await removeUserFavorite(userId, category, ingredient);
         if (success) {
-          await loadUserFavorites(); // Frissítjük a listát
+          await loadUserFavorites();
         }
         return success;
       }
