@@ -45,8 +45,18 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     getRecipesByCategory,
     getRandomRecipe,
     getFilteredIngredients,
-    convertToStandardRecipe
+    convertToStandardRecipe,
+    getFavoriteForIngredient,
+    refreshFavorites
   } = useSupabaseData(user.id);
+
+  // Kedvencek újratöltése amikor a komponens mountálódik
+  useEffect(() => {
+    if (user?.id) {
+      console.log('🔄 Kedvencek újratöltése SingleRecipeApp-ben...');
+      refreshFavorites();
+    }
+  }, [user?.id, refreshFavorites]);
 
   // AUTOMATIKUS receptgenerálás amikor meal type változik
   useEffect(() => {
@@ -457,6 +467,12 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
               onGetRecipe={getRecipe}
               multipleIngredients={true}
               onGetMultipleRecipes={getMultipleRecipes}
+              getFavoriteForIngredient={(ingredient: string, category: string) => {
+                console.log('🔍 SingleRecipeApp - Kedvenc ellenőrzés:', { ingredient, category });
+                const result = getFavoriteForIngredient(ingredient, category);
+                console.log('✅ SingleRecipeApp - Kedvenc eredmény:', result);
+                return result;
+              }}
             />
           )}
 
