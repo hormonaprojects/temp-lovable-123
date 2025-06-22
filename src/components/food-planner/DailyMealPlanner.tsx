@@ -106,17 +106,17 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-purple-500" />
-          <p className="text-gray-600">Adatok betöltése...</p>
+          <RefreshCw className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mx-auto mb-3 sm:mb-4 text-purple-500" />
+          <p className="text-gray-600 text-sm sm:text-base">Adatok betöltése...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-8 max-w-6xl mx-auto p-3 sm:p-6">
+    <div className="space-y-3 sm:space-y-8 max-w-6xl mx-auto p-2 sm:p-6">
       <DailyMealHeader onToggleSingleRecipe={onToggleSingleRecipe} />
 
       <MealTypeCardSelector

@@ -54,42 +54,42 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
     sum + parseFloat(recipe.zsír || '0'), 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Összegzés */}
-      <Card className="bg-gradient-to-br from-indigo-600/90 to-purple-700/90 backdrop-blur-lg border-purple-300/30 shadow-xl">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-2xl font-bold text-center text-white flex items-center justify-center gap-3">
-            <ChefHat className="w-8 h-8 text-purple-300" />
-            Napi Étrend Összegzés
+      <Card className="bg-gradient-to-br from-indigo-600/90 to-purple-700/90 backdrop-blur-lg border-purple-300/30 shadow-xl mx-2 sm:mx-0">
+        <CardHeader className="pb-3 sm:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
+          <CardTitle className="text-lg sm:text-2xl font-bold text-center text-white flex items-center justify-center gap-2 sm:gap-3">
+            <ChefHat className="w-5 h-5 sm:w-8 sm:h-8 text-purple-300" />
+            <span className="leading-tight">Napi Étrend Összegzés</span>
           </CardTitle>
-          <CardDescription className="text-center text-white/80">
+          <CardDescription className="text-center text-white/80 text-xs sm:text-base">
             {generatedRecipes.length} étkezés sikeresen generálva
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center border border-white/30">
-              <div className="text-2xl font-bold text-white">{Math.round(totalCalories)}</div>
-              <div className="text-white/80 text-sm">Kalória</div>
+        <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-white/30">
+              <div className="text-lg sm:text-2xl font-bold text-white">{Math.round(totalCalories)}</div>
+              <div className="text-white/80 text-xs sm:text-sm">Kalória</div>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center border border-white/30">
-              <div className="text-2xl font-bold text-blue-300">{Math.round(totalProtein)}g</div>
-              <div className="text-white/80 text-sm">Fehérje</div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-white/30">
+              <div className="text-lg sm:text-2xl font-bold text-blue-300">{Math.round(totalProtein)}g</div>
+              <div className="text-white/80 text-xs sm:text-sm">Fehérje</div>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center border border-white/30">
-              <div className="text-2xl font-bold text-green-300">{Math.round(totalCarbs)}g</div>
-              <div className="text-white/80 text-sm">Szénhidrát</div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-white/30">
+              <div className="text-lg sm:text-2xl font-bold text-green-300">{Math.round(totalCarbs)}g</div>
+              <div className="text-white/80 text-xs sm:text-sm">Szénhidrát</div>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center border border-white/30">
-              <div className="text-2xl font-bold text-yellow-300">{Math.round(totalFat)}g</div>
-              <div className="text-white/80 text-sm">Zsír</div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 text-center border border-white/30">
+              <div className="text-lg sm:text-2xl font-bold text-yellow-300">{Math.round(totalFat)}g</div>
+              <div className="text-white/80 text-xs sm:text-sm">Zsír</div>
             </div>
           </div>
 
           {/* Étkezések listája */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-white mb-3">📋 Étkezések:</h3>
-            <div className="grid gap-3">
+          <div className="space-y-2 sm:space-y-3">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">📋 Étkezések:</h3>
+            <div className="grid gap-2 sm:gap-3">
               {generatedRecipes.map((recipe, index) => {
                 const mealTypeInfo = mealTypes.find(m => m.key === recipe.mealType);
                 const isExpanded = expandedRecipes.has(index);
@@ -97,30 +97,25 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
                 return (
                   <div 
                     key={index} 
-                    className="bg-white/20 backdrop-blur-sm rounded-lg border border-white/30 p-4 hover:bg-white/25 transition-all cursor-pointer"
+                    className="bg-white/20 backdrop-blur-sm rounded-lg border border-white/30 p-3 sm:p-4 hover:bg-white/25 transition-all cursor-pointer"
                     onClick={() => toggleRecipeExpanded(index)}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{mealTypeInfo?.emoji || '🍽️'}</span>
-                        <div>
-                          <h4 className="font-semibold text-white capitalize">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <span className="text-lg sm:text-2xl">{mealTypeInfo?.emoji || '🍽️'}</span>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-white capitalize text-xs sm:text-base">
                             {mealTypeInfo?.label || recipe.mealType}
                           </h4>
-                          <p className="text-white/90 font-medium">{recipe.név}</p>
+                          <p className="text-white/90 font-medium text-xs sm:text-base truncate">{recipe.név}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         {recipe.elkészítésiIdő && (
-                          <Badge variant="outline" className="text-white border-white/40 bg-white/10">
-                            <Clock className="w-3 h-3 mr-1" />
-                            {recipe.elkészítésiIdő}
-                          </Badge>
-                        )}
-                        {recipe.adagok && (
-                          <Badge variant="outline" className="text-white border-white/40 bg-white/10">
-                            <Users className="w-3 h-3 mr-1" />
-                            {recipe.adagok}
+                          <Badge variant="outline" className="text-white border-white/40 bg-white/10 text-xs px-1 py-0">
+                            <Clock className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
+                            <span className="hidden sm:inline">{recipe.elkészítésiIdő}</span>
+                            <span className="sm:hidden">{recipe.elkészítésiIdő.split(' ')[0]}</span>
                           </Badge>
                         )}
                         <Button
@@ -130,17 +125,17 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
                           }}
                           variant="ghost"
                           size="sm"
-                          className="text-white hover:bg-white/20"
+                          className="text-white hover:bg-white/20 px-2 py-1 h-6 sm:h-8 text-xs sm:text-sm"
                         >
                           {isExpanded ? (
                             <>
-                              <EyeOff className="w-4 h-4 mr-1" />
-                              Bezár
+                              <EyeOff className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                              <span className="hidden sm:inline">Bezár</span>
                             </>
                           ) : (
                             <>
-                              <Eye className="w-4 h-4 mr-1" />
-                              Részletek
+                              <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                              <span className="hidden sm:inline">Részletek</span>
                             </>
                           )}
                         </Button>
@@ -148,7 +143,7 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
                     </div>
 
                     {isExpanded && (
-                      <div className="mt-4 pt-4 border-t border-white/20" onClick={(e) => e.stopPropagation()}>
+                      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/20" onClick={(e) => e.stopPropagation()}>
                         <RecipeDisplay
                           recipe={recipe}
                           isLoading={false}

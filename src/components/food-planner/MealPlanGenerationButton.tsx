@@ -25,6 +25,11 @@ export function MealPlanGenerationButton({
     ? `Étrend generálása (${selectedMeals.length} étkezés, ${ingredientCount} alapanyag)`
     : `Étrend generálása (${selectedMeals.length} étkezés)`;
 
+  // Rövidebb szöveg mobilon
+  const mobileButtonText = ingredientCount > 0 
+    ? `Generálás (${selectedMeals.length}+${ingredientCount})`
+    : `Generálás (${selectedMeals.length})`;
+
   console.log('🎯 MealPlanGenerationButton render:', {
     selectedMeals: selectedMeals.length,
     ingredientCount,
@@ -32,7 +37,7 @@ export function MealPlanGenerationButton({
   });
 
   return (
-    <div className="text-center">
+    <div className="text-center px-2 sm:px-0">
       <Button
         onClick={() => {
           console.log('🎯 Étrend generálása gomb megnyomva');
@@ -40,17 +45,19 @@ export function MealPlanGenerationButton({
         }}
         disabled={isGenerating}
         size="lg"
-        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg transition-all duration-300"
+        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg transition-all duration-300 text-xs sm:text-base px-3 sm:px-6 py-2 sm:py-3 h-10 sm:h-auto"
       >
         {isGenerating ? (
           <>
-            <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-            Étrend generálása...
+            <RefreshCw className="mr-1 sm:mr-2 h-3 w-3 sm:h-5 sm:w-5 animate-spin" />
+            <span className="sm:hidden">Generálás...</span>
+            <span className="hidden sm:inline">Étrend generálása...</span>
           </>
         ) : (
           <>
-            <Star className="mr-2 h-5 w-5" />
-            {buttonText}
+            <Star className="mr-1 sm:mr-2 h-3 w-3 sm:h-5 sm:w-5" />
+            <span className="sm:hidden">{mobileButtonText}</span>
+            <span className="hidden sm:inline">{buttonText}</span>
           </>
         )}
       </Button>
