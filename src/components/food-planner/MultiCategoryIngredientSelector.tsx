@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -166,7 +165,7 @@ export function MultiCategoryIngredientSelector({
                       <Plus className="w-4 h-4 text-white/60" />
                     )}
                     {isSingleSelection && (
-                      <AlertCircle className="w-4 h-4 text-amber-400" title="Csak 1 alapanyag választható" />
+                      <AlertCircle className="w-4 h-4 text-amber-400" />
                     )}
                   </div>
                   <p className="text-white text-sm font-medium text-center leading-tight">
