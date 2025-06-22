@@ -377,13 +377,12 @@ export function SingleRecipeApp({ user }: SingleRecipeAppProps) {
 
         {currentView === 'multi-day-planner' && (
           <MultiDayMealPlanGenerator
-            user={user}
-            mealTypes={mealTypes}
-            getRecipesByMealType={getRecipesByMealType}
-            convertToStandardRecipe={convertToStandardRecipe}
-            saveRating={saveRating}
-            getFavoriteForIngredient={getFavoriteForIngredient}
-            onFavoriteToggle={handleFavoriteToggle}
+            onGeneratePlan={async (days: number) => {
+              console.log(`Generating ${days} day meal plan`);
+              return [];
+            }}
+            isLoading={isGenerating}
+            mealPlan={[]}
           />
         )}
       </div>
