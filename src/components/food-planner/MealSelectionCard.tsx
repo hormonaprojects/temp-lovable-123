@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MealSelectionCardProps {
@@ -14,6 +15,7 @@ interface MealSelectionCardProps {
   onToggle: (mealKey: string) => void;
   categories: string[];
   getIngredientsByCategory: (category: string) => string[];
+  getFavoriteForIngredient?: (ingredient: string) => boolean;
   onGetRecipe: (mealType: string, category: string, ingredient: string) => Promise<void>;
   onSelectionChange: (mealType: string, category: string, ingredient: string) => void;
   isGenerating: boolean;
@@ -29,6 +31,7 @@ export function MealSelectionCard({
   onToggle,
   categories,
   getIngredientsByCategory,
+  getFavoriteForIngredient,
   onGetRecipe,
   onSelectionChange,
   isGenerating,
@@ -38,7 +41,26 @@ export function MealSelectionCard({
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedIngredient, setSelectedIngredient] = useState("");
 
-  const availableIngredients = selectedCategory ? getIngredientsByCategory(selectedCategory) : [];
+  const getSortedIngredients = (category: string): string[] => {
+    const ingredients = getIngredientsByCategory(category);
+    
+    if (!getFavoriteForIngredient) {
+      return ingredients;
+    }
+
+    // Sort ingredients: favorites first, then alphabetically
+    return [...ingredients].sort((a, b) => {
+      const aIsFavorite = getFavoriteForIngredient(a);
+      const bIsFavorite = getFavoriteForIngredient(b);
+      
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      
+      return a.localeCompare(b);
+    });
+  };
+
+  const availableIngredients = selectedCategory ? getSortedIngredients(selectedCategory) : [];
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
@@ -119,15 +141,21 @@ export function MealSelectionCard({
                     <SelectItem value="no-ingredient" className="text-white hover:bg-gray-700">
                       Nincs megadva (random kategóriában)
                     </SelectItem>
-                    {availableIngredients.map((ingredient) => (
-                      <SelectItem 
-                        key={ingredient} 
-                        value={ingredient}
-                        className="text-white hover:bg-gray-700"
-                      >
-                        {ingredient}
-                      </SelectItem>
-                    ))}
+                    {availableIngredients.map((ingredient) => {
+                      const isFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(ingredient) : false;
+                      return (
+                        <SelectItem 
+                          key={ingredient} 
+                          value={ingredient}
+                          className="text-white hover:bg-gray-700"
+                        >
+                          <div className="flex items-center gap-2">
+                            {isFavorite && <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />}
+                            {ingredient}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
