@@ -1,9 +1,9 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 interface MealTypeCardSelectorProps {
   selectedMeals: string[];
@@ -40,16 +40,21 @@ export function MealTypeCardSelector({
           
           return (
             <Card key={meal.key} className="bg-white/10 backdrop-blur-lg border-white/20 shadow-xl">
-              <CardContent className="p-4">
+              <CardContent className="p-0">
                 <Button
                   onClick={() => handleMealToggle(meal.key)}
                   className={cn(
-                    "w-full py-6 text-lg font-semibold rounded-xl transition-all duration-300 min-h-[100px] flex flex-col items-center justify-center border-2",
+                    "w-full h-full py-6 text-lg font-semibold rounded-xl transition-all duration-300 min-h-[120px] flex flex-col items-center justify-center border-2 relative",
                     isSelected
-                      ? "bg-yellow-400 text-black hover:bg-yellow-300 shadow-lg scale-105 border-yellow-300"
-                      : "bg-white/20 text-white hover:bg-white/30 hover:scale-102 border-white/30"
+                      ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-green-400 shadow-lg scale-105 hover:from-green-600 hover:to-emerald-600"
+                      : "bg-white/20 text-white hover:bg-white/30 hover:scale-102 border-white/30 hover:border-white/50"
                   )}
                 >
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 bg-white/20 rounded-full p-1">
+                      <Check className="h-4 w-4 text-white" />
+                    </div>
+                  )}
                   <div className="text-center">
                     <div className="text-3xl mb-2">
                       {meal.emoji}
