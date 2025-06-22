@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,6 +58,14 @@ export function MultiCategoryIngredientSelector({
         newIngredients.splice(existingIndex, 1);
         return newIngredients;
       }
+      
+      // Húsfélék és Halak kategóriáknál maximum 1 elem választható
+      if (selectedCategory === 'Húsfélék' || selectedCategory === 'Halak') {
+        // Távolítsuk el a már kiválasztott elemet ebből a kategóriából
+        const filteredIngredients = prev.filter(item => item.category !== selectedCategory);
+        return [...filteredIngredients, newIngredient];
+      }
+      
       // Ha nincs kiválasztva, adjuk hozzá
       return [...prev, newIngredient];
     });
