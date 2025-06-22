@@ -313,7 +313,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
           </CardContent>
         </Card>
 
-        {/* Category Ingredient Selector */}
+        {/* Category Ingredient Selector - FONTOS: hideDisliked={false} */}
         {selectedCategory && (
           <div data-scroll-target="category-ingredients">
             <PreferencesCategorySelector
@@ -323,6 +323,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
               getFavoriteForIngredient={getFavoriteForIngredient}
               onPreferenceChange={handlePreferenceUpdate}
               onFavoriteChange={handleFavoriteChange}
+              hideDisliked={false}
             />
           </div>
         )}

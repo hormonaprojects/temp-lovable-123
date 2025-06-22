@@ -10,6 +10,7 @@ interface PreferencesCategorySelectorProps {
   getFavoriteForIngredient: (ingredient: string, category: string) => boolean;
   onPreferenceChange: (ingredient: string, category: string, preference: 'like' | 'dislike' | 'neutral') => void;
   onFavoriteChange: (ingredient: string, category: string, isFavorite: boolean) => void;
+  hideDisliked?: boolean;
 }
 
 export function PreferencesCategorySelector({
@@ -18,7 +19,8 @@ export function PreferencesCategorySelector({
   getPreferenceForIngredient,
   getFavoriteForIngredient,
   onPreferenceChange,
-  onFavoriteChange
+  onFavoriteChange,
+  hideDisliked = true
 }: PreferencesCategorySelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState("");
 
@@ -47,6 +49,7 @@ export function PreferencesCategorySelector({
             getFavoriteForIngredient={(ingredient) => getFavoriteForIngredient(ingredient, selectedCategory)}
             onPreferenceChange={(ingredient, preference) => onPreferenceChange(ingredient, selectedCategory, preference)}
             onFavoriteChange={(ingredient, isFavorite) => onFavoriteChange(ingredient, selectedCategory, isFavorite)}
+            hideDisliked={hideDisliked}
           />
         </div>
       )}
