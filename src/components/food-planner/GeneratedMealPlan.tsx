@@ -1,7 +1,10 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { RecipeDisplay } from "./RecipeDisplay";
+import { ChefHat, Clock, Users, Eye, EyeOff } from "lucide-react";
 
 interface GeneratedMealPlanProps {
   generatedRecipes: any[];
@@ -9,51 +12,152 @@ interface GeneratedMealPlanProps {
 }
 
 const mealTypes = [
-  { key: 'reggeli', label: 'Reggeli', emoji: '🍳' },
-  { key: 'tízórai', label: 'Tízórai', emoji: '🥪' },
-  { key: 'ebéd', label: 'Ebéd', emoji: '🍽️' },
-  { key: 'uzsonna', label: 'Uzsonna', emoji: '🧁' },
-  { key: 'vacsora', label: 'Vacsora', emoji: '🌮' }
+  { key: 'reggeli', label: 'Reggeli', emoji: '🍳', color: 'bg-orange-500/20 border-orange-400' },
+  { key: 'tízórai', label: 'Tízórai', emoji: '🥪', color: 'bg-yellow-500/20 border-yellow-400' },
+  { key: 'ebéd', label: 'Ebéd', emoji: '🍽️', color: 'bg-green-500/20 border-green-400' },
+  { key: 'uzsonna', label: 'Uzsonna', emoji: '🧁', color: 'bg-pink-500/20 border-pink-400' },
+  { key: 'vacsora', label: 'Vacsora', emoji: '🌮', color: 'bg-purple-500/20 border-purple-400' }
 ];
 
 export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanProps) {
+  const [expandedRecipes, setExpandedRecipes] = useState<Set<number>>(new Set());
+
   if (generatedRecipes.length === 0) {
     return null;
   }
 
+  const toggleRecipeExpanded = (index: number) => {
+    setExpandedRecipes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  // Összegzés számítása
+  const totalCalories = generatedRecipes.reduce((sum, recipe) => {
+    const protein = parseFloat(recipe.fehérje || '0');
+    const carbs = parseFloat(recipe.szénhidrát || '0');
+    const fat = parseFloat(recipe.zsír || '0');
+    return sum + (protein * 4) + (carbs * 4) + (fat * 9);
+  }, 0);
+
+  const totalProtein = generatedRecipes.reduce((sum, recipe) => 
+    sum + parseFloat(recipe.fehérje || '0'), 0);
+  const totalCarbs = generatedRecipes.reduce((sum, recipe) => 
+    sum + parseFloat(recipe.szénhidrát || '0'), 0);
+  const totalFat = generatedRecipes.reduce((sum, recipe) => 
+    sum + parseFloat(recipe.zsír || '0'), 0);
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-center text-gray-800">
-        🍽️ Generált Napi Étrend
-      </h2>
-      <div className="grid gap-6">
-        {generatedRecipes.map((recipe, index) => (
-          <Card key={index} className="overflow-hidden border-2 border-purple-200 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-xl text-purple-800 capitalize flex items-center gap-2">
-                    {mealTypes.find(m => m.key === recipe.mealType)?.emoji} {recipe.mealType}
-                  </CardTitle>
-                  <CardDescription className="flex gap-2 mt-2">
-                    <Badge variant="secondary">{recipe.category}</Badge>
-                    <Badge variant="outline">{recipe.ingredient}</Badge>
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <RecipeDisplay
-                recipe={recipe}
-                isLoading={false}
-                onRegenerate={() => {}}
-                onNewRecipe={() => {}}
-                user={user}
-              />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Összegzés */}
+      <Card className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 backdrop-blur-lg border-purple-300/30 shadow-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-bold text-center text-white flex items-center justify-center gap-3">
+            <ChefHat className="w-8 h-8 text-purple-400" />
+            Napi Étrend Összegzés
+          </CardTitle>
+          <CardDescription className="text-center text-white/80">
+            {generatedRecipes.length} étkezés sikeresen generálva
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-white">{Math.round(totalCalories)}</div>
+              <div className="text-white/70 text-sm">Kalória</div>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-blue-400">{Math.round(totalProtein)}g</div>
+              <div className="text-white/70 text-sm">Fehérje</div>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-green-400">{Math.round(totalCarbs)}g</div>
+              <div className="text-white/70 text-sm">Szénhidrát</div>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-yellow-400">{Math.round(totalFat)}g</div>
+              <div className="text-white/70 text-sm">Zsír</div>
+            </div>
+          </div>
+
+          {/* Étkezések listája */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-white mb-3">📋 Étkezések:</h3>
+            <div className="grid gap-3">
+              {generatedRecipes.map((recipe, index) => {
+                const mealTypeInfo = mealTypes.find(m => m.key === recipe.mealType);
+                const isExpanded = expandedRecipes.has(index);
+                
+                return (
+                  <div key={index} className={`rounded-lg border-2 ${mealTypeInfo?.color || 'bg-white/10 border-white/20'} p-4`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{mealTypeInfo?.emoji || '🍽️'}</span>
+                        <div>
+                          <h4 className="font-semibold text-white capitalize">
+                            {mealTypeInfo?.label || recipe.mealType}
+                          </h4>
+                          <p className="text-white/80 font-medium">{recipe.név}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {recipe.elkészítésiIdő && (
+                          <Badge variant="outline" className="text-white border-white/30">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {recipe.elkészítésiIdő}
+                          </Badge>
+                        )}
+                        {recipe.adagok && (
+                          <Badge variant="outline" className="text-white border-white/30">
+                            <Users className="w-3 h-3 mr-1" />
+                            {recipe.adagok}
+                          </Badge>
+                        )}
+                        <Button
+                          onClick={() => toggleRecipeExpanded(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-white hover:bg-white/20"
+                        >
+                          {isExpanded ? (
+                            <>
+                              <EyeOff className="w-4 h-4 mr-1" />
+                              Bezár
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-4 h-4 mr-1" />
+                              Részletek
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-4 pt-4 border-t border-white/20">
+                        <RecipeDisplay
+                          recipe={recipe}
+                          isLoading={false}
+                          onRegenerate={() => {}}
+                          onNewRecipe={() => {}}
+                          user={user}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
