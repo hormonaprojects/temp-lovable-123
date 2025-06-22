@@ -15,7 +15,7 @@ interface MealSelectionCardProps {
   onToggle: (mealKey: string) => void;
   categories: string[];
   getIngredientsByCategory: (category: string) => string[];
-  getFavoriteForIngredient?: (ingredient: string) => boolean;
+  getFavoriteForIngredient?: (ingredient: string, category: string) => boolean;
   onGetRecipe: (mealType: string, category: string, ingredient: string) => Promise<void>;
   onSelectionChange: (mealType: string, category: string, ingredient: string) => void;
   isGenerating: boolean;
@@ -50,8 +50,8 @@ export function MealSelectionCard({
 
     // Sort ingredients: favorites first, then alphabetically
     return [...ingredients].sort((a, b) => {
-      const aIsFavorite = getFavoriteForIngredient(a);
-      const bIsFavorite = getFavoriteForIngredient(b);
+      const aIsFavorite = getFavoriteForIngredient(a, category);
+      const bIsFavorite = getFavoriteForIngredient(b, category);
       
       // If one is favorite and the other is not, favorite comes first
       if (aIsFavorite && !bIsFavorite) return -1;
@@ -144,7 +144,7 @@ export function MealSelectionCard({
                       Nincs megadva (random kategóriában)
                     </SelectItem>
                     {availableIngredients.map((ingredient) => {
-                      const isFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(ingredient) : false;
+                      const isFavorite = getFavoriteForIngredient ? getFavoriteForIngredient(ingredient, selectedCategory) : false;
                       return (
                         <SelectItem 
                           key={ingredient} 

@@ -35,8 +35,17 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     saveRating,
     loading,
     getFavoriteForIngredient,
-    handleFavoriteToggle
+    handleFavoriteToggle,
+    refreshFavorites
   } = useSupabaseData(user?.id);
+
+  // Kedvencek újratöltése amikor a komponens mountálódik
+  useEffect(() => {
+    if (user?.id) {
+      console.log('🔄 Kedvencek újratöltése DailyMealPlanner-ben...');
+      refreshFavorites();
+    }
+  }, [user?.id, refreshFavorites]);
 
   const mealTypes = [
     { key: 'reggeli', label: 'Reggeli', emoji: '🍳' },
@@ -264,15 +273,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
             onToggle={handleMealToggle}
             categories={Object.keys(categories)}
             getIngredientsByCategory={getFilteredIngredients}
-            getFavoriteForIngredient={(ingredient: string) => {
-              // Megkeressük, hogy melyik kategóriához tartozik az alapanyag
-              for (const [categoryName, ingredients] of Object.entries(categories)) {
-                if (ingredients.includes(ingredient)) {
-                  return getFavoriteForIngredient(ingredient, categoryName);
-                }
-              }
-              return false;
-            }}
+            getFavoriteForIngredient={getFavoriteForIngredient}
             onGetRecipe={handleGetRecipe}
             onSelectionChange={handleSelectionChange}
             isGenerating={isGenerating}
