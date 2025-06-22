@@ -37,7 +37,9 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     saveRating,
     loading,
     getFavoriteForIngredient,
-    refreshFavorites
+    refreshFavorites,
+    recipes,
+    mealTypes
   } = useSupabaseData(user?.id);
 
   // Kedvencek újratöltése amikor a komponens mountálódik
@@ -101,10 +103,17 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     setSelectedIngredients(ingredients);
     
     try {
+      // Extract meal type recipes from mealTypes object
+      const mealTypeRecipes: Record<string, string[]> = {};
+      Object.keys(mealTypes).forEach(mealType => {
+        mealTypeRecipes[mealType] = mealTypes[mealType] || [];
+      });
+
       const newRecipes = await generateDailyMealPlan(
         selectedMeals,
         ingredients,
-        getRecipesByMealType,
+        recipes,
+        mealTypeRecipes,
         convertToStandardRecipe
       );
       

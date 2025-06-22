@@ -1,6 +1,6 @@
 
 import { SupabaseRecipe } from '@/types/supabase';
-import { normalizeText } from '@/utils/textNormalization';
+import { getRecipesByMealType, filterRecipesByMultipleIngredients } from './recipeFilters';
 
 interface SelectedIngredient {
   category: string;
@@ -25,7 +25,8 @@ interface GeneratedRecipe {
 export const generateDailyMealPlan = async (
   selectedMeals: string[],
   ingredients: SelectedIngredient[],
-  getRecipesByMealType: (mealType: string) => SupabaseRecipe[],
+  recipes: SupabaseRecipe[],
+  mealTypeRecipes: Record<string, string[]>,
   convertToStandardRecipe: (recipe: SupabaseRecipe) => any
 ): Promise<GeneratedRecipe[]> => {
   console.log('🍽️ Napi étrend generálása:', { selectedMeals, ingredients });
@@ -35,32 +36,19 @@ export const generateDailyMealPlan = async (
   for (const mealType of selectedMeals) {
     console.log(`\n🔍 ${mealType} receptek keresése...`);
     
-    // Étkezési típus alapján receptek lekérése
-    const mealTypeRecipes = getRecipesByMealType(mealType);
-    console.log(`📋 ${mealType} összes recepte:`, mealTypeRecipes.length, 'db');
+    // Étkezési típus alapján receptek lekérése a refactorált függvénnyel
+    const mealTypeRecipes_filtered = getRecipesByMealType(recipes, mealTypeRecipes, mealType);
+    console.log(`📋 ${mealType} összes recepte:`, mealTypeRecipes_filtered.length, 'db');
     
-    let filteredRecipes = mealTypeRecipes;
+    let filteredRecipes = mealTypeRecipes_filtered;
     
-    // Ha vannak kiválasztott alapanyagok, szűrjük a recepteket
+    // Ha vannak kiválasztott alapanyagok, szűrjük a recepteket a refactorált függvénnyel
     if (ingredients.length > 0) {
       console.log(`🎯 Szűrés alapanyagok alapján:`, ingredients.map(ing => ing.ingredient));
       
-      filteredRecipes = mealTypeRecipes.filter(recipe => {
-        const recipeIngredients = getAllRecipeIngredients(recipe);
-        
-        // Ellenőrizzük, hogy legalább egy kiválasztott alapanyag szerepel-e a receptben
-        const hasMatchingIngredient = ingredients.some(selectedIng => 
-          hasIngredientMatch(recipeIngredients, selectedIng.ingredient)
-        );
-        
-        if (hasMatchingIngredient) {
-          console.log(`✅ Recept ELFOGADVA: "${recipe['Recept_Neve']}" tartalmazza a kiválasztott alapanyagokat`);
-        } else {
-          console.log(`❌ Recept ELUTASÍTVA: "${recipe['Recept_Neve']}" nem tartalmazza a kiválasztott alapanyagokat`);
-        }
-        
-        return hasMatchingIngredient;
-      });
+      // A refactorált filterRecipesByMultipleIngredients függvényt használjuk
+      const ingredientNames = ingredients.map(ing => ing.ingredient);
+      filteredRecipes = filterRecipesByMultipleIngredients(mealTypeRecipes_filtered, ingredientNames);
     }
     
     console.log(`📊 Szűrés után ${mealType}-hoz: ${filteredRecipes.length} recept`);
@@ -95,29 +83,4 @@ export const generateDailyMealPlan = async (
   
   console.log(`🏁 Végeredmény: ${newRecipes.length} recept generálva`);
   return newRecipes;
-};
-
-const getAllRecipeIngredients = (recipe: SupabaseRecipe): string[] => {
-  return [
-    recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
-    recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
-    recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
-    recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
-    recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
-    recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
-  ].filter(Boolean).map(ing => ing?.toString() || '');
-};
-
-const hasIngredientMatch = (recipeIngredients: string[], searchIngredient: string): boolean => {
-  const searchNormalized = normalizeText(searchIngredient);
-  
-  return recipeIngredients.some(recipeIng => {
-    const recipeIngNormalized = normalizeText(recipeIng);
-    
-    // Pontosabb egyezés: a recept hozzávalója tartalmazza a keresett alapanyagot
-    const containsIngredient = recipeIngNormalized.includes(searchNormalized);
-    const exactMatch = recipeIngNormalized === searchNormalized;
-    
-    return exactMatch || containsIngredient;
-  });
 };
