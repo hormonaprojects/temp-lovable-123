@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
@@ -281,7 +282,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
             </p>
           </div>
 
-          {/* Ingredients Grid */}
+          {/* Ingredients Grid - FONTOS: hideDisliked={false} */}
           <IngredientsGrid
             ingredients={currentIngredients}
             categoryName={categoryNames[currentCategoryIndex]}
@@ -289,6 +290,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
             getFavoriteForIngredient={getFavoriteForIngredient}
             onPreferenceChange={handlePreferenceChange}
             onFavoriteChange={handleFavoriteChange}
+            hideDisliked={false}
           />
 
           {/* Navigation */}
