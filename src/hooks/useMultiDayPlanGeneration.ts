@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Recipe } from '@/types/recipe';
 import { filterRecipesByMultipleIngredients } from '@/services/recipeFilters';
@@ -113,6 +112,82 @@ export function useMultiDayPlanGeneration({
     }
   };
 
+  const regenerateSingleRecipe = async (
+    day: number,
+    mealType: string,
+    ingredients: SelectedIngredient[] = []
+  ): Promise<Recipe | null> => {
+    console.log(`🔄 Egyetlen recept újragenerálása: ${day}. nap, ${mealType}`);
+    
+    try {
+      let foundRecipes = getRecipesByMealType(mealType);
+      
+      // Apply ingredient filtering if ingredients are selected
+      if (ingredients.length > 0) {
+        const ingredientNames = ingredients.map(ing => ing.ingredient);
+        foundRecipes = filterRecipesByMultipleIngredients(foundRecipes, ingredientNames);
+        console.log(`🎯 ${mealType} - szűrés után ${foundRecipes.length} recept`);
+      }
+      
+      if (foundRecipes.length === 0) {
+        console.log(`❌ ${mealType}: Nincs elérhető recept`);
+        return null;
+      }
+      
+      // Get current recipe to avoid duplicating it
+      const currentPlan = multiDayPlan.find(plan => plan.day === day);
+      const currentRecipe = currentPlan?.meals[mealType];
+      
+      // Filter out the current recipe if it exists
+      const availableRecipes = currentRecipe 
+        ? foundRecipes.filter(recipe => {
+            const standardRecipe = convertToStandardRecipe(recipe);
+            return standardRecipe.név !== currentRecipe.név;
+          })
+        : foundRecipes;
+      
+      if (availableRecipes.length === 0) {
+        console.log(`❌ ${mealType}: Nincs más elérhető recept`);
+        // If no other recipes available, use any recipe (including current one)
+        const randomIndex = Math.floor(Math.random() * foundRecipes.length);
+        const selectedSupabaseRecipe = foundRecipes[randomIndex];
+        const newRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
+        
+        // Update the plan
+        setMultiDayPlan(prevPlan => 
+          prevPlan.map(planDay => 
+            planDay.day === day 
+              ? { ...planDay, meals: { ...planDay.meals, [mealType]: newRecipe } }
+              : planDay
+          )
+        );
+        
+        console.log(`✅ ${mealType}: "${newRecipe.név}" újragenerálva (ugyanaz maradt)`);
+        return newRecipe;
+      }
+      
+      const randomIndex = Math.floor(Math.random() * availableRecipes.length);
+      const selectedSupabaseRecipe = availableRecipes[randomIndex];
+      const newRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
+      
+      // Update the specific recipe in the plan
+      setMultiDayPlan(prevPlan => 
+        prevPlan.map(planDay => 
+          planDay.day === day 
+            ? { ...planDay, meals: { ...planDay.meals, [mealType]: newRecipe } }
+            : planDay
+        )
+      );
+      
+      console.log(`✅ ${mealType}: "${newRecipe.név}" újragenerálva`);
+      return newRecipe;
+      
+    } catch (error) {
+      console.error('❌ Hiba az egyetlen recept újragenerálásakor:', error);
+      return null;
+    }
+  };
+
   const clearPlan = () => {
     setMultiDayPlan([]);
     console.log('🗑️ Többnapos étrend törölve');
@@ -124,6 +199,7 @@ export function useMultiDayPlanGeneration({
     generateMultiDayPlan,
     clearPlan,
     setMultiDayPlan,
-    setIsGenerating
+    setIsGenerating,
+    regenerateSingleRecipe
   };
 }

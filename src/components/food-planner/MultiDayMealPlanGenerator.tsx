@@ -42,6 +42,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
   const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>({});
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentRecipeContext, setCurrentRecipeContext] = useState<{day: number, mealType: string} | null>(null);
   
   const { toast } = useToast();
   
@@ -62,7 +63,8 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     generateMultiDayPlan,
     clearPlan,
     setMultiDayPlan,
-    setIsGenerating
+    setIsGenerating,
+    regenerateSingleRecipe
   } = useMultiDayPlanGeneration({
     getRecipesByMealType,
     convertToStandardRecipe
@@ -109,15 +111,17 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     await generateMultiDayPlan(selectedDays, selectedMeals, currentMealIngredients);
   };
 
-  const handleRecipeClick = (recipe: Recipe) => {
+  const handleRecipeClick = (recipe: Recipe, day: number, mealType: string) => {
     console.log('🔍 Recept megnyitása modalban:', recipe.név);
     setSelectedRecipe(recipe);
+    setCurrentRecipeContext({ day, mealType });
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedRecipe(null);
+    setCurrentRecipeContext(null);
   };
 
   const handleRating = async (rating: number) => {
@@ -141,6 +145,33 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
       toast({
         title: "Hiba",
         description: "Nem sikerült menteni az értékelést.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleGenerateSimilar = async () => {
+    if (!currentRecipeContext) return;
+    
+    console.log('🔄 Hasonló recept generálása:', currentRecipeContext);
+    
+    const mealSpecificIngredients = currentMealIngredients[currentRecipeContext.mealType] || [];
+    const newRecipe = await regenerateSingleRecipe(
+      currentRecipeContext.day,
+      currentRecipeContext.mealType,
+      mealSpecificIngredients
+    );
+    
+    if (newRecipe) {
+      toast({
+        title: "Új recept generálva!",
+        description: `${newRecipe.név} receptet generáltuk a ${currentRecipeContext.mealType} helyére.`,
+      });
+      handleCloseModal();
+    } else {
+      toast({
+        title: "Hiba",
+        description: "Nem sikerült új receptet generálni.",
         variant: "destructive"
       });
     }
@@ -303,7 +334,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
                         {recipe ? (
                           <div 
                             className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all duration-200 cursor-pointer"
-                            onClick={() => handleRecipeClick(recipe)}
+                            onClick={() => handleRecipeClick(recipe, dayPlan.day, mealType)}
                           >
                             <RecipeContent recipe={recipe} compact />
                           </div>
@@ -366,11 +397,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           onRating={handleRating}
-          onGenerateSimilar={() => {
-            // TODO: Implement generate similar functionality for multi-day planner
-            console.log('Generate similar not implemented for multi-day planner yet');
-            handleCloseModal();
-          }}
+          onGenerateSimilar={handleGenerateSimilar}
         />
       )}
     </div>
