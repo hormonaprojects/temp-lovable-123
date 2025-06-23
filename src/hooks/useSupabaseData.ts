@@ -53,7 +53,7 @@ export function useSupabaseData(userId?: string) {
     }
   }, [userId, loadUserPreferences, loadUserFavorites]);
 
-  // JAVÍTOTT: Initial data loading - üres dependency array, csak egyszer fut le
+  // FIXED: Initial data loading - runs only once on component mount
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -102,9 +102,9 @@ export function useSupabaseData(userId?: string) {
     };
 
     loadInitialData();
-  }, []); // Üres dependency array - csak egyszer fut le!
+  }, []); // Empty dependency array - runs only once!
 
-  // Külön loadData function a manuális refetch-hez
+  // Separate loadData function for manual refetch
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
