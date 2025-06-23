@@ -194,6 +194,26 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     }
   };
 
+  const handleGenerateSimilar = async () => {
+    console.log('🔄 Hasonló recept generálása ugyanazokkal a paraméterekkel...');
+    
+    if (showIngredientSelection && lastSearchParams.category && lastSearchParams.ingredient) {
+      // Ha van több kategóriás keresés, használjuk azt
+      const ingredientsArray = lastSearchParams.ingredient.split(", ").map(item => {
+        const match = item.match(/^(.+) \((.+)\)$/);
+        if (match) {
+          return { ingredient: match[1], category: match[2] };
+        }
+        return { ingredient: item, category: lastSearchParams.category };
+      });
+      
+      await getMultipleCategoryRecipes(ingredientsArray);
+    } else {
+      // Egyszerű újragenerálás
+      await regenerateRecipe();
+    }
+  };
+
   const regenerateRecipe = async () => {
     if (selectedMealType) {
       setIsLoading(true);
@@ -346,6 +366,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
             isLoading={isLoading}
             onRegenerate={regenerateRecipe}
             onNewRecipe={resetForm}
+            onGenerateSimilar={handleGenerateSimilar}
             user={user}
           />
         </>

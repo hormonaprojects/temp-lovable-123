@@ -43,15 +43,14 @@ export function RecipeActions({
       {showButtons && (
         <div className="flex justify-center gap-2 mt-2 sm:mt-3">
           <FavoriteButton user={user} recipe={recipe} />
-          {onGenerateSimilar && (
-            <Button
-              onClick={onGenerateSimilar}
-              className="bg-gradient-to-r from-green-600/80 to-emerald-600/80 hover:from-green-700/90 hover:to-emerald-700/90 backdrop-blur-sm border border-green-300/20 text-white px-3 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-            >
-              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Hasonló generálása
-            </Button>
-          )}
+          
+          <Button
+            onClick={onGenerateSimilar}
+            className="bg-gradient-to-r from-green-600/80 to-emerald-600/80 hover:from-green-700/90 hover:to-emerald-700/90 backdrop-blur-sm border border-green-300/20 text-white px-3 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+          >
+            <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            Hasonló generálása
+          </Button>
         </div>
       )}
     </div>

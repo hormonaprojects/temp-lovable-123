@@ -102,6 +102,7 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, on
         isOpen={fullScreenModalOpen}
         onClose={() => setFullScreenModalOpen(false)}
         onRating={handleRating}
+        onGenerateSimilar={onGenerateSimilar}
       />
     </>
   );
