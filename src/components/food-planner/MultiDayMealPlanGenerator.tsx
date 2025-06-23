@@ -108,6 +108,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
       return;
     }
 
+    // Don't clear ingredients - keep them persistent
     await generateMultiDayPlan(selectedDays, selectedMeals, currentMealIngredients);
   };
 
@@ -254,7 +255,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
         subtitle="Kattints az étkezésekre a kiválasztáshoz"
       />
 
-      {/* Shared Ingredient Selector */}
+      {/* Shared Ingredient Selector - Keep ingredients persistent */}
       <SharedIngredientSelector
         selectedMeals={selectedMeals}
         categories={categories}
@@ -262,6 +263,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
         getFavoriteForIngredient={getFavoriteForIngredient}
         getPreferenceForIngredient={getPreferenceForIngredient}
         onMealIngredientsChange={handleMealIngredientsChange}
+        initialMealIngredients={currentMealIngredients}
         showIngredientSelection={showIngredientSelection}
         title="Alapanyag szűrés (opcionális)"
       />

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +40,13 @@ export function SharedIngredientSelector({
 }: SharedIngredientSelectorProps) {
   const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>(initialMealIngredients);
   const [activeMealType, setActiveMealType] = useState<string>(selectedMeals[0] || '');
+
+  // Keep ingredients persistent - don't reset them
+  useEffect(() => {
+    if (Object.keys(initialMealIngredients).length > 0) {
+      setCurrentMealIngredients(initialMealIngredients);
+    }
+  }, [initialMealIngredients]);
 
   useEffect(() => {
     if (selectedMeals.length > 0 && !selectedMeals.includes(activeMealType)) {
