@@ -15,6 +15,15 @@ interface RecipeModalProps {
 }
 
 export function RecipeModal({ recipe, user, isOpen, onClose, onRating, onGenerateSimilar }: RecipeModalProps) {
+  const handleGenerateSimilarWrapper = () => {
+    console.log('🔄 RecipeModal - Generate Similar wrapper called');
+    if (onGenerateSimilar) {
+      onGenerateSimilar();
+    }
+    // Close modal after generating similar recipe
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -41,7 +50,7 @@ export function RecipeModal({ recipe, user, isOpen, onClose, onRating, onGenerat
             onRegenerate={() => {}}
             onNewRecipe={() => {}}
             onRating={onRating}
-            onGenerateSimilar={onGenerateSimilar}
+            onGenerateSimilar={handleGenerateSimilarWrapper}
             isFullScreen={true}
           />
           

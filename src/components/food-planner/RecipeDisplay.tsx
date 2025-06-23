@@ -65,6 +65,13 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, on
     }
   };
 
+  const handleGenerateSimilarWrapper = () => {
+    console.log('🔄 RecipeDisplay - Generate Similar wrapper called');
+    if (onGenerateSimilar) {
+      onGenerateSimilar();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
@@ -92,7 +99,7 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, on
           onRegenerate={onRegenerate}
           onNewRecipe={onNewRecipe}
           onRating={handleRating}
-          onGenerateSimilar={onGenerateSimilar}
+          onGenerateSimilar={handleGenerateSimilarWrapper}
         />
       </div>
 
@@ -102,7 +109,7 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, on
         isOpen={fullScreenModalOpen}
         onClose={() => setFullScreenModalOpen(false)}
         onRating={handleRating}
-        onGenerateSimilar={onGenerateSimilar}
+        onGenerateSimilar={handleGenerateSimilarWrapper}
       />
     </>
   );
