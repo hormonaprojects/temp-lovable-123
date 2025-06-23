@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +38,7 @@ interface MultiDayMealPlanGeneratorProps {
 
 export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorProps) {
   const [selectedDays, setSelectedDays] = useState(3);
-  const [selectedMeals, setSelectedMeals] = useState<string[]>(['reggeli', 'ebéd', 'vacsora']);
+  const [selectedMeals, setSelectedMeals] = useState<string[]>([]); // Changed from ['reggeli', 'ebéd', 'vacsora'] to []
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
   const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>({});
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
