@@ -24,11 +24,11 @@ interface IngredientSelectionSectionProps {
 }
 
 const mealTypes = [
-  { key: 'reggeli', label: 'Reggeli', emoji: '🍳' },
-  { key: 'tízórai', label: 'Tízórai', emoji: '🥪' },
-  { key: 'ebéd', label: 'Ebéd', emoji: '🍽️' },
-  { key: 'uzsonna', label: 'Uzsonna', emoji: '🧁' },
-  { key: 'vacsora', label: 'Vacsora', emoji: '🌮' }
+  { key: 'reggeli', label: '🌅 Reggeli', emoji: '🌅' },
+  { key: 'tízórai', label: '☕ Tízórai', emoji: '☕' },
+  { key: 'ebéd', label: '🍽️ Ebéd', emoji: '🍽️' },
+  { key: 'uzsonna', label: '🥨 Uzsonna', emoji: '🥨' },
+  { key: 'vacsora', label: '🌙 Vacsora', emoji: '🌙' }
 ];
 
 export function IngredientSelectionSection({

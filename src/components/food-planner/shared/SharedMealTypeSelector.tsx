@@ -19,11 +19,11 @@ export function SharedMealTypeSelector({
   subtitle = "Kattints az étkezésekre a kiválasztáshoz"
 }: SharedMealTypeSelectorProps) {
   const mealTypes = [
-    { key: 'reggeli', name: '🌅 Reggeli', icon: '☀️' },
+    { key: 'reggeli', name: '🌅 Reggeli', icon: '🌅' },
     { key: 'tízórai', name: '☕ Tízórai', icon: '☕' },
     { key: 'ebéd', name: '🍽️ Ebéd', icon: '🍽️' },
     { key: 'uzsonna', name: '🥨 Uzsonna', icon: '🥨' },
-    { key: 'vacsora', name: '🌙 Vacsora', icon: '🌜' }
+    { key: 'vacsora', name: '🌙 Vacsora', icon: '🌙' }
   ];
 
   return (
