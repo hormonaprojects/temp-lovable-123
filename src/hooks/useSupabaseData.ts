@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SupabaseRecipe, MealTypeData } from '@/types/supabase';
@@ -138,25 +139,35 @@ export function useSupabaseData(userId?: string) {
     }
   }, [toast]);
 
+  // JAVÍTOTT: Stabil függvények - nem újra jönnek létre minden rendereléskor
   const getRecipesByMealTypeHandler = useCallback((mealType: string): SupabaseRecipe[] => {
+    if (!recipes.length || !Object.keys(mealTypeRecipes).length) {
+      return [];
+    }
     return getRecipesByMealType(recipes, mealTypeRecipes, mealType, userPreferences);
-  }, [recipes, mealTypeRecipes, userPreferences]);
+  }, [recipes.length, Object.keys(mealTypeRecipes).length, userPreferences.length]);
 
   const getRecipesByCategoryHandler = useCallback((category: string, ingredient?: string, mealType?: string): SupabaseRecipe[] => {
+    if (!recipes.length || !Object.keys(categories).length) {
+      return [];
+    }
     return getRecipesByCategory(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
-  }, [recipes, mealTypeRecipes, categories, userPreferences]);
+  }, [recipes.length, Object.keys(categories).length, Object.keys(mealTypeRecipes).length, userPreferences.length]);
 
   const getFilteredIngredients = useCallback((category: string): string[] => {
+    if (!Object.keys(categories).length) {
+      return [];
+    }
     const allIngredients = categories[category] || [];
     if (userPreferences.length === 0) return allIngredients;
     
     return filterIngredientsByPreferences(allIngredients, category, userPreferences);
-  }, [categories, userPreferences]);
+  }, [Object.keys(categories).length, userPreferences.length]);
 
   const getRandomRecipe = useCallback((): SupabaseRecipe | null => {
     if (recipes.length === 0) return null;
     return recipes[Math.floor(Math.random() * recipes.length)];
-  }, [recipes]);
+  }, [recipes.length]);
 
   const saveRating = async (recipeName: string, rating: number) => {
     if (!userId) {
@@ -175,11 +186,12 @@ export function useSupabaseData(userId?: string) {
   };
 
   const getFavoriteForIngredient = useCallback((ingredient: string, category?: string): boolean => {
+    if (!userFavorites.length) return false;
     if (!category) {
       return userFavorites.some(fav => fav.ingredient === ingredient);
     }
     return isFavoriteIngredient(ingredient, category, userFavorites);
-  }, [userFavorites]);
+  }, [userFavorites.length]);
 
   const handleFavoriteToggle = async (ingredient: string, category: string, isFavorite: boolean) => {
     if (!userId) return false;
