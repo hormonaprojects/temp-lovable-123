@@ -26,18 +26,14 @@ export function DailyMealPlanner({
   onGenerateSimilar 
 }: DailyMealPlannerProps) {
   const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
-  const { generateMealPlan } = useMealPlanGeneration();
-  const [isLoading, setIsLoading] = useState(false);
-
+  const { handleGenerateMealPlan, isGenerating } = useMealPlanGeneration();
+  
   const handleGenerateDailyPlan = async () => {
-    setIsLoading(true);
     try {
-      const recipes = await generateMealPlan(selectedMeals);
+      const recipes = await handleGenerateMealPlan({ selectedMeals });
       setGeneratedRecipes(recipes);
     } catch (error) {
       console.error("Error generating daily meal plan:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -59,12 +55,15 @@ export function DailyMealPlanner({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {Object.entries(categories).map(([mealType]) => (
-              <MealSelectionCard
-                key={mealType}
-                mealType={mealType}
-                getFilteredIngredients={getFilteredIngredients}
-                getRecipesByMealType={getRecipesByMealType}
-              />
+              <div key={mealType}>
+                {/* Simplified meal selection - just showing meal types for now */}
+                <div className="bg-white/10 p-4 rounded-lg">
+                  <h3 className="text-white capitalize">{mealType}</h3>
+                  <p className="text-white/70 text-sm">
+                    {getRecipesByMealType(mealType).length} receptek
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
         </CardContent>
@@ -72,8 +71,9 @@ export function DailyMealPlanner({
 
       <MealPlanGenerationButton 
         selectedMeals={selectedMeals}
-        isLoading={isLoading}
-        onGenerateDailyPlan={handleGenerateDailyPlan}
+        selectedIngredients={[]}
+        isGenerating={isGenerating}
+        onGenerateMealPlan={handleGenerateDailyPlan}
       />
 
       {generatedRecipes.length > 0 && (

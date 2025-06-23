@@ -55,7 +55,10 @@ export function SingleRecipeApp({ user, onGenerateSimilar }: SingleRecipeAppProp
 
   return (
     <div className="space-y-6">
-      <RecipeForm onGenerate={generateRecipe} onNewRecipe={handleNewRecipe} />
+      <RecipeForm 
+        onGenerate={generateRecipe} 
+        onNewRecipe={handleNewRecipe} 
+      />
 
       <RecipeDisplay
         recipe={recipe}

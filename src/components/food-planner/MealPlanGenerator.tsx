@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChefHat, Calendar, Utensils } from "lucide-react";
-import { FunctionSelector } from "./FunctionSelector";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
 import { DailyMealPlanner } from "./DailyMealPlanner";
 import { MultiDayMealPlanGenerator } from "./MultiDayMealPlanGenerator";
@@ -33,6 +32,10 @@ export function MealPlanGenerator({ user, onGenerateSimilar }: MealPlanGenerator
     });
   };
 
+  const getRecipeCount = (mealType: string) => {
+    return getRecipesByMealType(mealType).length;
+  };
+
   return (
     <div className="space-y-8">
       <section>
@@ -43,7 +46,22 @@ export function MealPlanGenerator({ user, onGenerateSimilar }: MealPlanGenerator
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <FunctionSelector activeFunction={activeFunction} onSelect={setActiveFunction} />
+            <div className="flex gap-4">
+              <Button
+                variant={activeFunction === 'daily' ? 'default' : 'outline'}
+                onClick={() => setActiveFunction('daily')}
+                className="text-white"
+              >
+                Napi Étrend
+              </Button>
+              <Button
+                variant={activeFunction === 'multi-day' ? 'default' : 'outline'}
+                onClick={() => setActiveFunction('multi-day')}
+                className="text-white"
+              >
+                Többnapos Étrend
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </section>
@@ -59,7 +77,8 @@ export function MealPlanGenerator({ user, onGenerateSimilar }: MealPlanGenerator
             <CardContent>
               <MealTypeCardSelector
                 selectedMeals={selectedMeals}
-                onMealSelect={handleMealSelect}
+                onMealToggle={handleMealSelect}
+                getRecipeCount={getRecipeCount}
               />
             </CardContent>
           </Card>
