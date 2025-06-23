@@ -52,9 +52,62 @@ export function useSupabaseData(userId?: string) {
     }
   }, [userId, loadUserPreferences, loadUserFavorites]);
 
+  // JAVÍTOTT: Initial data loading - üres dependency array, csak egyszer fut le
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        console.log('🔄 Valódi adatok betöltése Supabase-ből...');
+        
+        const [categoriesData, mealTypesData, recipesData] = await Promise.all([
+          fetchCategories(),
+          fetchMealTypes(),
+          fetchRecipes()
+        ]);
+
+        console.log('📊 Nyers adatok betöltve:', {
+          categories: categoriesData?.length || 0,
+          mealTypes: mealTypesData?.length || 0,
+          recipes: recipesData?.length || 0
+        });
+
+        const processedCategories = processCategories(categoriesData || []);
+        const processedMealTypeRecipes = processMealTypes(mealTypesData || []);
+        const processedMealTypes = createMealTypesDisplay(processedMealTypeRecipes);
+
+        console.log('📊 Feldolgozott kategóriák:', processedCategories);
+
+        setCategories(processedCategories);
+        setMealTypes(processedMealTypes);
+        setMealTypeRecipes(processedMealTypeRecipes);
+        setRecipes(recipesData || []);
+        
+        console.log('✅ Adatok sikeresen betöltve:', {
+          categories: Object.keys(processedCategories).length,
+          mealTypes: Object.keys(processedMealTypes).length,
+          totalRecipesInMealTypes: Object.values(processedMealTypes).reduce((acc, recipes) => acc + recipes.length, 0),
+          recipes: recipesData?.length || 0
+        });
+
+      } catch (error) {
+        console.error('❌ Adatok betöltési hiba:', error);
+        toast({
+          title: "Hiba",
+          description: "Nem sikerült betölteni az adatokat az adatbázisból.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, []); // Üres dependency array - csak egyszer fut le!
+
+  // Külön loadData function a manuális refetch-hez
   const loadData = useCallback(async () => {
+    setLoading(true);
     try {
-      console.log('🔄 Valódi adatok betöltése Supabase-ből...');
+      console.log('🔄 Valódi adatok újratöltése Supabase-ből...');
       
       const [categoriesData, mealTypesData, recipesData] = await Promise.all([
         fetchCategories(),
@@ -62,32 +115,19 @@ export function useSupabaseData(userId?: string) {
         fetchRecipes()
       ]);
 
-      console.log('📊 Nyers adatok betöltve:', {
-        categories: categoriesData?.length || 0,
-        mealTypes: mealTypesData?.length || 0,
-        recipes: recipesData?.length || 0
-      });
-
       const processedCategories = processCategories(categoriesData || []);
       const processedMealTypeRecipes = processMealTypes(mealTypesData || []);
       const processedMealTypes = createMealTypesDisplay(processedMealTypeRecipes);
-
-      console.log('📊 Feldolgozott kategóriák:', processedCategories);
 
       setCategories(processedCategories);
       setMealTypes(processedMealTypes);
       setMealTypeRecipes(processedMealTypeRecipes);
       setRecipes(recipesData || []);
       
-      console.log('✅ Adatok sikeresen betöltve:', {
-        categories: Object.keys(processedCategories).length,
-        mealTypes: Object.keys(processedMealTypes).length,
-        totalRecipesInMealTypes: Object.values(processedMealTypes).reduce((acc, recipes) => acc + recipes.length, 0),
-        recipes: recipesData?.length || 0
-      });
+      console.log('✅ Adatok sikeresen újratöltve');
 
     } catch (error) {
-      console.error('❌ Adatok betöltési hiba:', error);
+      console.error('❌ Adatok újratöltési hiba:', error);
       toast({
         title: "Hiba",
         description: "Nem sikerült betölteni az adatokat az adatbázisból.",
@@ -97,10 +137,6 @@ export function useSupabaseData(userId?: string) {
       setLoading(false);
     }
   }, [toast]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   const getRecipesByMealTypeHandler = useCallback((mealType: string): SupabaseRecipe[] => {
     return getRecipesByMealType(recipes, mealTypeRecipes, mealType, userPreferences);
