@@ -20,6 +20,9 @@ export function GeneratedMealPlan({ generatedRecipes, user, onGenerateSimilar }:
   const { toast } = useToast();
   const { saveRating } = useSupabaseData(user?.id);
 
+  // Define meal order for consistent display
+  const mealOrder = ['reggeli', 'tízórai', 'ebéd', 'uzsonna', 'vacsora'];
+
   // Automatikus scroll az új étrendhez
   useEffect(() => {
     if (generatedRecipes.length > 0) {
@@ -86,11 +89,24 @@ export function GeneratedMealPlan({ generatedRecipes, user, onGenerateSimilar }:
     return null;
   }
 
+  // Sort recipes by meal order
+  const sortedRecipes = [...generatedRecipes].sort((a, b) => {
+    const orderA = mealOrder.indexOf(a.mealType);
+    const orderB = mealOrder.indexOf(b.mealType);
+    
+    // If meal types are not in the order array, put them at the end
+    if (orderA === -1 && orderB === -1) return 0;
+    if (orderA === -1) return 1;
+    if (orderB === -1) return -1;
+    
+    return orderA - orderB;
+  });
+
   return (
     <div className="generated-meal-plan space-y-4 sm:space-y-6 mt-6 sm:mt-8">
       <div className="text-center mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
-          🍽️ Generált napi étrend ({generatedRecipes.length} étkezés)
+          🍽️ Generált napi étrend ({sortedRecipes.length} étkezés)
         </h2>
         <p className="text-white/80 text-sm sm:text-base">
           Kattintson bármelyik étkezésre a recept megnyitásához
@@ -98,7 +114,7 @@ export function GeneratedMealPlan({ generatedRecipes, user, onGenerateSimilar }:
       </div>
 
       <div className="grid gap-4 sm:gap-6">
-        {generatedRecipes.map((recipe, index) => {
+        {sortedRecipes.map((recipe, index) => {
           const recipeKey = `${recipe.mealType}-${index}`;
           const isExpanded = expandedRecipes.has(recipeKey);
           

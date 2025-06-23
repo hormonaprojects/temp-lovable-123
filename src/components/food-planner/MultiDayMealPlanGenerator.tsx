@@ -73,6 +73,9 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
 
   const dayOptions = [3, 5, 7];
 
+  // Define meal order for consistent display
+  const mealOrder = ['reggeli', 'tízórai', 'ebéd', 'uzsonna', 'vacsora'];
+
   const handleMealToggle = (mealKey: string) => {
     setSelectedMeals(prev => {
       const newSelectedMeals = prev.includes(mealKey) 
@@ -166,7 +169,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     if (newRecipe) {
       toast({
         title: "Új recept generálva!",
-        description: `${newRecipe.név} receptet generáltuk a ${currentRecipeContext.mealType} helyére.`,
+        description: `${newRecipe.név} receptet generáltunk a ${currentRecipeContext.mealType} helyére.`,
       });
       handleCloseModal();
     } else {
@@ -333,7 +336,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
                   selectedMeals.length === 4 ? 'md:grid-cols-2 lg:grid-cols-4' :
                   'md:grid-cols-2 lg:grid-cols-5'
                 }`}>
-                  {selectedMeals.map((mealType) => {
+                  {mealOrder.filter(mealType => selectedMeals.includes(mealType)).map((mealType) => {
                     const recipe = dayPlan.meals[mealType];
                     return (
                       <div key={mealType} className="space-y-3">
