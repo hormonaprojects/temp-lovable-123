@@ -88,6 +88,8 @@ export function useMealPlanGeneration({
     isGenerating,
     selectedIngredients: [],
     handleGenerateMealPlan,
-    handleGetMultipleCategoryRecipes
+    handleGetMultipleCategoryRecipes,
+    setGeneratedRecipes,
+    setIsGenerating
   };
 }
