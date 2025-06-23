@@ -1,7 +1,7 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
-import { LoadingChef } from "@/components/ui/LoadingChef";
 import { Recipe } from "@/types/recipe";
 import { RecipeDisplay } from "./RecipeDisplay";
 import { RecipeForm } from "./RecipeForm";
@@ -54,11 +54,7 @@ export function SingleRecipeApp({ user, onGenerateSimilar }: SingleRecipeAppProp
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
-      <header className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold text-center mb-4">Recept Generátor</h1>
-      </header>
-
+    <div className="space-y-6">
       <RecipeForm onGenerate={generateRecipe} onNewRecipe={handleNewRecipe} />
 
       <RecipeDisplay

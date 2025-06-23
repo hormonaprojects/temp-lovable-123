@@ -1,12 +1,12 @@
+
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChefHat, Utensils } from "lucide-react";
+import { Utensils } from "lucide-react";
 import { DailyMealHeader } from "./DailyMealHeader";
 import { MealSelectionCard } from "./MealSelectionCard";
 import { GeneratedMealPlan } from "./GeneratedMealPlan";
 import { MealPlanGenerationButton } from "./MealPlanGenerationButton";
-import { useMultiDayPlanGeneration } from "@/hooks/useMultiDayPlanGeneration";
+import { useMealPlanGeneration } from "@/hooks/useMealPlanGeneration";
 
 interface DailyMealPlannerProps {
   selectedMeals: string[];
@@ -26,13 +26,13 @@ export function DailyMealPlanner({
   onGenerateSimilar 
 }: DailyMealPlannerProps) {
   const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
-  const { generateDailyPlan } = useMultiDayPlanGeneration();
+  const { generateMealPlan } = useMealPlanGeneration();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGenerateDailyPlan = async () => {
     setIsLoading(true);
     try {
-      const recipes = await generateDailyPlan(selectedMeals);
+      const recipes = await generateMealPlan(selectedMeals);
       setGeneratedRecipes(recipes);
     } catch (error) {
       console.error("Error generating daily meal plan:", error);
@@ -47,7 +47,7 @@ export function DailyMealPlanner({
 
   return (
     <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-      <DailyMealHeader />
+      <DailyMealHeader onToggleSingleRecipe={() => {}} />
 
       <Card className="bg-white/5 backdrop-blur-lg border-white/20 shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -58,11 +58,10 @@ export function DailyMealPlanner({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Object.entries(categories).map(([mealType, ingredients]) => (
+            {Object.entries(categories).map(([mealType]) => (
               <MealSelectionCard
                 key={mealType}
                 mealType={mealType}
-                ingredients={ingredients}
                 getFilteredIngredients={getFilteredIngredients}
                 getRecipesByMealType={getRecipesByMealType}
               />
@@ -72,7 +71,7 @@ export function DailyMealPlanner({
       </Card>
 
       <MealPlanGenerationButton 
-        hasSelectedMeals={hasSelectedMeals}
+        selectedMeals={selectedMeals}
         isLoading={isLoading}
         onGenerateDailyPlan={handleGenerateDailyPlan}
       />

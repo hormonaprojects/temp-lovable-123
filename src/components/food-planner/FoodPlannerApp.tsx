@@ -1,5 +1,5 @@
+
 import { useState, useEffect } from 'react';
-import { useUser } from '@/hooks/useUser';
 import { Navigation } from './Navigation';
 import { SingleRecipeApp } from './SingleRecipeApp';
 import { MealPlanGenerator } from './MealPlanGenerator';
@@ -24,8 +24,7 @@ export function FoodPlannerApp({ user }: FoodPlannerAppProps) {
     localStorage.setItem('currentPage', page);
   };
 
-  // Add the onGenerateSimilar function
-  const handleGenerateSimilar = (recipe: any, mealType: string) => {
+  const handleGenerateSimilar = (recipe: any, mealType?: string) => {
     console.log('Generating similar recipe for:', recipe.név, 'meal type:', mealType);
     // TODO: Implement similar recipe generation logic
   };
