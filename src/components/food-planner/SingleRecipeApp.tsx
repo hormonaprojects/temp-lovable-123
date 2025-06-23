@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
 import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
@@ -304,7 +303,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   };
 
   // Transform mealTypes to match FoodData interface
-  const transformedMealTypes = Object.keys(m realTypes).reduce((acc, mealType) => {
+  const transformedMealTypes = Object.keys(mealTypes).reduce((acc, mealType) => {
     acc[mealType] = {
       categories: categories
     };
