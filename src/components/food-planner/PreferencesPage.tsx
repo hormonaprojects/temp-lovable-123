@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import {
   updateUserPreference,
   FoodPreference 
 } from "@/services/foodPreferencesQueries";
-import { PreferencesCategorySelector } from "./PreferencesCategorySelector";
+import { IngredientsGrid } from "./IngredientsGrid";
 import { supabase } from '@/integrations/supabase/client';
 
 interface User {
@@ -100,7 +101,6 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   };
 
   const handleCategorySelect = (category: string) => {
-    // Egyszerűsített logika - mindig kiválasztjuk a kategóriát
     setSelectedCategory(category);
     
     // Görgessünk le az alapanyagokhoz
@@ -116,29 +116,31 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     }, 100);
   };
 
-  const handlePreferenceUpdate = async (ingredient: string, category: string, preference: 'like' | 'dislike' | 'neutral') => {
+  const handlePreferenceUpdate = async (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => {
+    if (!selectedCategory) return;
+    
     try {
-      console.log('🔄 Preferencia frissítése:', { ingredient, category, preference });
+      console.log('🔄 Preferencia frissítése:', { ingredient, category: selectedCategory, preference });
       
       // Update in database
-      await updateUserPreference(user.id, ingredient, category, preference);
+      await updateUserPreference(user.id, ingredient, selectedCategory, preference);
       
       // Update local state
       setUserPreferences(prev => {
         const existingIndex = prev.findIndex(p => 
-          p.ingredient === ingredient && p.category === category
+          p.ingredient === ingredient && p.category === selectedCategory
         );
         
         if (preference === 'neutral') {
           // Remove the preference if it exists
-          return prev.filter(p => !(p.ingredient === ingredient && p.category === category));
+          return prev.filter(p => !(p.ingredient === ingredient && p.category === selectedCategory));
         } else {
           // Add or update the preference
           const newPreference: FoodPreference = {
             id: existingIndex >= 0 ? prev[existingIndex].id : crypto.randomUUID(),
             user_id: user.id,
             ingredient,
-            category,
+            category: selectedCategory,
             preference,
             created_at: existingIndex >= 0 ? prev[existingIndex].created_at : new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -167,8 +169,12 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     }
   };
 
+  const handleFavoriteChange = (ingredient: string, isFavorite: boolean) => {
+    // For now, we don't handle favorites in preferences page
+    console.log('Favorite change:', { ingredient, category: selectedCategory, isFavorite });
+  };
+
   const getStatsForCategory = (category: string) => {
-    // Csak azokat a preferenciákat számoljuk, amelyek létező alapanyagokra vonatkoznak
     const availableIngredients = categoryIngredients[category] || [];
     const categoryPrefs = userPreferences.filter(p => 
       p.category === category && availableIngredients.includes(p.ingredient)
@@ -181,7 +187,6 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   };
 
   const getTotalStats = () => {
-    // Összesített statisztikák csak a létező alapanyagokra
     let totalLiked = 0;
     let totalDisliked = 0;
     
@@ -198,27 +203,17 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     };
   };
 
-  const getPreferenceForIngredient = (ingredient: string, category: string): 'like' | 'dislike' | 'neutral' => {
+  const getPreferenceForIngredient = (ingredient: string): 'like' | 'dislike' | 'neutral' => {
+    if (!selectedCategory) return 'neutral';
+    
     const preference = userPreferences.find(p => 
-      p.ingredient === ingredient && p.category === category
+      p.ingredient === ingredient && p.category === selectedCategory
     );
     return preference?.preference || 'neutral';
   };
 
-  const getFavoriteForIngredient = (ingredient: string, category: string): boolean => {
-    // For now, we don't have a separate favorites system in preferences page
-    // This is just a placeholder to match the interface
-    return false;
-  };
-
-  const handleFavoriteChange = (ingredient: string, category: string, isFavorite: boolean) => {
-    // For now, we don't handle favorites in preferences page
-    // This is just a placeholder to match the interface
-    console.log('Favorite change:', { ingredient, category, isFavorite });
-  };
-
-  const getFilteredIngredients = (category: string): string[] => {
-    return categoryIngredients[category] || [];
+  const getFavoriteForIngredient = (ingredient: string): boolean => {
+    return false; // Placeholder
   };
 
   if (loading) {
@@ -288,7 +283,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                     variant="outline"
                     className={`h-auto p-3 sm:p-4 flex-col gap-2 transition-all duration-200 text-sm sm:text-base ${
                       isSelected
-                        ? 'bg-purple-600/30 border-purple-400/50 text-white shadow-lg'
+                        ? 'bg-purple-600/30 border-purple-400/50 text-white shadow-lg ring-2 ring-purple-400/50'
                         : 'bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30'
                     }`}
                   >
@@ -310,18 +305,27 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
           </CardContent>
         </Card>
 
-        {/* Category Ingredient Selector - Egyetlen kattintásra megjelennek az alapanyagok */}
+        {/* Ingredients for Selected Category */}
         {selectedCategory && (
           <div data-scroll-target="category-ingredients">
-            <PreferencesCategorySelector
-              categories={categoryIngredients}
-              getFilteredIngredients={getFilteredIngredients}
-              getPreferenceForIngredient={getPreferenceForIngredient}
-              getFavoriteForIngredient={getFavoriteForIngredient}
-              onPreferenceChange={handlePreferenceUpdate}
-              onFavoriteChange={handleFavoriteChange}
-              hideDisliked={false}
-            />
+            <Card className="bg-white/10 border-white/20">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white text-xl text-center">
+                  {selectedCategory} alapanyagai
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <IngredientsGrid
+                  ingredients={categoryIngredients[selectedCategory] || []}
+                  categoryName={selectedCategory}
+                  getPreferenceForIngredient={getPreferenceForIngredient}
+                  getFavoriteForIngredient={getFavoriteForIngredient}
+                  onPreferenceChange={handlePreferenceUpdate}
+                  onFavoriteChange={handleFavoriteChange}
+                  hideDisliked={false}
+                />
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

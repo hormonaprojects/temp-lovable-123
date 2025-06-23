@@ -40,10 +40,7 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
           variant: "destructive",
         });
       } else {
-        toast({
-          title: "Sikeres bejelentkezés! 🎉",
-          description: "Üdvözlünk újra!",
-        });
+        // Nincs toast - csak sikeres átirányítás
         onSuccess();
       }
     } catch (error) {
@@ -92,10 +89,7 @@ export function ModernAuthForm({ onSuccess }: ModernAuthFormProps) {
           variant: "destructive",
         });
       } else {
-        toast({
-          title: "Sikeres regisztráció! 🎉",
-          description: "Fiókod sikeresen létrehozva!",
-        });
+        // POPUP ALERT ELTÁVOLÍTVA - csak sikeres átirányítás
         onSuccess();
       }
     } catch (error) {
