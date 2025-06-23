@@ -1,4 +1,5 @@
 
+
 import { useState } from 'react';
 import { filterRecipesByMultipleIngredients } from '@/services/recipeFilters';
 
@@ -24,7 +25,6 @@ export function useMealPlanGeneration({
 }: UseMealPlanGenerationProps) {
   const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
 
   const handleGenerateMealPlan = async (mealIngredients: MealIngredients = {}) => {
     if (selectedMeals.length === 0) {
@@ -39,10 +39,6 @@ export function useMealPlanGeneration({
 
     console.log('🍽️ Napi étrend generálás indítása:', { selectedMeals, mealIngredients });
     setIsGenerating(true);
-    
-    // Összesítjük az összes kiválasztott alapanyagot a selectedIngredients state-hez
-    const allIngredients = Object.values(mealIngredients).flat();
-    setSelectedIngredients(allIngredients);
     
     try {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
@@ -124,8 +120,9 @@ export function useMealPlanGeneration({
   return {
     generatedRecipes,
     isGenerating,
-    selectedIngredients,
+    selectedIngredients: [], // Üres tömb, hogy ne okozzon újrarenderelést
     handleGenerateMealPlan,
     handleGetMultipleCategoryRecipes
   };
 }
+
