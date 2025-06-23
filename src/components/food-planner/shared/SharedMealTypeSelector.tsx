@@ -20,7 +20,9 @@ export function SharedMealTypeSelector({
 }: SharedMealTypeSelectorProps) {
   const mealTypes = [
     { key: 'reggeli', name: '🌅 Reggeli', icon: '☀️' },
+    { key: 'tízórai', name: '☕ Tízórai', icon: '☕' },
     { key: 'ebéd', name: '🍽️ Ebéd', icon: '🍽️' },
+    { key: 'uzsonna', name: '🥨 Uzsonna', icon: '🥨' },
     { key: 'vacsora', name: '🌙 Vacsora', icon: '🌜' }
   ];
 
@@ -35,7 +37,7 @@ export function SharedMealTypeSelector({
           <p className="text-white/70 text-sm sm:text-base">{subtitle}</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {mealTypes.map((meal) => {
             const isSelected = selectedMeals.includes(meal.key);
             const recipeCount = getRecipeCount(meal.key);

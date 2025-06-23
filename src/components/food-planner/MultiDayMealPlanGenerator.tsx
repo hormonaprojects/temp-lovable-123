@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +37,7 @@ interface MultiDayMealPlanGeneratorProps {
 
 export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorProps) {
   const [selectedDays, setSelectedDays] = useState(3);
-  const [selectedMeals, setSelectedMeals] = useState<string[]>([]); // Changed from ['reggeli', 'ebéd', 'vacsora'] to []
+  const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
   const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>({});
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -72,7 +71,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
   });
 
   const dayOptions = [3, 5, 7];
-  const mealTypes = ['reggeli', 'ebéd', 'vacsora'];
+  const mealTypes = ['reggeli', 'tízórai', 'ebéd', 'uzsonna', 'vacsora'];
 
   const handleMealToggle = (mealKey: string) => {
     setSelectedMeals(prev => {
@@ -182,7 +181,9 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
   const getMealTypeDisplayName = (mealType: string) => {
     switch (mealType) {
       case 'reggeli': return '🌅 Reggeli';
+      case 'tízórai': return '☕ Tízórai';
       case 'ebéd': return '🍽️ Ebéd';
+      case 'uzsonna': return '🥨 Uzsonna';
       case 'vacsora': return '🌙 Vacsora';
       default: return mealType;
     }
@@ -325,7 +326,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                   {mealTypes.map((mealType) => {
                     const recipe = dayPlan.meals[mealType];
                     return (
@@ -375,13 +376,13 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-purple-400">
-                      {multiDayPlan.length * 3}
+                      {multiDayPlan.length * selectedMeals.length}
                     </div>
                     <div className="text-sm">étkezés</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-yellow-400">
-                      {Math.round((multiDayPlan.reduce((acc, day) => acc + Object.values(day.meals).filter(recipe => recipe !== null).length, 0) / (multiDayPlan.length * 3)) * 100)}%
+                      {selectedMeals.length > 0 ? Math.round((multiDayPlan.reduce((acc, day) => acc + Object.values(day.meals).filter(recipe => recipe !== null).length, 0) / (multiDayPlan.length * selectedMeals.length)) * 100) : 0}%
                     </div>
                     <div className="text-sm">lefedettség</div>
                   </div>
