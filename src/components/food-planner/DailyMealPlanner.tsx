@@ -53,30 +53,16 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     convertToStandardRecipe
   });
 
-  // FIXED: Meal toggle - only state update, no automatic generation
+  // FIXED: Meal toggle - only state update, no automatic scrolling
   const handleMealToggle = (mealKey: string) => {
     setSelectedMeals(prev => {
       const newSelectedMeals = prev.includes(mealKey) 
         ? prev.filter(m => m !== mealKey)
         : [...prev, mealKey];
       
-      // Show ingredient filter if there are selected meals with smooth scroll
+      // Show ingredient filter if there are selected meals - NO AUTO SCROLL
       const willShowIngredients = newSelectedMeals.length > 0;
       setShowIngredientSelection(willShowIngredients);
-      
-      // Automatikus scroll az alapanyag választáshoz
-      if (willShowIngredients && newSelectedMeals.length > prev.length) {
-        setTimeout(() => {
-          const ingredientSection = document.querySelector('.ingredient-selection-section');
-          if (ingredientSection) {
-            ingredientSection.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'start',
-              inline: 'nearest'
-            });
-          }
-        }, 100);
-      }
       
       return newSelectedMeals;
     });

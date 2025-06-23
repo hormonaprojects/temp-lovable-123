@@ -48,7 +48,7 @@ export function SharedMealTypeSelector({
                 onClick={() => onMealToggle(meal.key)}
                 className={`relative p-4 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
                   isSelected
-                    ? 'bg-gradient-to-br from-purple-600/40 to-pink-600/40 border-purple-400/60 shadow-2xl shadow-purple-500/20'
+                    ? 'bg-gradient-to-br from-green-600/40 to-emerald-600/40 border-green-400/60 shadow-2xl shadow-green-500/20'
                     : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/40'
                 }`}
               >
