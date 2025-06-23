@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SupabaseRecipe, MealTypeData } from '@/types/supabase';
@@ -193,6 +192,16 @@ export function useSupabaseData(userId?: string) {
     return isFavoriteIngredient(ingredient, category, userFavorites);
   }, [userFavorites]);
 
+  const getPreferenceForIngredient = useCallback((ingredient: string, category?: string): 'like' | 'dislike' | 'neutral' => {
+    if (!userPreferences.length || !category) return 'neutral';
+    
+    const preference = userPreferences.find(
+      pref => pref.ingredient === ingredient && pref.category === category
+    );
+    
+    return preference ? preference.preference as 'like' | 'dislike' | 'neutral' : 'neutral';
+  }, [userPreferences]);
+
   const handleFavoriteToggle = async (ingredient: string, category: string, isFavorite: boolean) => {
     if (!userId) return false;
 
@@ -233,6 +242,7 @@ export function useSupabaseData(userId?: string) {
     refreshPreferences: loadUserPreferences,
     userFavorites,
     getFavoriteForIngredient,
+    getPreferenceForIngredient,
     handleFavoriteToggle,
     refreshFavorites: loadUserFavorites
   };

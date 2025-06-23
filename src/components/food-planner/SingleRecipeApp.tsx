@@ -300,7 +300,10 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
             selectedMealType={selectedMealType}
             onSelectMealType={handleMealTypeSelect}
             foodData={{
-              mealTypes: mealTypes,
+              mealTypes: Object.keys(mealTypes).reduce((acc, key) => {
+                acc[key] = { categories: categories };
+                return acc;
+              }, {} as { [key: string]: { categories: { [key: string]: string[] } } }),
               categories: categories,
               getFilteredIngredients: getFilteredIngredients,
               getRecipesByMealType: getRecipesByMealType
