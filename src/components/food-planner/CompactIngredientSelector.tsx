@@ -23,6 +23,8 @@ interface CompactIngredientSelectorProps {
   onIngredientsChange: (ingredients: SelectedIngredient[]) => void;
   getFavoriteForIngredient?: (ingredient: string, category: string) => boolean;
   getPreferenceForIngredient?: (ingredient: string, category: string) => 'like' | 'dislike' | 'neutral';
+  // FIXED: Add prop to receive initial ingredients
+  initialIngredients?: SelectedIngredient[];
 }
 
 export function CompactIngredientSelector({
@@ -30,11 +32,20 @@ export function CompactIngredientSelector({
   getFilteredIngredients,
   onIngredientsChange,
   getFavoriteForIngredient,
-  getPreferenceForIngredient
+  getPreferenceForIngredient,
+  initialIngredients = []
 }: CompactIngredientSelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
+  // FIXED: Initialize with preserved ingredients
+  const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>(initialIngredients);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // FIXED: Update state when initialIngredients changes
+  useEffect(() => {
+    if (initialIngredients.length > 0) {
+      setSelectedIngredients(initialIngredients);
+    }
+  }, [initialIngredients]);
 
   // FIXED: Remove onIngredientsChange from dependency array to prevent infinite loop
   useEffect(() => {

@@ -28,6 +28,8 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
   const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>({});
+  // FIXED: Add state to preserve ingredients after generation
+  const [preservedMealIngredients, setPreservedMealIngredients] = useState<MealIngredients>({});
 
   const {
     categories,
@@ -93,6 +95,9 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       return;
     }
     
+    // FIXED: Preserve ingredients before generation
+    setPreservedMealIngredients({ ...currentMealIngredients });
+    
     // Scroll to generation button first
     setTimeout(() => {
       const generationButton = document.querySelector('.meal-plan-generation-button');
@@ -115,9 +120,11 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     // Create a new meal ingredients object with only the specific meal type
     const singleMealIngredients: MealIngredients = {};
     
-    // If we have stored ingredients for this meal type, use them
-    if (currentMealIngredients[mealType]) {
-      singleMealIngredients[mealType] = currentMealIngredients[mealType];
+    // FIXED: Use preserved ingredients if available, otherwise use current
+    const ingredientsToUse = Object.keys(preservedMealIngredients).length > 0 ? preservedMealIngredients : currentMealIngredients;
+    
+    if (ingredientsToUse[mealType]) {
+      singleMealIngredients[mealType] = ingredientsToUse[mealType];
     } else {
       // Otherwise, set empty array to get any recipe from this meal type
       singleMealIngredients[mealType] = [];
@@ -195,6 +202,8 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
           onMealIngredientsChange={handleMealIngredientsChange}
           getFavoriteForIngredient={getFavoriteForIngredient}
           getPreferenceForIngredient={getPreferenceForIngredient}
+          // FIXED: Pass preserved ingredients to maintain state
+          initialMealIngredients={preservedMealIngredients}
         />
       </div>
 

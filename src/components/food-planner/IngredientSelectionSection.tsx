@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompactIngredientSelector } from "./CompactIngredientSelector";
 
@@ -19,6 +19,8 @@ interface IngredientSelectionSectionProps {
   onMealIngredientsChange: (mealIngredients: MealIngredients) => void;
   getFavoriteForIngredient: (ingredient: string) => boolean;
   getPreferenceForIngredient?: (ingredient: string, category: string) => 'like' | 'dislike' | 'neutral';
+  // FIXED: Add prop to receive preserved ingredients
+  initialMealIngredients?: MealIngredients;
 }
 
 const mealTypes = [
@@ -35,9 +37,18 @@ export function IngredientSelectionSection({
   foodData,
   onMealIngredientsChange,
   getFavoriteForIngredient,
-  getPreferenceForIngredient
+  getPreferenceForIngredient,
+  initialMealIngredients = {}
 }: IngredientSelectionSectionProps) {
-  const [mealIngredients, setMealIngredients] = useState<MealIngredients>({});
+  // FIXED: Initialize with preserved ingredients
+  const [mealIngredients, setMealIngredients] = useState<MealIngredients>(initialMealIngredients);
+
+  // FIXED: Update state when initialMealIngredients changes
+  useEffect(() => {
+    if (Object.keys(initialMealIngredients).length > 0) {
+      setMealIngredients(initialMealIngredients);
+    }
+  }, [initialMealIngredients]);
 
   if (!showIngredientSelection || selectedMeals.length === 0) {
     return null;
@@ -84,6 +95,8 @@ export function IngredientSelectionSection({
                   getFavoriteForIngredient(ingredient)
                 }
                 getPreferenceForIngredient={getPreferenceForIngredient}
+                // FIXED: Pass initial ingredients for this meal type
+                initialIngredients={mealIngredients[mealKey] || []}
               />
             </div>
           );
