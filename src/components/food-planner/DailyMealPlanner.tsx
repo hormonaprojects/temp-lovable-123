@@ -50,7 +50,9 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     convertToStandardRecipe
   });
 
+  // NINCS AUTOMATIKUS RECEPT GENERÁLÁS - csak manuális gombnyomásra
   const handleMealToggle = (mealKey: string) => {
+    console.log('🔄 Meal toggle (csak state frissítés):', mealKey);
     setSelectedMeals(prev => {
       const newSelectedMeals = prev.includes(mealKey) 
         ? prev.filter(m => m !== mealKey)
@@ -71,10 +73,6 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
   const handleMealIngredientsChange = (mealIngredients: MealIngredients) => {
     console.log('🔄 Meal ingredients változás (csak state frissítés):', mealIngredients);
     setCurrentMealIngredients(mealIngredients);
-    
-    // Frissítjük a selectedIngredients count-ot a gomb számára
-    const allIngredients = Object.values(mealIngredients).flat();
-    // Ez csak a UI frissítéshez kell, nem triggerel generálást
   };
 
   const handleGenerateMealPlan = async () => {

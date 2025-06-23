@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
 import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
@@ -6,7 +7,6 @@ import { MultiDayMealPlanGenerator } from "./MultiDayMealPlanGenerator";
 import { DailyMealPlanner } from "./DailyMealPlanner";
 import { FunctionSelector } from "./FunctionSelector";
 import { Recipe } from "@/types/recipe";
-import { useToast } from "@/hooks/use-toast";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { LoadingChef } from "@/components/ui/LoadingChef";
 
@@ -41,7 +41,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     ingredient: string;
     mealType: string;
   }>({ category: "", ingredient: "", mealType: "" });
-  const { toast } = useToast();
   
   const { 
     categories, 
@@ -97,25 +96,13 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         setCurrentRecipe(standardRecipe);
         setLastSearchParams({ category: "", ingredient: "", mealType: selectedMealType });
         
-        toast({
-          title: "Recept betöltve!",
-          description: `${standardRecipe.név} automatikusan betöltve (preferenciáiddal).`,
-        });
+        console.log(`✅ Recept betöltve: ${standardRecipe.név} (preferenciáiddal)`);
       } else {
-        toast({
-          title: "Nincs megfelelő recept",
-          description: `Nincs recept "${selectedMealType}" étkezéshez (preferenciáid szerint).`,
-          variant: "destructive"
-        });
+        console.log(`❌ Nincs recept "${selectedMealType}" étkezéshez (preferenciáid szerint)`);
       }
 
     } catch (error) {
       console.error('❌ Hiba az automatikus recept generálásakor:', error);
-      toast({
-        title: "Hiba",
-        description: "Nem sikerült automatikusan betölteni a receptet.",
-        variant: "destructive"
-      });
     } finally {
       setIsLoading(false);
     }
@@ -199,27 +186,12 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         setCurrentRecipe(standardRecipe);
         
         console.log(`✅ SIKERES TALÁLAT: "${standardRecipe.név}" receptben minden alapanyag megtalálható!`);
-        
-        toast({
-          title: "Recept betöltve!",
-          description: `${standardRecipe.név} sikeresen betöltve (${selectedIngredients.length} alapanyag több kategóriából).`,
-        });
       } else {
         console.log('❌ NINCS OLYAN RECEPT, ami minden kiválasztott alapanyagot tartalmazná!');
-        toast({
-          title: "Nincs megfelelő recept",
-          description: `Nincs olyan recept "${selectedMealType}" étkezéshez, amely minden kiválasztott alapanyagot tartalmazná.`,
-          variant: "destructive"
-        });
       }
 
     } catch (error) {
       console.error('❌ Hiba a több kategóriás recept kérésekor:', error);
-      toast({
-        title: "Hiba",
-        description: "Nem sikerült betölteni a receptet.",
-        variant: "destructive"
-      });
     } finally {
       setIsLoading(false);
     }
@@ -260,20 +232,12 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       
       setMultiDayPlan(newPlan);
       
-      toast({
-        title: "Többnapos étrend generálva!",
-        description: `${days} napos étrend sikeresen elkészült.`,
-      });
+      console.log(`✅ ${days} napos étrend sikeresen elkészült`);
       
       return newPlan;
       
     } catch (error) {
       console.error('❌ Hiba a többnapos étrend generálásakor:', error);
-      toast({
-        title: "Hiba",
-        description: "Nem sikerült generálni a többnapos étrendet.",
-        variant: "destructive"
-      });
       return [];
     } finally {
       setIsMultiDayLoading(false);
@@ -309,10 +273,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
           
           setCurrentRecipe(standardRecipe);
           
-          toast({
-            title: "Új recept betöltve!",
-            description: `${standardRecipe.név} sikeresen betöltve az adatbázisból (preferenciáiddal).`,
-          });
+          console.log(`✅ Új recept betöltve: ${standardRecipe.név} (preferenciáiddal)`);
         } else {
           let errorMessage = "";
           if (lastSearchParams.category && lastSearchParams.ingredient) {
@@ -323,19 +284,10 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
             errorMessage = `Nincs több recept "${selectedMealType}" étkezéshez (preferenciáid szerint).`;
           }
           
-          toast({
-            title: "Nincs megfelelő recept",
-            description: errorMessage,
-            variant: "destructive"
-          });
+          console.log(`❌ ${errorMessage}`);
         }
       } catch (error) {
         console.error('❌ Hiba az újrageneráláskor:', error);
-        toast({
-          title: "Hiba",
-          description: "Nem sikerült újragenerálni a receptet.",
-          variant: "destructive"
-        });
       } finally {
         setIsLoading(false);
       }
@@ -352,7 +304,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   };
 
   // Transform mealTypes to match FoodData interface
-  const transformedMealTypes = Object.keys(mealTypes).reduce((acc, mealType) => {
+  const transformedMealTypes = Object.keys(m realTypes).reduce((acc, mealType) => {
     acc[mealType] = {
       categories: categories
     };

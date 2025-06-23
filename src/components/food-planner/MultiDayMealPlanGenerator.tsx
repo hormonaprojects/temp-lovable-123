@@ -33,7 +33,9 @@ export function MultiDayMealPlanGenerator({
   const mealTypes = ['reggeli', 'ebéd', 'vacsora'];
 
   const handleGeneratePlan = async () => {
-    await onGeneratePlan(selectedDays);
+    const result = await onGeneratePlan(selectedDays);
+    // Toast üzenet eltávolítva - csak console log
+    console.log(`✅ ${selectedDays} napos étrend sikeresen generálva`);
   };
 
   if (isLoading) {

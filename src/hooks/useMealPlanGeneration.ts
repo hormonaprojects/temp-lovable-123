@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
 
 interface SelectedIngredient {
   category: string;
@@ -25,7 +24,6 @@ export function useMealPlanGeneration({
   const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
-  const { toast } = useToast();
 
   // PONTOSAN ugyanaz a logika, mint a SingleRecipeApp-ban
   const getAllRecipeIngredients = (recipe: any): string[] => {
@@ -59,11 +57,7 @@ export function useMealPlanGeneration({
 
   const handleGenerateMealPlan = async (mealIngredients: MealIngredients = {}) => {
     if (selectedMeals.length === 0) {
-      toast({
-        title: "Hiba",
-        description: "Válasszon ki legalább egy étkezési típust!",
-        variant: "destructive"
-      });
+      console.log('❌ Nem választottál ki étkezési típust');
       return;
     }
 
@@ -154,29 +148,13 @@ export function useMealPlanGeneration({
       
       if (newRecipes.length > 0) {
         const totalIngredients = Object.values(mealIngredients).flat().length;
-        const ingredientText = totalIngredients > 0 
-          ? ` a kiválasztott alapanyagokkal (${totalIngredients} db)`
-          : " preferenciáid alapján";
-          
-        toast({
-          title: "Étrend elkészült!",
-          description: `${newRecipes.length} recept sikeresen generálva${ingredientText}.`,
-        });
+        console.log(`✅ Étrend sikeresen generálva: ${newRecipes.length} recept (${totalIngredients} alapanyag)`);
       } else {
-        toast({
-          title: "Nincs megfelelő recept",
-          description: "Nem található elegendő recept a kiválasztott étkezésekhez és alapanyagokhoz. Próbáljon kevesebb vagy más alapanyagokat!",
-          variant: "destructive"
-        });
+        console.log('❌ Nem található elegendő recept a kiválasztott étkezésekhez és alapanyagokhoz');
       }
       
     } catch (error) {
       console.error('❌ Étrend generálási hiba:', error);
-      toast({
-        title: "Hiba",
-        description: "Hiba történt az étrend generálása közben.",
-        variant: "destructive"
-      });
     } finally {
       setIsGenerating(false);
     }
