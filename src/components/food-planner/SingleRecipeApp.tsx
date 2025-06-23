@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
 import { SharedIngredientSelector } from "./shared/SharedIngredientSelector";
@@ -331,6 +330,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
               }}
               onMealIngredientsChange={setMealIngredients}
               initialMealIngredients={mealIngredients}
+              showIngredientSelection={showIngredientSelection}
               title="Alapanyag szűrés (opcionális)"
             />
           )}
