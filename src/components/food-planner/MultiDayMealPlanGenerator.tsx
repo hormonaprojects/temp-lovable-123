@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +72,6 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
   });
 
   const dayOptions = [3, 5, 7];
-  const mealTypes = ['reggeli', 'tízórai', 'ebéd', 'uzsonna', 'vacsora'];
 
   const handleMealToggle = (mealKey: string) => {
     setSelectedMeals(prev => {
@@ -326,8 +326,14 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                  {mealTypes.map((mealType) => {
+                <div className={`grid grid-cols-1 gap-6 ${
+                  selectedMeals.length === 1 ? 'md:grid-cols-1' :
+                  selectedMeals.length === 2 ? 'md:grid-cols-2' :
+                  selectedMeals.length === 3 ? 'md:grid-cols-3' :
+                  selectedMeals.length === 4 ? 'md:grid-cols-2 lg:grid-cols-4' :
+                  'md:grid-cols-2 lg:grid-cols-5'
+                }`}>
+                  {selectedMeals.map((mealType) => {
                     const recipe = dayPlan.meals[mealType];
                     return (
                       <div key={mealType} className="space-y-3">
