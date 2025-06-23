@@ -19,11 +19,11 @@ export function SharedMealTypeSelector({
   subtitle = "Kattints az étkezésekre a kiválasztáshoz"
 }: SharedMealTypeSelectorProps) {
   const mealTypes = [
-    { key: 'reggeli', name: '🌅 Reggeli', icon: '🌅' },
-    { key: 'tízórai', name: '☕ Tízórai', icon: '☕' },
-    { key: 'ebéd', name: '🍽️ Ebéd', icon: '🍽️' },
-    { key: 'uzsonna', name: '🥨 Uzsonna', icon: '🥨' },
-    { key: 'vacsora', name: '🌙 Vacsora', icon: '🌙' }
+    { key: 'reggeli', name: 'Reggeli', icon: '🍳', emoji: '🍳' },
+    { key: 'tízórai', name: 'Tízórai', icon: '☕', emoji: '☕' },
+    { key: 'ebéd', name: 'Ebéd', icon: '🍽️', emoji: '🍽️' },
+    { key: 'uzsonna', name: 'Uzsonna', icon: '🥨', emoji: '🥨' }, 
+    { key: 'vacsora', name: 'Vacsora', icon: '🌙', emoji: '🌙' }
   ];
 
   return (
@@ -48,14 +48,14 @@ export function SharedMealTypeSelector({
                 onClick={() => onMealToggle(meal.key)}
                 className={`relative p-4 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
                   isSelected
-                    ? 'bg-gradient-to-br from-purple-600/40 to-pink-600/40 border-purple-400/60 shadow-2xl shadow-purple-500/20'
+                    ? 'bg-gradient-to-br from-green-500/40 to-green-600/40 border-green-400/60 shadow-2xl shadow-green-500/20'
                     : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/40'
                 }`}
               >
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">{meal.icon}</div>
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-1 sm:mb-2">
-                    {meal.name}
+                  <div className="text-4xl sm:text-5xl mb-2 sm:mb-3">{meal.emoji}</div>
+                  <h3 className="text-sm sm:text-base font-bold text-white mb-1 sm:mb-2">
+                    {meal.emoji} {meal.name}
                   </h3>
                   <Badge 
                     variant="secondary" 
