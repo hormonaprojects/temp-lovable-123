@@ -41,6 +41,9 @@ export function SharedIngredientSelector({
   const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>(initialMealIngredients);
   const [activeMealType, setActiveMealType] = useState<string>(selectedMeals[0] || '');
 
+  // Define meal order for consistent display
+  const mealOrder = ['reggeli', 'tízórai', 'ebéd', 'uzsonna', 'vacsora'];
+
   // Keep ingredients persistent - don't reset them
   useEffect(() => {
     if (Object.keys(initialMealIngredients).length > 0) {
@@ -50,7 +53,9 @@ export function SharedIngredientSelector({
 
   useEffect(() => {
     if (selectedMeals.length > 0 && !selectedMeals.includes(activeMealType)) {
-      setActiveMealType(selectedMeals[0]);
+      // Find the first meal type in the ordered list that is selected
+      const firstSelectedMeal = mealOrder.find(mealType => selectedMeals.includes(mealType));
+      setActiveMealType(firstSelectedMeal || selectedMeals[0]);
     }
   }, [selectedMeals, activeMealType]);
 
@@ -87,7 +92,9 @@ export function SharedIngredientSelector({
   const getMealTypeDisplayName = (mealType: string) => {
     switch (mealType) {
       case 'reggeli': return '🌅 Reggeli';
+      case 'tízórai': return '☕ Tízórai';
       case 'ebéd': return '🍽️ Ebéd';
+      case 'uzsonna': return '🥨 Uzsonna';
       case 'vacsora': return '🌙 Vacsora';
       default: return mealType;
     }
@@ -96,6 +103,9 @@ export function SharedIngredientSelector({
   if (!showIngredientSelection || selectedMeals.length === 0) {
     return null;
   }
+
+  // Sort selected meals by the defined order
+  const sortedSelectedMeals = mealOrder.filter(mealType => selectedMeals.includes(mealType));
 
   return (
     <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
@@ -106,9 +116,9 @@ export function SharedIngredientSelector({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        {/* Meal Type Tabs */}
+        {/* Meal Type Tabs - now in correct order */}
         <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
-          {selectedMeals.map((mealType) => (
+          {sortedSelectedMeals.map((mealType) => (
             <Button
               key={mealType}
               onClick={() => setActiveMealType(mealType)}
