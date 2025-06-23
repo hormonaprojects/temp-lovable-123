@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Recipe } from '@/types/recipe';
+import { filterRecipesByMultipleIngredients } from '@/services/recipeFilters';
 
 interface MultiDayMealPlan {
   day: number;
@@ -8,6 +9,15 @@ interface MultiDayMealPlan {
   meals: {
     [mealType: string]: Recipe | null;
   };
+}
+
+interface SelectedIngredient {
+  category: string;
+  ingredient: string;
+}
+
+interface MealIngredients {
+  [mealType: string]: SelectedIngredient[];
 }
 
 interface UseMultiDayPlanGenerationProps {
@@ -22,7 +32,11 @@ export function useMultiDayPlanGeneration({
   const [multiDayPlan, setMultiDayPlan] = useState<MultiDayMealPlan[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const generateMultiDayPlan = async (days: number): Promise<MultiDayMealPlan[]> => {
+  const generateMultiDayPlan = async (
+    days: number, 
+    selectedMeals: string[] = ['reggeli', 'ebéd', 'vacsora'], 
+    mealIngredients: MealIngredients = {}
+  ): Promise<MultiDayMealPlan[]> => {
     if (days <= 0) {
       console.log('❌ Érvénytelen napok száma:', days);
       return [];
@@ -33,7 +47,6 @@ export function useMultiDayPlanGeneration({
     
     try {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
-      const mealTypesArray = ['reggeli', 'ebéd', 'vacsora'];
       const newPlan: MultiDayMealPlan[] = [];
       
       for (let day = 1; day <= days; day++) {
@@ -49,11 +62,20 @@ export function useMultiDayPlanGeneration({
           meals: {}
         };
         
-        // Minden étkezési típusra generálunk egy receptet
-        for (const mealType of mealTypesArray) {
+        // Generate recipes for selected meal types only
+        for (const mealType of selectedMeals) {
           console.log(`🔍 ${mealType} recept keresése...`);
           
-          const foundRecipes = getRecipesByMealType(mealType);
+          const mealSpecificIngredients = mealIngredients[mealType] || [];
+          let foundRecipes = getRecipesByMealType(mealType);
+          
+          // Apply ingredient filtering if ingredients are selected
+          if (mealSpecificIngredients.length > 0) {
+            const ingredientNames = mealSpecificIngredients.map(ing => ing.ingredient);
+            foundRecipes = filterRecipesByMultipleIngredients(foundRecipes, ingredientNames);
+            console.log(`🎯 ${mealType} - szűrés után ${foundRecipes.length} recept`);
+          }
+          
           console.log(`📋 ${mealType} - ${foundRecipes.length} recept található`);
           
           if (foundRecipes.length > 0) {
@@ -95,6 +117,8 @@ export function useMultiDayPlanGeneration({
     multiDayPlan,
     isGenerating,
     generateMultiDayPlan,
-    clearPlan
+    clearPlan,
+    setMultiDayPlan,
+    setIsGenerating
   };
 }
