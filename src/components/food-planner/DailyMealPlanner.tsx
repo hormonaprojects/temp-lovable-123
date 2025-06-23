@@ -41,24 +41,25 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
   const {
     generatedRecipes,
     isGenerating,
-    selectedIngredients,
-    handleGetMultipleCategoryRecipes,
-    generateDailyMealPlanWithoutIngredients
+    handleGetMultipleCategoryRecipes
   } = useMealPlanGeneration({
     selectedMeals,
     getRecipesByMealType,
     convertToStandardRecipe
   });
 
-  // NINCS AUTOMATIKUS RECEPT GENERÁLÁS - csak manuális gombnyomásra
+  // EGYSZERŰ meal toggle - csak state frissítés, SEMMI automatikus generálás
   const handleMealToggle = (mealKey: string) => {
-    console.log('🔄 Meal toggle (csak state frissítés):', mealKey);
+    console.log('🔄 Meal toggle - CSAK state frissítés:', mealKey);
+    
     setSelectedMeals(prev => {
       const newSelectedMeals = prev.includes(mealKey) 
         ? prev.filter(m => m !== mealKey)
         : [...prev, mealKey];
       
-      // Ha van kiválasztott étkezés, mutassuk az alapanyag szűrőt
+      console.log('✅ Új selectedMeals state:', newSelectedMeals);
+      
+      // Alapanyag szűrő megjelenítése ha van kiválasztott étkezés
       setShowIngredientSelection(newSelectedMeals.length > 0);
       
       return newSelectedMeals;
@@ -71,12 +72,22 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
   };
 
   const handleMealIngredientsChange = (mealIngredients: MealIngredients) => {
-    console.log('🔄 Meal ingredients változás (csak state frissítés):', mealIngredients);
+    console.log('🔄 Meal ingredients változás - CSAK state frissítés:', mealIngredients);
     setCurrentMealIngredients(mealIngredients);
   };
 
+  // MANUÁLIS étrend generálás - csak gombnyomásra
   const handleGenerateMealPlan = async () => {
-    console.log('🎯 MANUÁLIS étrend generálás gombbal:', currentMealIngredients);
+    console.log('🎯 MANUÁLIS étrend generálás indítása:', {
+      selectedMeals,
+      currentMealIngredients
+    });
+    
+    if (selectedMeals.length === 0) {
+      console.log('❌ Nincs kiválasztott étkezés');
+      return;
+    }
+    
     await handleGetMultipleCategoryRecipes(currentMealIngredients);
   };
 
