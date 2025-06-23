@@ -47,6 +47,9 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
   
   const { toast } = useToast();
   
+  // Add ref for the summary section - MOVED TO TOP
+  const summaryRef = useRef<HTMLDivElement>(null);
+  
   const {
     categories,
     getRecipesByMealType,
@@ -70,6 +73,19 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     getRecipesByMealType,
     convertToStandardRecipe
   });
+
+  // Auto-scroll effect - MOVED TO TOP
+  useEffect(() => {
+    if (multiDayPlan.length > 0 && !isGenerating && summaryRef.current) {
+      // Small delay to ensure the content is rendered
+      setTimeout(() => {
+        summaryRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 300);
+    }
+  }, [multiDayPlan.length, isGenerating]);
 
   // Define meal order for consistent display
   const mealOrder = ['reggeli', 'tízórai', 'ebéd', 'uzsonna', 'vacsora'];
@@ -213,21 +229,6 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
       </div>
     );
   }
-
-  // Add ref for the summary section
-  const summaryRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    if (multiDayPlan.length > 0 && !isGenerating && summaryRef.current) {
-      // Small delay to ensure the content is rendered
-      setTimeout(() => {
-        summaryRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-      }, 300);
-    }
-  }, [multiDayPlan.length, isGenerating]);
 
   return (
     <div className="space-y-6 sm:space-y-8">
