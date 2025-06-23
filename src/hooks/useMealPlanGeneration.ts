@@ -25,6 +25,8 @@ export function useMealPlanGeneration({
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
 
+  // ELTÁVOLÍTOTTAM az összes useEffect-et hogy megakadályozzam az automatikus generálást
+  
   // PONTOSAN ugyanaz a logika, mint a SingleRecipeApp-ban
   const getAllRecipeIngredients = (recipe: any): string[] => {
     return [
@@ -165,17 +167,11 @@ export function useMealPlanGeneration({
     await handleGenerateMealPlan(mealIngredients);
   };
 
-  const generateDailyMealPlanWithoutIngredients = async () => {
-    console.log('🔄 generateDailyMealPlanWithoutIngredients hívva');
-    await handleGenerateMealPlan({});
-  };
-
   return {
     generatedRecipes,
     isGenerating,
     selectedIngredients,
     handleGenerateMealPlan,
-    handleGetMultipleCategoryRecipes,
-    generateDailyMealPlanWithoutIngredients
+    handleGetMultipleCategoryRecipes
   };
 }
