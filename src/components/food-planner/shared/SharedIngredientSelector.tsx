@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Utensils, Heart, X } from "lucide-react";
 import { sortIngredientsByPreference } from "@/services/ingredientSorting";
 
@@ -147,8 +148,8 @@ export function SharedIngredientSelector({
           </div>
         )}
 
-        {/* Category Sections */}
-        <div className="space-y-4 sm:space-y-6">
+        {/* Collapsible Category Sections */}
+        <Accordion type="multiple" className="space-y-2">
           {Object.entries(categories).map(([category, ingredients]) => {
             const filteredIngredients = getFilteredIngredients(category);
             const sortedIngredients = sortIngredientsByPreference(
@@ -161,47 +162,54 @@ export function SharedIngredientSelector({
             if (sortedIngredients.length === 0) return null;
 
             return (
-              <div key={category} className="space-y-2 sm:space-y-3">
-                <h3 className="text-white font-semibold text-sm sm:text-base border-b border-white/20 pb-1 sm:pb-2">
-                  {category}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
-                  {sortedIngredients.map((ingredient) => {
-                    const isSelected = isIngredientSelected(category, ingredient);
-                    const isFavorite = getFavoriteForIngredient(ingredient, category);
-                    const preference = getPreferenceForIngredient(ingredient, category);
+              <AccordionItem key={category} value={category} className="border-white/10">
+                <AccordionTrigger className="text-white font-semibold text-sm sm:text-base hover:text-white/80 py-3">
+                  <div className="flex items-center justify-between w-full pr-4">
+                    <span>{category}</span>
+                    <Badge variant="outline" className="bg-white/10 text-white/70 border-white/30 text-xs ml-2">
+                      {sortedIngredients.length}
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                    {sortedIngredients.map((ingredient) => {
+                      const isSelected = isIngredientSelected(category, ingredient);
+                      const isFavorite = getFavoriteForIngredient(ingredient, category);
+                      const preference = getPreferenceForIngredient(ingredient, category);
 
-                    return (
-                      <button
-                        key={ingredient}
-                        onClick={() => handleIngredientToggle(category, ingredient)}
-                        className={`relative p-2 sm:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 text-left ${
-                          isSelected
-                            ? 'bg-green-600/80 text-white border-2 border-green-400/60 shadow-lg'
-                            : preference === 'like'
-                            ? 'bg-blue-600/20 text-blue-200 border border-blue-400/30 hover:bg-blue-600/30'
-                            : 'bg-white/5 text-white/80 border border-white/10 hover:bg-white/10'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="truncate pr-1">{ingredient}</span>
-                          {isFavorite && (
-                            <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-red-400 fill-current flex-shrink-0" />
-                          )}
-                        </div>
-                        {isSelected && (
-                          <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-xs font-bold">
-                            ✓
+                      return (
+                        <button
+                          key={ingredient}
+                          onClick={() => handleIngredientToggle(category, ingredient)}
+                          className={`relative p-2 sm:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 text-left ${
+                            isSelected
+                              ? 'bg-green-600/80 text-white border-2 border-green-400/60 shadow-lg'
+                              : preference === 'like'
+                              ? 'bg-blue-600/20 text-blue-200 border border-blue-400/30 hover:bg-blue-600/30'
+                              : 'bg-white/5 text-white/80 border border-white/10 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="truncate pr-1">{ingredient}</span>
+                            {isFavorite && (
+                              <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-red-400 fill-current flex-shrink-0" />
+                            )}
                           </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                          {isSelected && (
+                            <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-xs font-bold">
+                              ✓
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             );
           })}
-        </div>
+        </Accordion>
       </CardContent>
     </Card>
   );
