@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +12,6 @@ import { useMultiDayPlanGeneration } from "@/hooks/useMultiDayPlanGeneration";
 import { SharedMealTypeSelector } from "./shared/SharedMealTypeSelector";
 import { SharedIngredientSelector } from "./shared/SharedIngredientSelector";
 import { SharedGenerationButton } from "./shared/SharedGenerationButton";
-import { filterRecipesByMultipleIngredients } from '@/services/recipeFilters';
 
 interface MultiDayMealPlan {
   day: number;
@@ -54,7 +54,9 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     multiDayPlan,
     isGenerating,
     generateMultiDayPlan,
-    clearPlan
+    clearPlan,
+    setMultiDayPlan,
+    setIsGenerating
   } = useMultiDayPlanGeneration({
     getRecipesByMealType,
     convertToStandardRecipe
@@ -94,79 +96,11 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
   const handleGenerateWithIngredients = async () => {
     console.log(`🎯 ${selectedDays} napos étrend generálás alapanyagokkal:`, currentMealIngredients);
     
-    // Enhanced generation with ingredient filtering
     if (selectedMeals.length === 0) {
       return;
     }
 
-    // Call the generation with enhanced logic
-    await generateEnhancedMultiDayPlan(selectedDays, selectedMeals, currentMealIngredients);
-  };
-
-  const generateEnhancedMultiDayPlan = async (days: number, meals: string[], mealIngredients: MealIngredients) => {
-    if (days <= 0) {
-      console.log('❌ Érvénytelen napok száma:', days);
-      return;
-    }
-
-    console.log(`🍽️ ${days} napos étrend generálás indítása (alapanyagokkal)`);
-    
-    try {
-      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
-      const newPlan: MultiDayMealPlan[] = [];
-      
-      for (let day = 1; day <= days; day++) {
-        const date = new Date();
-        date.setDate(date.getDate() + day - 1);
-        const formattedDate = date.toLocaleDateString('hu-HU');
-        
-        console.log(`📅 ${day}. nap generálása (${formattedDate})`);
-        
-        const dayPlan: MultiDayMealPlan = {
-          day,
-          date: formattedDate,
-          meals: {}
-        };
-        
-        // Generate recipes for selected meal types only
-        for (const mealType of meals) {
-          console.log(`🔍 ${mealType} recept keresése...`);
-          
-          const mealSpecificIngredients = mealIngredients[mealType] || [];
-          let foundRecipes = getRecipesByMealType(mealType);
-          
-          // Apply ingredient filtering if ingredients are selected
-          if (mealSpecificIngredients.length > 0) {
-            const ingredientNames = mealSpecificIngredients.map(ing => ing.ingredient);
-            foundRecipes = filterRecipesByMultipleIngredients(foundRecipes, ingredientNames);
-            console.log(`🎯 ${mealType} - szűrés után ${foundRecipes.length} recept`);
-          }
-          
-          console.log(`📋 ${mealType} - ${foundRecipes.length} recept található`);
-          
-          if (foundRecipes.length > 0) {
-            const randomIndex = Math.floor(Math.random() * foundRecipes.length);
-            const selectedSupabaseRecipe = foundRecipes[randomIndex];
-            const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
-            dayPlan.meals[mealType] = standardRecipe;
-            
-            console.log(`✅ ${mealType}: "${standardRecipe.név}" kiválasztva`);
-          } else {
-            dayPlan.meals[mealType] = null;
-            console.log(`❌ ${mealType}: Nincs elérhető recept`);
-          }
-        }
-        
-        newPlan.push(dayPlan);
-      }
-      
-      await minLoadingTime;
-      // You would need to update the hook to accept the new plan
-      console.log(`✅ ${days} napos étrend sikeresen generálva!`);
-      
-    } catch (error) {
-      console.error('❌ Hiba a többnapos étrend generálásakor:', error);
-    }
+    await generateMultiDayPlan(selectedDays, selectedMeals, currentMealIngredients);
   };
 
   const getMealTypeDisplayName = (mealType: string) => {

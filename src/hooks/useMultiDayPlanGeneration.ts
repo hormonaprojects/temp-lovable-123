@@ -43,6 +43,9 @@ export function useMultiDayPlanGeneration({
     }
 
     console.log(`🍽️ ${days} napos étrend generálás indítása`);
+    console.log('📋 Kiválasztott étkezések:', selectedMeals);
+    console.log('🎯 Alapanyag szűrők:', mealIngredients);
+    
     setIsGenerating(true);
     
     try {
@@ -98,6 +101,8 @@ export function useMultiDayPlanGeneration({
       setMultiDayPlan(newPlan);
       
       console.log(`✅ ${days} napos étrend sikeresen generálva!`);
+      console.log('📊 Végeredmény:', newPlan);
+      
       return newPlan;
       
     } catch (error) {
