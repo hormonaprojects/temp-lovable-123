@@ -32,8 +32,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'single' | 'daily' | 'multi'>('single');
-  const [multiDayPlan, setMultiDayPlan] = useState<MultiDayMealPlan[]>([]);
-  const [isMultiDayLoading, setIsMultiDayLoading] = useState(false);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
   const [lastSearchParams, setLastSearchParams] = useState<{
     category: string;
@@ -196,53 +194,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     }
   };
 
-  const generateMultiDayPlan = async (days: number): Promise<MultiDayMealPlan[]> => {
-    setIsMultiDayLoading(true);
-    
-    try {
-      const mealTypesArray = ['reggeli', 'ebéd', 'vacsora'];
-      const newPlan: MultiDayMealPlan[] = [];
-      
-      for (let day = 1; day <= days; day++) {
-        const date = new Date();
-        date.setDate(date.getDate() + day - 1);
-        const formattedDate = date.toLocaleDateString('hu-HU');
-        
-        const dayPlan: MultiDayMealPlan = {
-          day,
-          date: formattedDate,
-          meals: {}
-        };
-        
-        for (const mealType of mealTypesArray) {
-          const foundRecipes = getRecipesByMealType(mealType);
-          if (foundRecipes.length > 0) {
-            const randomIndex = Math.floor(Math.random() * foundRecipes.length);
-            const selectedSupabaseRecipe = foundRecipes[randomIndex];
-            const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
-            dayPlan.meals[mealType] = standardRecipe;
-          } else {
-            dayPlan.meals[mealType] = null;
-          }
-        }
-        
-        newPlan.push(dayPlan);
-      }
-      
-      setMultiDayPlan(newPlan);
-      
-      console.log(`✅ ${days} napos étrend sikeresen elkészült`);
-      
-      return newPlan;
-      
-    } catch (error) {
-      console.error('❌ Hiba a többnapos étrend generálásakor:', error);
-      return [];
-    } finally {
-      setIsMultiDayLoading(false);
-    }
-  };
-
   const regenerateRecipe = async () => {
     if (selectedMealType) {
       setIsLoading(true);
@@ -296,7 +247,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const resetForm = () => {
     setSelectedMealType("");
     setCurrentRecipe(null);
-    setMultiDayPlan([]);
     setViewMode('single');
     setShowIngredientSelection(false);
     setLastSearchParams({ category: "", ingredient: "", mealType: "" });
@@ -361,11 +311,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       />
 
       {viewMode === 'multi' ? (
-        <MultiDayMealPlanGenerator
-          onGeneratePlan={generateMultiDayPlan}
-          isLoading={isMultiDayLoading}
-          mealPlan={multiDayPlan}
-        />
+        <MultiDayMealPlanGenerator user={user} />
       ) : viewMode === 'daily' ? (
         <DailyMealPlanner
           user={user}
