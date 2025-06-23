@@ -23,7 +23,6 @@ export function MultiCategoryIngredientList({
 }: MultiCategoryIngredientListProps) {
   if (!selectedCategory) return null;
 
-  // Centralizált sorrendezés használata
   const getSortedIngredients = (category: string) => {
     const ingredients = getFilteredIngredients(category);
     
@@ -48,24 +47,17 @@ export function MultiCategoryIngredientList({
           const preference = getPreferenceForIngredient ? getPreferenceForIngredient(ingredient, selectedCategory) : 'neutral';
           const isSelected = isIngredientSelected(ingredient);
           
-          console.log(`🎨 MultiCategoryIngredientList - Renderelés: ${ingredient} - kedvenc: ${isFavorite}, preferencia: ${preference}, kiválasztva: ${isSelected}`);
-          
-          // EGYSÉGES stílusok prioritás szerint
           let buttonClasses = cn(
             "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative border-2 min-h-[60px] flex items-center justify-center"
           );
 
           if (isSelected) {
-            // Kiválasztott állapot - zöld háttér
             buttonClasses = cn(buttonClasses, "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg border-green-400 transform scale-105");
           } else if (isFavorite) {
-            // KEDVENC = rózsaszín háttér (LEGMAGASABB PRIORITÁS)
             buttonClasses = cn(buttonClasses, "bg-gradient-to-r from-pink-500/80 to-rose-500/80 text-white hover:from-pink-600/90 hover:to-rose-600/90 shadow-md border-pink-400");
           } else if (preference === 'like') {
-            // SZERETEM = zöld háttér (MÁSODIK PRIORITÁS)
             buttonClasses = cn(buttonClasses, "bg-gradient-to-r from-green-500/60 to-emerald-500/60 text-white hover:from-green-600/80 hover:to-emerald-600/80 border-green-400");
           } else {
-            // SEMLEGES = alapértelmezett
             buttonClasses = cn(buttonClasses, "bg-white/10 text-white hover:bg-white/20 border-white/20 hover:border-white/40");
           }
 
@@ -78,7 +70,6 @@ export function MultiCategoryIngredientList({
               {isSelected && (
                 <Check className="absolute top-1 right-1 w-4 h-4 text-white bg-green-600 rounded-full p-0.5" />
               )}
-              {/* EGYSÉGES kedvenc jelölés - RÓZSASZÍN SZÍV */}
               {isFavorite && !isSelected && (
                 <Heart className="absolute top-1 right-1 w-4 h-4 text-white fill-white drop-shadow-sm" />
               )}

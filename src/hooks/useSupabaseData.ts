@@ -139,20 +139,20 @@ export function useSupabaseData(userId?: string) {
     }
   }, [toast]);
 
-  // JAVÍTOTT: Stabil függvények - nem újra jönnek létre minden rendereléskor
+  // FIXED: Stable functions using actual objects/arrays as dependencies
   const getRecipesByMealTypeHandler = useCallback((mealType: string): SupabaseRecipe[] => {
     if (!recipes.length || !Object.keys(mealTypeRecipes).length) {
       return [];
     }
     return getRecipesByMealType(recipes, mealTypeRecipes, mealType, userPreferences);
-  }, [recipes.length, Object.keys(mealTypeRecipes).length, userPreferences.length]);
+  }, [recipes, mealTypeRecipes, userPreferences]);
 
   const getRecipesByCategoryHandler = useCallback((category: string, ingredient?: string, mealType?: string): SupabaseRecipe[] => {
     if (!recipes.length || !Object.keys(categories).length) {
       return [];
     }
     return getRecipesByCategory(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
-  }, [recipes.length, Object.keys(categories).length, Object.keys(mealTypeRecipes).length, userPreferences.length]);
+  }, [recipes, categories, mealTypeRecipes, userPreferences]);
 
   const getFilteredIngredients = useCallback((category: string): string[] => {
     if (!Object.keys(categories).length) {
@@ -162,12 +162,12 @@ export function useSupabaseData(userId?: string) {
     if (userPreferences.length === 0) return allIngredients;
     
     return filterIngredientsByPreferences(allIngredients, category, userPreferences);
-  }, [Object.keys(categories).length, userPreferences.length]);
+  }, [categories, userPreferences]);
 
   const getRandomRecipe = useCallback((): SupabaseRecipe | null => {
     if (recipes.length === 0) return null;
     return recipes[Math.floor(Math.random() * recipes.length)];
-  }, [recipes.length]);
+  }, [recipes]);
 
   const saveRating = async (recipeName: string, rating: number) => {
     if (!userId) {
@@ -191,7 +191,7 @@ export function useSupabaseData(userId?: string) {
       return userFavorites.some(fav => fav.ingredient === ingredient);
     }
     return isFavoriteIngredient(ingredient, category, userFavorites);
-  }, [userFavorites.length]);
+  }, [userFavorites]);
 
   const handleFavoriteToggle = async (ingredient: string, category: string, isFavorite: boolean) => {
     if (!userId) return false;

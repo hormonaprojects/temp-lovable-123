@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseRecipe } from '@/types/supabase';
 import { normalizeText } from '@/utils/textNormalization';
@@ -21,7 +22,6 @@ export const getUserPreferences = async (userId: string): Promise<UserPreference
     return [];
   }
 
-  // Type casting to ensure the preference field matches our interface
   return (data || []).map(item => ({
     ...item,
     preference: item.preference as 'like' | 'dislike' | 'neutral'
@@ -33,30 +33,18 @@ export const filterIngredientsByPreferences = (
   category: string,
   userPreferences: UserPreference[]
 ): string[] => {
-  console.log('🔍 Alapanyagok szűrése preferenciák alapján:', { category, totalIngredients: ingredients.length });
-  
   const filteredIngredients = ingredients.filter(ingredient => {
     const preference = userPreferences.find(pref => 
       normalizeText(pref.category) === normalizeText(category) &&
       normalizeText(pref.ingredient) === normalizeText(ingredient)
     );
     
-    // Ha nincs preferencia beállítva, akkor megtartjuk
     if (!preference) return true;
     
-    // Csak a "like" és "neutral" alapanyagokat tartjuk meg
     const shouldKeep = preference.preference === 'like' || preference.preference === 'neutral';
-    
-    if (!shouldKeep) {
-      console.log(`❌ Kizárva (nem szeretem): ${ingredient}`);
-    } else {
-      console.log(`✅ Megtartva (${preference.preference}): ${ingredient}`);
-    }
-    
     return shouldKeep;
   });
   
-  console.log(`🔍 Szűrés eredménye: ${filteredIngredients.length}/${ingredients.length} alapanyag`);
   return filteredIngredients;
 };
 
@@ -64,8 +52,6 @@ export const prioritizeRecipesByPreferences = (
   recipes: SupabaseRecipe[],
   userPreferences: UserPreference[]
 ): SupabaseRecipe[] => {
-  console.log('🎯 Receptek prioritizálása preferenciák alapján:', recipes.length, 'recept');
-  
   const categorizedRecipes = {
     liked: [] as SupabaseRecipe[],
     neutral: [] as SupabaseRecipe[],
@@ -74,7 +60,7 @@ export const prioritizeRecipesByPreferences = (
   
   recipes.forEach(recipe => {
     const allIngredients = [
-      recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
+      recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzav로_3'],
       recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
       recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
       recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
@@ -104,22 +90,16 @@ export const prioritizeRecipesByPreferences = (
       }
     });
     
-    // Kizárjuk azokat a recepteket, amelyek "nem szeretem" alapanyagot tartalmaznak
     if (hasDislikedIngredient) {
-      console.log(`❌ Recept kizárva (nem szerett alapanyag): ${recipe['Recept_Neve']}`);
       return;
     }
     
-    // Prioritizálás
     if (hasLikedIngredient) {
       categorizedRecipes.liked.push(recipe);
-      console.log(`💚 Kedvelt recept: ${recipe['Recept_Neve']}`);
     } else if (hasNeutralIngredient) {
       categorizedRecipes.neutral.push(recipe);
-      console.log(`😐 Semleges recept: ${recipe['Recept_Neve']}`);
     } else {
       categorizedRecipes.noPreference.push(recipe);
-      console.log(`⚪ Nincs preferencia: ${recipe['Recept_Neve']}`);
     }
   });
   
@@ -128,8 +108,6 @@ export const prioritizeRecipesByPreferences = (
     ...categorizedRecipes.neutral,
     ...categorizedRecipes.noPreference
   ];
-  
-  console.log(`🎯 Prioritizálás eredménye: ${categorizedRecipes.liked.length} kedvelt, ${categorizedRecipes.neutral.length} semleges, ${categorizedRecipes.noPreference.length} nincs preferencia`);
   
   return prioritizedRecipes;
 };

@@ -36,9 +36,10 @@ export function CompactIngredientSelector({
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // FIXED: Remove onIngredientsChange from dependency array to prevent infinite loop
   useEffect(() => {
     onIngredientsChange(selectedIngredients);
-  }, [selectedIngredients, onIngredientsChange]);
+  }, [selectedIngredients]);
 
   const handleIngredientToggle = (ingredient: string) => {
     if (!selectedCategory) return;

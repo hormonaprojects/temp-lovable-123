@@ -9,7 +9,7 @@ interface IngredientsGridProps {
   getFavoriteForIngredient: (ingredient: string) => boolean;
   onPreferenceChange: (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => void;
   onFavoriteChange: (ingredient: string, isFavorite: boolean) => void;
-  hideDisliked?: boolean; // Új prop a dislike-ok elrejtéséhez
+  hideDisliked?: boolean;
 }
 
 export function IngredientsGrid({
@@ -19,37 +19,20 @@ export function IngredientsGrid({
   getFavoriteForIngredient,
   onPreferenceChange,
   onFavoriteChange,
-  hideDisliked = true // Alapértelmezetten elrejtjük (mint eddig)
+  hideDisliked = true
 }: IngredientsGridProps) {
-  console.log(`🎯 IngredientsGrid renderelés - kategória: ${categoryName}`);
-  
   const getSortedIngredients = () => {
-    console.log(`🔄 Sorrendezés kezdése - hideDisliked: ${hideDisliked}`);
-    
-    // Centralizált sorrendezés használata
-    let sortedIngredients = sortIngredientsByPreference(
-      ingredients,
-      (ingredient) => getFavoriteForIngredient(ingredient),
-      (ingredient) => getPreferenceForIngredient(ingredient),
-      categoryName
-    );
-
-    // Ha hideDisliked false (mint a preference setup-nál), ne szűrjük ki a dislike-okat
     if (!hideDisliked) {
-      console.log(`👁️ Dislike alapanyagok megjelenítése engedélyezve`);
-      // Visszaadjuk az összes alapanyagot, de sorrendezve
-      sortedIngredients = [...ingredients].sort((a, b) => {
+      return [...ingredients].sort((a, b) => {
         const aIsFavorite = getFavoriteForIngredient(a);
         const bIsFavorite = getFavoriteForIngredient(b);
         const aPreference = getPreferenceForIngredient(a);
         const bPreference = getPreferenceForIngredient(b);
         
-        // Kedvencek előre
         if (aIsFavorite !== bIsFavorite) {
           return aIsFavorite ? -1 : 1;
         }
         
-        // Like előre
         if (aPreference === 'like' && bPreference !== 'like') {
           return -1;
         }
@@ -57,7 +40,6 @@ export function IngredientsGrid({
           return 1;
         }
         
-        // Dislike hátra
         if (aPreference === 'dislike' && bPreference !== 'dislike') {
           return 1;
         }
@@ -65,13 +47,16 @@ export function IngredientsGrid({
           return -1;
         }
         
-        // Ábécé sorrend
         return a.localeCompare(b, 'hu');
       });
     }
     
-    console.log(`✅ Végleges sorrendezett alapanyagok (${sortedIngredients.length}):`, sortedIngredients.slice(0, 5));
-    return sortedIngredients;
+    return sortIngredientsByPreference(
+      ingredients,
+      (ingredient) => getFavoriteForIngredient(ingredient),
+      (ingredient) => getPreferenceForIngredient(ingredient),
+      categoryName
+    );
   };
 
   const displayedIngredients = getSortedIngredients();
@@ -89,8 +74,6 @@ export function IngredientsGrid({
       {displayedIngredients.map((ingredient, index) => {
         const preference = getPreferenceForIngredient(ingredient);
         const favorite = getFavoriteForIngredient(ingredient);
-        
-        console.log(`🎨 IngredientsGrid - Renderelés: ${ingredient} - kedvenc: ${favorite}, preferencia: ${preference}`);
         
         return (
           <IngredientCard

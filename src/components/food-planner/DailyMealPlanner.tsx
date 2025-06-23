@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
 import { IngredientSelectionSection } from "./IngredientSelectionSection";
@@ -48,18 +48,14 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     convertToStandardRecipe
   });
 
-  // EGYSZERŰ meal toggle - csak state frissítés, SEMMI automatikus generálás
+  // FIXED: Meal toggle - only state update, no automatic generation
   const handleMealToggle = (mealKey: string) => {
-    console.log('🔄 Meal toggle - CSAK state frissítés:', mealKey);
-    
     setSelectedMeals(prev => {
       const newSelectedMeals = prev.includes(mealKey) 
         ? prev.filter(m => m !== mealKey)
         : [...prev, mealKey];
       
-      console.log('✅ Új selectedMeals state:', newSelectedMeals);
-      
-      // Alapanyag szűrő megjelenítése ha van kiválasztott étkezés
+      // Show ingredient filter if there are selected meals
       setShowIngredientSelection(newSelectedMeals.length > 0);
       
       return newSelectedMeals;
@@ -72,26 +68,19 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
   };
 
   const handleMealIngredientsChange = (mealIngredients: MealIngredients) => {
-    console.log('🔄 Meal ingredients változás - CSAK state frissítés:', mealIngredients);
     setCurrentMealIngredients(mealIngredients);
   };
 
-  // MANUÁLIS étrend generálás - csak gombnyomásra
+  // Manual meal plan generation - only on button press
   const handleGenerateMealPlan = async () => {
-    console.log('🎯 MANUÁLIS étrend generálás indítása:', {
-      selectedMeals,
-      currentMealIngredients
-    });
-    
     if (selectedMeals.length === 0) {
-      console.log('❌ Nincs kiválasztott étkezés');
       return;
     }
     
     await handleGetMultipleCategoryRecipes(currentMealIngredients);
   };
 
-  // Preferencia keresés függvény
+  // Preference search function
   const getPreferenceForIngredient = (ingredient: string, category: string): 'like' | 'dislike' | 'neutral' => {
     const preference = userPreferences.find(pref => 
       pref.ingredient.toLowerCase() === ingredient.toLowerCase() &&
@@ -100,8 +89,8 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     return preference ? preference.preference : 'neutral';
   };
 
-  // Transform categories to match FoodData interface
-  const foodData = {
+  // FIXED: Memoize foodData object to prevent unnecessary re-renders
+  const foodData = useMemo(() => ({
     mealTypes: selectedMeals.reduce((acc, mealType) => {
       acc[mealType] = {
         categories: categories
@@ -111,9 +100,9 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     categories: categories,
     getFilteredIngredients: getFilteredIngredients,
     getRecipesByMealType: getRecipesByMealType
-  };
+  }), [selectedMeals, categories, getFilteredIngredients, getRecipesByMealType]);
 
-  // HOOKS UTÁN van a loading check - ez megoldja a hooks hibát
+  // Loading check after hooks
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">

@@ -2,7 +2,6 @@
 import { SupabaseRecipe } from '@/types/supabase';
 import { normalizeText } from '@/utils/textNormalization';
 
-// Alapanyagok kinyerése egy receptből
 export const getAllRecipeIngredients = (recipe: SupabaseRecipe): string[] => {
   return [
     recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
@@ -14,7 +13,6 @@ export const getAllRecipeIngredients = (recipe: SupabaseRecipe): string[] => {
   ].filter(Boolean).map(ing => ing?.toString() || '');
 };
 
-// Ellenőrzi, hogy egy recept tartalmaz-e egy adott alapanyagot
 export const hasIngredientMatch = (recipeIngredients: string[], searchIngredient: string): boolean => {
   const searchNormalized = normalizeText(searchIngredient);
   
@@ -27,56 +25,31 @@ export const hasIngredientMatch = (recipeIngredients: string[], searchIngredient
   });
 };
 
-// Alapanyag szűrés - külön függvény az átláthatóságért
 export const filterRecipesByIngredient = (
   recipes: SupabaseRecipe[],
   ingredient: string
 ): SupabaseRecipe[] => {
-  console.log(`🎯 Alapanyag szűrés: "${ingredient}"`);
-
   const filteredRecipes = recipes.filter(recipe => {
     const allIngredients = getAllRecipeIngredients(recipe);
-    const hasIngredient = hasIngredientMatch(allIngredients, ingredient);
-    
-    if (hasIngredient) {
-      console.log(`✅ ELFOGADVA: "${recipe['Recept_Neve']}" tartalmazza "${ingredient}"-t`);
-    } else {
-      console.log(`❌ ELUTASÍTVA: "${recipe['Recept_Neve']}" nem tartalmazza "${ingredient}"-t`);
-    }
-    
-    return hasIngredient;
+    return hasIngredientMatch(allIngredients, ingredient);
   });
   
-  console.log(`🎯 Alapanyag szűrés eredménye: ${filteredRecipes.length}/${recipes.length} recept`);
   return filteredRecipes;
 };
 
-// Több alapanyag szűrés - minden alapanyagnak szerepelnie kell
 export const filterRecipesByMultipleIngredients = (
   recipes: SupabaseRecipe[],
   ingredients: string[]
 ): SupabaseRecipe[] => {
-  console.log(`🎯 Több alapanyag szűrés:`, ingredients);
-
   const filteredRecipes = recipes.filter(recipe => {
     const recipeIngredients = getAllRecipeIngredients(recipe);
     
-    // Ellenőrizzük, hogy MINDEN kiválasztott alapanyag szerepel-e a receptben
     const hasAllIngredients = ingredients.every(selectedIngredient => {
-      const found = hasIngredientMatch(recipeIngredients, selectedIngredient);
-      console.log(`${found ? '✅' : '❌'} "${selectedIngredient}" ${found ? 'MEGTALÁLVA' : 'HIÁNYZIK'} - ${recipe['Recept_Neve']}`);
-      return found;
+      return hasIngredientMatch(recipeIngredients, selectedIngredient);
     });
-    
-    if (hasAllIngredients) {
-      console.log(`✅ ✅ ✅ ELFOGADVA: "${recipe['Recept_Neve']}" TARTALMAZZA az ÖSSZES alapanyagot!`);
-    } else {
-      console.log(`❌ ❌ ❌ ELUTASÍTVA: "${recipe['Recept_Neve']}" NEM tartalmazza az összes alapanyagot!`);
-    }
     
     return hasAllIngredients;
   });
   
-  console.log(`🎯 Több alapanyag szűrés eredménye: ${filteredRecipes.length}/${recipes.length} recept`);
   return filteredRecipes;
 };
