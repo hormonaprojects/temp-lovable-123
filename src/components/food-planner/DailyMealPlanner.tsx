@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
-import { IngredientSelectionSection } from "./IngredientSelectionSection";
 import { MealPlanGenerationButton } from "./MealPlanGenerationButton";
 import { DailyMealHeader } from "./DailyMealHeader";
 import { GeneratedMealPlan } from "./GeneratedMealPlan";
@@ -9,6 +8,7 @@ import { LoadingChef } from "@/components/ui/LoadingChef";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { useMealPlanGeneration } from "@/hooks/useMealPlanGeneration";
 import { filterRecipesByMultipleIngredients } from '@/services/recipeFilters';
+import { SharedIngredientSelector } from "./shared/SharedIngredientSelector";
 
 interface DailyMealPlannerProps {
   user: any;
@@ -205,19 +205,6 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     return preference ? preference.preference : 'neutral';
   };
 
-  // FIXED: Memoize foodData object to prevent unnecessary re-renders
-  const foodData = useMemo(() => ({
-    mealTypes: selectedMeals.reduce((acc, mealType) => {
-      acc[mealType] = {
-        categories: categories
-      };
-      return acc;
-    }, {} as { [key: string]: { categories: { [key: string]: string[] } } }),
-    categories: categories,
-    getFilteredIngredients: getFilteredIngredients,
-    getRecipesByMealType: getRecipesByMealType
-  }), [selectedMeals, categories, getFilteredIngredients, getRecipesByMealType]);
-
   // Loading check after hooks
   if (loading) {
     return (
@@ -250,15 +237,16 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       />
 
       <div className="ingredient-selection-section">
-        <IngredientSelectionSection
-          showIngredientSelection={showIngredientSelection}
+        <SharedIngredientSelector
           selectedMeals={selectedMeals}
-          foodData={foodData}
-          onMealIngredientsChange={handleMealIngredientsChange}
+          categories={categories}
+          getFilteredIngredients={getFilteredIngredients}
           getFavoriteForIngredient={getFavoriteForIngredient}
           getPreferenceForIngredient={getPreferenceForIngredient}
-          // FIXED: Pass preserved ingredients to maintain state
+          onMealIngredientsChange={handleMealIngredientsChange}
           initialMealIngredients={preservedMealIngredients}
+          showIngredientSelection={showIngredientSelection}
+          title="Alapanyag szűrés (opcionális)"
         />
       </div>
 
