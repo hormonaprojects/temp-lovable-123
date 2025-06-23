@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -214,6 +214,21 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     );
   }
 
+  // Add ref for the summary section
+  const summaryRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (multiDayPlan.length > 0 && !isGenerating && summaryRef.current) {
+      // Small delay to ensure the content is rendered
+      setTimeout(() => {
+        summaryRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 300);
+    }
+  }, [multiDayPlan.length, isGenerating]);
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Day Count Selector */}
@@ -278,7 +293,7 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
 
       {/* Generated Meal Plan */}
       {multiDayPlan.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-6" ref={summaryRef}>
           <div className="text-center">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
               🍽️ {multiDayPlan.length} napos étrendterv
