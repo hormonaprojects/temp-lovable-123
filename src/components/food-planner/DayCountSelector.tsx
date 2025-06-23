@@ -13,18 +13,18 @@ interface DayCountSelectorProps {
 export function DayCountSelector({ selectedDays, onDaysChange }: DayCountSelectorProps) {
   const [inputValue, setInputValue] = useState(selectedDays.toString());
 
-  const quickOptions = [3, 5, 7, 14, 21, 30];
+  const quickOptions = [3, 5, 7];
 
   const handleInputChange = (value: string) => {
     setInputValue(value);
     const numValue = parseInt(value);
-    if (!isNaN(numValue) && numValue >= 1 && numValue <= 30) {
+    if (!isNaN(numValue) && numValue >= 1 && numValue <= 7) {
       onDaysChange(numValue);
     }
   };
 
   const handleIncrement = () => {
-    if (selectedDays < 30) {
+    if (selectedDays < 7) {
       const newValue = selectedDays + 1;
       onDaysChange(newValue);
       setInputValue(newValue.toString());
@@ -92,7 +92,7 @@ export function DayCountSelector({ selectedDays, onDaysChange }: DayCountSelecto
                 <Input
                   type="number"
                   min="1"
-                  max="30"
+                  max="7"
                   value={inputValue}
                   onChange={(e) => handleInputChange(e.target.value)}
                   className="w-20 text-center bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-green-400/50 focus:bg-white/15"
@@ -104,7 +104,7 @@ export function DayCountSelector({ selectedDays, onDaysChange }: DayCountSelecto
                 onClick={handleIncrement}
                 variant="outline"
                 size="sm"
-                disabled={selectedDays >= 30}
+                disabled={selectedDays >= 7}
                 className="bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed w-10 h-10 p-0"
               >
                 <Plus className="w-4 h-4" />
@@ -112,7 +112,7 @@ export function DayCountSelector({ selectedDays, onDaysChange }: DayCountSelecto
             </div>
 
             <p className="text-white/60 text-xs mt-2">
-              1-30 nap között választhatsz (max 1 hónap)
+              1-7 nap között választhatsz (max 1 hét)
             </p>
           </div>
         </div>
