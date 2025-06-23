@@ -3,8 +3,12 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RecipeDisplay } from "./RecipeDisplay";
+import { RecipeContent } from "./RecipeContent";
+import { NutritionInfo } from "./NutritionInfo";
+import { RecipeActions } from "./RecipeActions";
 import { ChefHat, Clock, Users, Eye, EyeOff } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 
 interface GeneratedMealPlanProps {
   generatedRecipes: any[];
@@ -21,6 +25,8 @@ const mealTypes = [
 
 export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanProps) {
   const [expandedRecipes, setExpandedRecipes] = useState<Set<number>>(new Set());
+  const { toast } = useToast();
+  const { saveRating } = useSupabaseData(user?.id);
 
   if (generatedRecipes.length === 0) {
     return null;
@@ -36,6 +42,32 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
       }
       return newSet;
     });
+  };
+
+  const handleRating = async (recipe: any, rating: number) => {
+    if (!recipe || !user?.id) {
+      toast({
+        title: "Hiba",
+        description: "Be kell jelentkezni az értékeléshez.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const success = await saveRating(recipe.név, rating);
+    
+    if (success) {
+      toast({
+        title: "Köszönjük az értékelést!",
+        description: `${rating}/5 csillag mentve az adatbázisba.`,
+      });
+    } else {
+      toast({
+        title: "Hiba",
+        description: "Nem sikerült menteni az értékelést.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Összegzés számítása
@@ -85,81 +117,39 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
               <div className="text-white/80 text-xs sm:text-sm">Zsír</div>
             </div>
           </div>
-
-          {/* Étkezések listája */}
-          <div className="space-y-2 sm:space-y-3">
-            <h3 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">📋 Étkezések:</h3>
-            <div className="grid gap-2 sm:gap-3">
-              {generatedRecipes.map((recipe, index) => {
-                const mealTypeInfo = mealTypes.find(m => m.key === recipe.mealType);
-                const isExpanded = expandedRecipes.has(index);
-                
-                return (
-                  <div 
-                    key={index} 
-                    className="bg-white/20 backdrop-blur-sm rounded-lg border border-white/30 p-3 sm:p-4 hover:bg-white/25 transition-all cursor-pointer"
-                    onClick={() => toggleRecipeExpanded(index)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                        <span className="text-lg sm:text-2xl">{mealTypeInfo?.emoji || '🍽️'}</span>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-white capitalize text-xs sm:text-base">
-                            {mealTypeInfo?.label || recipe.mealType}
-                          </h4>
-                          <p className="text-white/90 font-medium text-xs sm:text-base truncate">{recipe.név}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                        {recipe.elkészítésiIdő && (
-                          <Badge variant="outline" className="text-white border-white/40 bg-white/10 text-xs px-1 py-0">
-                            <Clock className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
-                            <span className="hidden sm:inline">{recipe.elkészítésiIdő}</span>
-                            <span className="sm:hidden">{recipe.elkészítésiIdő.split(' ')[0]}</span>
-                          </Badge>
-                        )}
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleRecipeExpanded(index);
-                          }}
-                          variant="ghost"
-                          size="sm"
-                          className="text-white hover:bg-white/20 px-2 py-1 h-6 sm:h-8 text-xs sm:text-sm"
-                        >
-                          {isExpanded ? (
-                            <>
-                              <EyeOff className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                              <span className="hidden sm:inline">Bezár</span>
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                              <span className="hidden sm:inline">Részletek</span>
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {isExpanded && (
-                      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/20" onClick={(e) => e.stopPropagation()}>
-                        <RecipeDisplay
-                          recipe={recipe}
-                          isLoading={false}
-                          onRegenerate={() => {}}
-                          onNewRecipe={() => {}}
-                          user={user}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </CardContent>
       </Card>
+
+      {/* Individual Recipe Cards - Same format as single recipe */}
+      <div className="space-y-4 sm:space-y-6">
+        {generatedRecipes.map((recipe, index) => {
+          const mealTypeInfo = mealTypes.find(m => m.key === recipe.mealType);
+          
+          return (
+            <Card key={index} className="bg-white/10 backdrop-blur-lg border-white/20 shadow-xl mx-2 sm:mx-0">
+              <CardHeader className="pb-3 sm:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
+                <CardTitle className="text-base sm:text-xl font-bold text-center text-white flex items-center justify-center gap-2 sm:gap-3">
+                  <span className="text-lg sm:text-2xl">{mealTypeInfo?.emoji || '🍽️'}</span>
+                  <span className="leading-tight capitalize">{mealTypeInfo?.label || recipe.mealType}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-2 sm:px-6 pb-3 sm:pb-6">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2 sm:p-4 mb-3 sm:mb-6">
+                  <RecipeContent recipe={recipe} />
+                  <NutritionInfo recipe={recipe} />
+                  <RecipeActions
+                    recipe={recipe}
+                    user={user}
+                    onRegenerate={() => {}}
+                    onNewRecipe={() => {}}
+                    onRating={(rating) => handleRating(recipe, rating)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }
