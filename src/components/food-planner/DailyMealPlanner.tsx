@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
@@ -80,6 +79,32 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     await handleGetMultipleCategoryRecipes(currentMealIngredients);
   };
 
+  // Handle similar recipe generation for a specific meal type
+  const handleGenerateSimilar = async (recipe: any, mealType: string) => {
+    console.log('🔄 Hasonló recept generálása:', recipe.név, 'típus:', mealType);
+    
+    // Create a new meal ingredients object with only the specific meal type
+    const singleMealIngredients: MealIngredients = {};
+    
+    // If we have stored ingredients for this meal type, use them
+    if (currentMealIngredients[mealType]) {
+      singleMealIngredients[mealType] = currentMealIngredients[mealType];
+    } else {
+      // Otherwise, set empty array to get any recipe from this meal type
+      singleMealIngredients[mealType] = [];
+    }
+    
+    // Temporarily set selected meals to only this meal type
+    const originalSelectedMeals = selectedMeals;
+    setSelectedMeals([mealType]);
+    
+    // Generate similar recipe
+    await handleGetMultipleCategoryRecipes(singleMealIngredients);
+    
+    // Restore original selected meals
+    setSelectedMeals(originalSelectedMeals);
+  };
+
   // Preference search function
   const getPreferenceForIngredient = (ingredient: string, category: string): 'like' | 'dislike' | 'neutral' => {
     const preference = userPreferences.find(pref => 
@@ -140,7 +165,11 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
         onGenerateMealPlan={handleGenerateMealPlan}
       />
 
-      <GeneratedMealPlan generatedRecipes={generatedRecipes} user={user} />
+      <GeneratedMealPlan 
+        generatedRecipes={generatedRecipes} 
+        user={user} 
+        onGenerateSimilar={handleGenerateSimilar}
+      />
     </div>
   );
 }
