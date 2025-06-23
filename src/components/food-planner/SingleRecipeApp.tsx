@@ -8,6 +8,7 @@ import { FunctionSelector } from "./FunctionSelector";
 import { Recipe } from "@/types/recipe";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { LoadingChef } from "@/components/ui/LoadingChef";
+import { filterRecipesByMultipleIngredients } from "@/services/recipeFilters";
 
 interface MultiDayMealPlan {
   day: number;
@@ -106,7 +107,10 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   };
 
   const getMultipleCategoryRecipes = async (selectedIngredients: SelectedIngredient[]) => {
-    if (!selectedMealType || selectedIngredients.length === 0) return;
+    if (!selectedMealType || selectedIngredients.length === 0) {
+      console.log('❌ Hiányzó meal type vagy alapanyagok:', { selectedMealType, selectedIngredients });
+      return;
+    }
 
     setIsLoading(true);
     setCurrentRecipe(null);
@@ -119,59 +123,22 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
       
-      // JAVÍTOTT logika: olyan recepteket keresünk, amelyek MINDEN kiválasztott alapanyagot tartalmazzák
+      // 1. Lépés: Lekérjük az étkezési típusnak megfelelő recepteket
       const mealTypeRecipes = getRecipesByMealType(selectedMealType);
       console.log(`📋 ${selectedMealType} étkezéshez tartozó receptek:`, mealTypeRecipes.length);
       
-      // Ellenőrizzük minden receptet, hogy tartalmazza-e az ÖSSZES kiválasztott alapanyagot
-      const getAllRecipeIngredients = (recipe: any): string[] => {
-        return [
-          recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
-          recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
-          recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
-          recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
-          recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
-          recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
-        ].filter(Boolean).map(ing => ing?.toString() || '');
-      };
-
-      const normalizeText = (text: string): string => {
-        return text
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^\w\s]/g, '')
-          .trim();
-      };
-
-      const hasIngredient = (recipeIngredients: string[], searchIngredient: string): boolean => {
-        const searchNormalized = normalizeText(searchIngredient);
-        return recipeIngredients.some(recipeIng => {
-          const recipeIngNormalized = normalizeText(recipeIng);
-          return recipeIngNormalized.includes(searchNormalized) || searchNormalized.includes(recipeIngNormalized);
-        });
-      };
-
-      const validRecipes = mealTypeRecipes.filter(recipe => {
-        const recipeIngredients = getAllRecipeIngredients(recipe);
-        console.log(`\n🔍 Recept vizsgálata: ${recipe['Recept_Neve']}`);
-        console.log(`📝 Hozzávalók:`, recipeIngredients);
-        
-        // Ellenőrizzük, hogy MINDEN kiválasztott alapanyag szerepel-e a receptben
-        const hasAllIngredients = selectedIngredients.every(selectedIng => {
-          const found = hasIngredient(recipeIngredients, selectedIng.ingredient);
-          console.log(`${found ? '✅' : '❌'} "${selectedIng.ingredient}" ${found ? 'MEGTALÁLVA' : 'HIÁNYZIK'}`);
-          return found;
-        });
-        
-        if (hasAllIngredients) {
-          console.log(`✅ ✅ ✅ ELFOGADVA: "${recipe['Recept_Neve']}" TARTALMAZZA az ÖSSZES kiválasztott alapanyagot!`);
-        } else {
-          console.log(`❌ ❌ ❌ ELUTASÍTVA: "${recipe['Recept_Neve']}" NEM tartalmazza az összes alapanyagot!`);
-        }
-        
-        return hasAllIngredients;
-      });
+      if (mealTypeRecipes.length === 0) {
+        console.log(`❌ Nincs recept "${selectedMealType}" étkezéshez`);
+        await minLoadingTime;
+        return;
+      }
+      
+      // 2. Lépés: Szűrjük a recepteket az alapanyagok alapján
+      const ingredientNames = selectedIngredients.map(ing => ing.ingredient);
+      console.log('🎯 Keresett alapanyagok:', ingredientNames);
+      
+      const validRecipes = filterRecipesByMultipleIngredients(mealTypeRecipes, ingredientNames);
+      console.log(`✅ Talált receptek: ${validRecipes.length} db`);
 
       await minLoadingTime;
 
