@@ -113,6 +113,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     getRecipesByMealType: getRecipesByMealType
   };
 
+  // HOOKS UTÁN van a loading check - ez megoldja a hooks hibát
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
