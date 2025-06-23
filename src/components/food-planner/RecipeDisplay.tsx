@@ -14,10 +14,11 @@ interface RecipeDisplayProps {
   isLoading: boolean;
   onRegenerate: () => void;
   onNewRecipe: () => void;
+  onGenerateSimilar?: () => void;
   user: any;
 }
 
-export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, user }: RecipeDisplayProps) {
+export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, onGenerateSimilar, user }: RecipeDisplayProps) {
   const [fullScreenModalOpen, setFullScreenModalOpen] = useState(false);
   const { toast } = useToast();
   const { saveRating } = useSupabaseData(user?.id);
@@ -91,6 +92,7 @@ export function RecipeDisplay({ recipe, isLoading, onRegenerate, onNewRecipe, us
           onRegenerate={onRegenerate}
           onNewRecipe={onNewRecipe}
           onRating={handleRating}
+          onGenerateSimilar={onGenerateSimilar}
         />
       </div>
 

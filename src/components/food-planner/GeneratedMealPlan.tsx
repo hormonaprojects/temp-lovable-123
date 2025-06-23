@@ -13,6 +13,7 @@ import { useSupabaseData } from "@/hooks/useSupabaseData";
 interface GeneratedMealPlanProps {
   generatedRecipes: any[];
   user: any;
+  onGenerateSimilar?: (recipe: any, mealType: string) => void;
 }
 
 const mealTypes = [
@@ -23,7 +24,7 @@ const mealTypes = [
   { key: 'vacsora', label: 'Vacsora', emoji: '🌮', color: 'bg-purple-500/20 border-purple-400' }
 ];
 
-export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanProps) {
+export function GeneratedMealPlan({ generatedRecipes, user, onGenerateSimilar }: GeneratedMealPlanProps) {
   const [expandedRecipes, setExpandedRecipes] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const { saveRating } = useSupabaseData(user?.id);
@@ -143,6 +144,7 @@ export function GeneratedMealPlan({ generatedRecipes, user }: GeneratedMealPlanP
                     onRegenerate={() => {}}
                     onNewRecipe={() => {}}
                     onRating={(rating) => handleRating(recipe, rating)}
+                    onGenerateSimilar={onGenerateSimilar ? () => onGenerateSimilar(recipe, recipe.mealType) : undefined}
                   />
                 </div>
               </CardContent>

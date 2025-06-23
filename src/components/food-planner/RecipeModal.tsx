@@ -11,9 +11,10 @@ interface RecipeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRating: (rating: number) => void;
+  onGenerateSimilar?: () => void;
 }
 
-export function RecipeModal({ recipe, user, isOpen, onClose, onRating }: RecipeModalProps) {
+export function RecipeModal({ recipe, user, isOpen, onClose, onRating, onGenerateSimilar }: RecipeModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -40,6 +41,7 @@ export function RecipeModal({ recipe, user, isOpen, onClose, onRating }: RecipeM
             onRegenerate={() => {}}
             onNewRecipe={() => {}}
             onRating={onRating}
+            onGenerateSimilar={onGenerateSimilar}
             isFullScreen={true}
           />
           
