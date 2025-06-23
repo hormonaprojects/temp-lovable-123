@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,12 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, ChefHat, Clock, RotateCcw, Trash2 } from "lucide-react";
 import { Recipe } from "@/types/recipe";
 import { RecipeContent } from "./RecipeContent";
+import { RecipeModal } from "./RecipeModal";
 import { LoadingChef } from "@/components/ui/LoadingChef";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { useMultiDayPlanGeneration } from "@/hooks/useMultiDayPlanGeneration";
 import { SharedMealTypeSelector } from "./shared/SharedMealTypeSelector";
 import { SharedIngredientSelector } from "./shared/SharedIngredientSelector";
 import { SharedGenerationButton } from "./shared/SharedGenerationButton";
+import { useToast } from "@/hooks/use-toast";
 
 interface MultiDayMealPlan {
   day: number;
@@ -39,6 +40,10 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
   const [selectedMeals, setSelectedMeals] = useState<string[]>(['reggeli', 'ebéd', 'vacsora']);
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
   const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>({});
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const { toast } = useToast();
   
   const {
     categories,
@@ -47,7 +52,8 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     getFavoriteForIngredient,
     convertToStandardRecipe,
     loading: dataLoading,
-    userPreferences
+    userPreferences,
+    saveRating
   } = useSupabaseData(user?.id);
 
   const {
@@ -101,6 +107,43 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     }
 
     await generateMultiDayPlan(selectedDays, selectedMeals, currentMealIngredients);
+  };
+
+  const handleRecipeClick = (recipe: Recipe) => {
+    console.log('🔍 Recept megnyitása modalban:', recipe.név);
+    setSelectedRecipe(recipe);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRecipe(null);
+  };
+
+  const handleRating = async (rating: number) => {
+    if (!selectedRecipe || !user?.id) {
+      toast({
+        title: "Hiba",
+        description: "Be kell jelentkezni az értékeléshez.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const success = await saveRating(selectedRecipe.név, rating);
+    
+    if (success) {
+      toast({
+        title: "Köszönjük az értékelést!",
+        description: `${rating}/5 csillag mentve az adatbázisba.`,
+      });
+    } else {
+      toast({
+        title: "Hiba",
+        description: "Nem sikerült menteni az értékelést.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getMealTypeDisplayName = (mealType: string) => {
@@ -258,7 +301,10 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
                         </h3>
                         
                         {recipe ? (
-                          <div className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all duration-200 cursor-pointer">
+                          <div 
+                            className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all duration-200 cursor-pointer"
+                            onClick={() => handleRecipeClick(recipe)}
+                          >
                             <RecipeContent recipe={recipe} compact />
                           </div>
                         ) : (
@@ -310,6 +356,22 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Recipe Modal */}
+      {selectedRecipe && (
+        <RecipeModal
+          recipe={selectedRecipe}
+          user={user}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onRating={handleRating}
+          onGenerateSimilar={() => {
+            // TODO: Implement generate similar functionality for multi-day planner
+            console.log('Generate similar not implemented for multi-day planner yet');
+            handleCloseModal();
+          }}
+        />
       )}
     </div>
   );
