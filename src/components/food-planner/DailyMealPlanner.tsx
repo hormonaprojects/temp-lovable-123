@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
@@ -5,6 +6,7 @@ import { IngredientSelectionSection } from "./IngredientSelectionSection";
 import { MealPlanGenerationButton } from "./MealPlanGenerationButton";
 import { DailyMealHeader } from "./DailyMealHeader";
 import { GeneratedMealPlan } from "./GeneratedMealPlan";
+import { LoadingChef } from "@/components/ui/LoadingChef";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { useMealPlanGeneration } from "@/hooks/useMealPlanGeneration";
 
@@ -54,8 +56,23 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
         ? prev.filter(m => m !== mealKey)
         : [...prev, mealKey];
       
-      // Show ingredient filter if there are selected meals
-      setShowIngredientSelection(newSelectedMeals.length > 0);
+      // Show ingredient filter if there are selected meals with smooth scroll
+      const willShowIngredients = newSelectedMeals.length > 0;
+      setShowIngredientSelection(willShowIngredients);
+      
+      // Automatikus scroll az alapanyag választáshoz
+      if (willShowIngredients && newSelectedMeals.length > prev.length) {
+        setTimeout(() => {
+          const ingredientSection = document.querySelector('.ingredient-selection-section');
+          if (ingredientSection) {
+            ingredientSection.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start',
+              inline: 'nearest'
+            });
+          }
+        }, 100);
+      }
       
       return newSelectedMeals;
     });
@@ -75,6 +92,18 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     if (selectedMeals.length === 0) {
       return;
     }
+    
+    // Scroll to generation button first
+    setTimeout(() => {
+      const generationButton = document.querySelector('.meal-plan-generation-button');
+      if (generationButton) {
+        generationButton.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
     
     await handleGetMultipleCategoryRecipes(currentMealIngredients);
   };
@@ -139,6 +168,15 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
     );
   }
 
+  // Full screen loading during generation
+  if (isGenerating) {
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <LoadingChef />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3 sm:space-y-8 max-w-6xl mx-auto p-2 sm:p-6">
       <DailyMealHeader onToggleSingleRecipe={onToggleSingleRecipe} />
@@ -149,21 +187,25 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
         getRecipeCount={getRecipeCount}
       />
 
-      <IngredientSelectionSection
-        showIngredientSelection={showIngredientSelection}
-        selectedMeals={selectedMeals}
-        foodData={foodData}
-        onMealIngredientsChange={handleMealIngredientsChange}
-        getFavoriteForIngredient={getFavoriteForIngredient}
-        getPreferenceForIngredient={getPreferenceForIngredient}
-      />
+      <div className="ingredient-selection-section">
+        <IngredientSelectionSection
+          showIngredientSelection={showIngredientSelection}
+          selectedMeals={selectedMeals}
+          foodData={foodData}
+          onMealIngredientsChange={handleMealIngredientsChange}
+          getFavoriteForIngredient={getFavoriteForIngredient}
+          getPreferenceForIngredient={getPreferenceForIngredient}
+        />
+      </div>
 
-      <MealPlanGenerationButton
-        selectedMeals={selectedMeals}
-        selectedIngredients={Object.values(currentMealIngredients).flat()}
-        isGenerating={isGenerating}
-        onGenerateMealPlan={handleGenerateMealPlan}
-      />
+      <div className="meal-plan-generation-button">
+        <MealPlanGenerationButton
+          selectedMeals={selectedMeals}
+          selectedIngredients={Object.values(currentMealIngredients).flat()}
+          isGenerating={isGenerating}
+          onGenerateMealPlan={handleGenerateMealPlan}
+        />
+      </div>
 
       <GeneratedMealPlan 
         generatedRecipes={generatedRecipes} 
