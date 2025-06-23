@@ -1,146 +1,89 @@
-
 import { useState, useMemo } from "react";
-import { RefreshCw } from "lucide-react";
-import { MealTypeCardSelector } from "./MealTypeCardSelector";
-import { IngredientSelectionSection } from "./IngredientSelectionSection";
-import { MealPlanGenerationButton } from "./MealPlanGenerationButton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ChefHat, Utensils } from "lucide-react";
 import { DailyMealHeader } from "./DailyMealHeader";
+import { MealSelectionCard } from "./MealSelectionCard";
 import { GeneratedMealPlan } from "./GeneratedMealPlan";
-import { useSupabaseData } from "@/hooks/useSupabaseData";
-import { useMealPlanGeneration } from "@/hooks/useMealPlanGeneration";
+import { MealPlanGenerationButton } from "./MealPlanGenerationButton";
+import { useMultiDayPlanGeneration } from "@/hooks/useMultiDayPlanGeneration";
 
 interface DailyMealPlannerProps {
+  selectedMeals: string[];
+  categories: Record<string, string[]>;
+  getFilteredIngredients: (category: string) => string[];
+  getRecipesByMealType: (mealType: string) => any[];
   user: any;
-  onToggleSingleRecipe: () => void;
+  onGenerateSimilar?: (recipe: any, mealType: string) => void;
 }
 
-interface SelectedIngredient {
-  category: string;
-  ingredient: string;
-}
+export function DailyMealPlanner({ 
+  selectedMeals, 
+  categories, 
+  getFilteredIngredients, 
+  getRecipesByMealType,
+  user,
+  onGenerateSimilar 
+}: DailyMealPlannerProps) {
+  const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
+  const { generateDailyPlan } = useMultiDayPlanGeneration();
+  const [isLoading, setIsLoading] = useState(false);
 
-interface MealIngredients {
-  [mealType: string]: SelectedIngredient[];
-}
-
-export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlannerProps) {
-  const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
-  const [showIngredientSelection, setShowIngredientSelection] = useState(false);
-  const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>({});
-
-  const {
-    categories,
-    getRecipesByMealType,
-    getFilteredIngredients,
-    loading,
-    getFavoriteForIngredient,
-    convertToStandardRecipe,
-    userPreferences
-  } = useSupabaseData(user?.id);
-
-  const {
-    generatedRecipes,
-    isGenerating,
-    handleGetMultipleCategoryRecipes
-  } = useMealPlanGeneration({
-    selectedMeals,
-    getRecipesByMealType,
-    convertToStandardRecipe
-  });
-
-  // FIXED: Meal toggle - only state update, no automatic generation
-  const handleMealToggle = (mealKey: string) => {
-    setSelectedMeals(prev => {
-      const newSelectedMeals = prev.includes(mealKey) 
-        ? prev.filter(m => m !== mealKey)
-        : [...prev, mealKey];
-      
-      // Show ingredient filter if there are selected meals
-      setShowIngredientSelection(newSelectedMeals.length > 0);
-      
-      return newSelectedMeals;
-    });
-  };
-
-  const getRecipeCount = (mealType: string) => {
-    const recipes = getRecipesByMealType(mealType);
-    return recipes ? recipes.length : 0;
-  };
-
-  const handleMealIngredientsChange = (mealIngredients: MealIngredients) => {
-    setCurrentMealIngredients(mealIngredients);
-  };
-
-  // Manual meal plan generation - only on button press
-  const handleGenerateMealPlan = async () => {
-    if (selectedMeals.length === 0) {
-      return;
+  const handleGenerateDailyPlan = async () => {
+    setIsLoading(true);
+    try {
+      const recipes = await generateDailyPlan(selectedMeals);
+      setGeneratedRecipes(recipes);
+    } catch (error) {
+      console.error("Error generating daily meal plan:", error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    await handleGetMultipleCategoryRecipes(currentMealIngredients);
   };
 
-  // Preference search function
-  const getPreferenceForIngredient = (ingredient: string, category: string): 'like' | 'dislike' | 'neutral' => {
-    const preference = userPreferences.find(pref => 
-      pref.ingredient.toLowerCase() === ingredient.toLowerCase() &&
-      pref.category.toLowerCase() === category.toLowerCase()
-    );
-    return preference ? preference.preference : 'neutral';
-  };
-
-  // FIXED: Memoize foodData object to prevent unnecessary re-renders
-  const foodData = useMemo(() => ({
-    mealTypes: selectedMeals.reduce((acc, mealType) => {
-      acc[mealType] = {
-        categories: categories
-      };
-      return acc;
-    }, {} as { [key: string]: { categories: { [key: string]: string[] } } }),
-    categories: categories,
-    getFilteredIngredients: getFilteredIngredients,
-    getRecipesByMealType: getRecipesByMealType
-  }), [selectedMeals, categories, getFilteredIngredients, getRecipesByMealType]);
-
-  // Loading check after hooks
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
-        <div className="text-center">
-          <RefreshCw className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mx-auto mb-3 sm:mb-4 text-purple-500" />
-          <p className="text-gray-600 text-sm sm:text-base">Adatok betöltése...</p>
-        </div>
-      </div>
-    );
-  }
+  const hasSelectedMeals = useMemo(() => {
+    return selectedMeals.length > 0;
+  }, [selectedMeals]);
 
   return (
-    <div className="space-y-3 sm:space-y-8 max-w-6xl mx-auto p-2 sm:p-6">
-      <DailyMealHeader onToggleSingleRecipe={onToggleSingleRecipe} />
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <DailyMealHeader />
 
-      <MealTypeCardSelector
-        selectedMeals={selectedMeals}
-        onMealToggle={handleMealToggle}
-        getRecipeCount={getRecipeCount}
+      <Card className="bg-white/5 backdrop-blur-lg border-white/20 shadow-xl">
+        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+            <Utensils className="w-4 h-4 text-yellow-400" />
+            Válaszd ki a napi étkezéseket:
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.entries(categories).map(([mealType, ingredients]) => (
+              <MealSelectionCard
+                key={mealType}
+                mealType={mealType}
+                ingredients={ingredients}
+                getFilteredIngredients={getFilteredIngredients}
+                getRecipesByMealType={getRecipesByMealType}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <MealPlanGenerationButton 
+        hasSelectedMeals={hasSelectedMeals}
+        isLoading={isLoading}
+        onGenerateDailyPlan={handleGenerateDailyPlan}
       />
 
-      <IngredientSelectionSection
-        showIngredientSelection={showIngredientSelection}
-        selectedMeals={selectedMeals}
-        foodData={foodData}
-        onMealIngredientsChange={handleMealIngredientsChange}
-        getFavoriteForIngredient={getFavoriteForIngredient}
-        getPreferenceForIngredient={getPreferenceForIngredient}
-      />
-
-      <MealPlanGenerationButton
-        selectedMeals={selectedMeals}
-        selectedIngredients={Object.values(currentMealIngredients).flat()}
-        isGenerating={isGenerating}
-        onGenerateMealPlan={handleGenerateMealPlan}
-      />
-
-      <GeneratedMealPlan generatedRecipes={generatedRecipes} user={user} />
+      {generatedRecipes.length > 0 && (
+        <GeneratedMealPlan 
+          generatedRecipes={generatedRecipes} 
+          user={user}
+          onGenerateSimilar={onGenerateSimilar}
+        />
+      )}
     </div>
   );
 }
