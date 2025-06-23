@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { filterRecipesByMultipleIngredients } from '@/services/recipeFilters';
 
 interface SelectedIngredient {
   category: string;
@@ -24,38 +25,6 @@ export function useMealPlanGeneration({
   const [generatedRecipes, setGeneratedRecipes] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
-
-  // ELTÁVOLÍTOTTAM az összes useEffect-et hogy megakadályozzam az automatikus generálást
-  
-  // PONTOSAN ugyanaz a logika, mint a SingleRecipeApp-ban
-  const getAllRecipeIngredients = (recipe: any): string[] => {
-    return [
-      recipe['Hozzavalo_1'], recipe['Hozzavalo_2'], recipe['Hozzavalo_3'],
-      recipe['Hozzavalo_4'], recipe['Hozzavalo_5'], recipe['Hozzavalo_6'],
-      recipe['Hozzavalo_7'], recipe['Hozzavalo_8'], recipe['Hozzavalo_9'],
-      recipe['Hozzavalo_10'], recipe['Hozzavalo_11'], recipe['Hozzavalo_12'],
-      recipe['Hozzavalo_13'], recipe['Hozzavalo_14'], recipe['Hozzavalo_15'],
-      recipe['Hozzavalo_16'], recipe['Hozzavalo_17'], recipe['Hozzavalo_18']
-    ].filter(Boolean).map(ing => ing?.toString() || '');
-  };
-
-  const normalizeText = (text: string): string => {
-    return text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^\w\s]/g, '')
-      .trim();
-  };
-
-  const hasIngredient = (recipeIngredients: string[], searchIngredient: string): boolean => {
-    const searchNormalized = normalizeText(searchIngredient);
-    return recipeIngredients.some(recipeIng => {
-      const recipeIngNormalized = normalizeText(recipeIng);
-      // SZIGORÚBB keresés: csak akkor fogadjuk el, ha ténylegesen tartalmazza
-      return recipeIngNormalized.includes(searchNormalized);
-    });
-  };
 
   const handleGenerateMealPlan = async (mealIngredients: MealIngredients = {}) => {
     if (selectedMeals.length === 0) {
@@ -93,31 +62,16 @@ export function useMealPlanGeneration({
         let validRecipes = [];
 
         if (mealSpecificIngredients.length > 0) {
-          // Ha vannak kiválasztott alapanyagok ehhez az étkezéshez, SZIGORÚAN szűrjük őket
-          console.log(`🎯 SZIGORÚ szűrés ${mealSpecificIngredients.length} alapanyag alapján`);
+          // Ha vannak kiválasztott alapanyagok ehhez az étkezéshez, használjuk a moduláris szűrőt
+          console.log(`🎯 ALAPANYAG SZŰRÉS ${mealSpecificIngredients.length} alapanyag alapján`);
           
-          validRecipes = mealTypeRecipes.filter(recipe => {
-            const recipeIngredients = getAllRecipeIngredients(recipe);
-            console.log(`\n🔍 Recept vizsgálata: "${recipe['Recept_Neve']}"`);
-            console.log(`📝 Recept alapanyagai:`, recipeIngredients);
-            
-            // Ellenőrizzük, hogy MINDEN kiválasztott alapanyag szerepel-e a receptben
-            const hasAllIngredients = mealSpecificIngredients.every(selectedIng => {
-              const found = hasIngredient(recipeIngredients, selectedIng.ingredient);
-              console.log(`${found ? '✅' : '❌'} "${selectedIng.ingredient}" ${found ? 'MEGTALÁLVA' : 'HIÁNYZIK'} - ${recipe['Recept_Neve']}`);
-              return found;
-            });
-            
-            if (hasAllIngredients) {
-              console.log(`✅ ✅ ✅ ELFOGADVA (${mealType}): "${recipe['Recept_Neve']}" TARTALMAZZA az ÖSSZES alapanyagot!`);
-            } else {
-              console.log(`❌ ❌ ❌ ELUTASÍTVA (${mealType}): "${recipe['Recept_Neve']}" NEM tartalmazza az összes alapanyagot!`);
-            }
-            
-            return hasAllIngredients;
-          });
+          // Csak az alapanyag neveket gyűjtjük össze
+          const ingredientNames = mealSpecificIngredients.map(ing => ing.ingredient);
+          console.log(`🔍 Szűrés ezekkel az alapanyagokkal:`, ingredientNames);
           
-          console.log(`🎯 SZIGORÚ szűrés után ${validRecipes.length} recept maradt`);
+          // Használjuk a filterRecipesByMultipleIngredients függvényt
+          validRecipes = filterRecipesByMultipleIngredients(mealTypeRecipes, ingredientNames);
+          
         } else {
           // Ha nincsenek kiválasztott alapanyagok ehhez az étkezéshez, használjuk az összes receptet
           validRecipes = mealTypeRecipes;
