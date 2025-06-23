@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
-import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
+import { SharedIngredientSelector } from "./shared/SharedIngredientSelector";
 import { RecipeDisplay } from "./RecipeDisplay";
 import { MultiDayMealPlanGenerator } from "./MultiDayMealPlanGenerator";
 import { DailyMealPlanner } from "./DailyMealPlanner";
@@ -23,6 +24,10 @@ interface SelectedIngredient {
   ingredient: string;
 }
 
+interface MealIngredients {
+  [mealType: string]: SelectedIngredient[];
+}
+
 interface SingleRecipeAppProps {
   user: any;
   onToggleDailyPlanner: () => void;
@@ -34,6 +39,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'single' | 'daily' | 'multi'>('single');
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
+  const [mealIngredients, setMealIngredients] = useState<MealIngredients>({});
   const [lastSearchParams, setLastSearchParams] = useState<{
     category: string;
     ingredient: string;
@@ -50,6 +56,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     getFilteredIngredients,
     convertToStandardRecipe,
     getFavoriteForIngredient,
+    getPreferenceForIngredient,
     refreshFavorites,
     recipes
   } = useSupabaseData(user.id);
@@ -106,9 +113,15 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     }
   };
 
-  const getMultipleCategoryRecipes = async (selectedIngredients: SelectedIngredient[]) => {
-    if (!selectedMealType || selectedIngredients.length === 0) {
-      console.log('❌ Hiányzó meal type vagy alapanyagok:', { selectedMealType, selectedIngredients });
+  const getMultipleCategoryRecipes = async (mealIngredients: MealIngredients) => {
+    if (!selectedMealType) {
+      console.log('❌ Hiányzó meal type:', { selectedMealType });
+      return;
+    }
+
+    const selectedIngredients = mealIngredients[selectedMealType] || [];
+    if (selectedIngredients.length === 0) {
+      console.log('❌ Nincs kiválasztott alapanyag');
       return;
     }
 
@@ -164,17 +177,9 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const handleGenerateSimilar = async () => {
     console.log('🔄 Hasonló recept generálása ugyanazokkal a paraméterekkel...');
     
-    if (showIngredientSelection && lastSearchParams.category && lastSearchParams.ingredient) {
+    if (showIngredientSelection && Object.keys(mealIngredients).length > 0) {
       // Ha van több kategóriás keresés, használjuk azt
-      const ingredientsArray = lastSearchParams.ingredient.split(", ").map(item => {
-        const match = item.match(/^(.+) \((.+)\)$/);
-        if (match) {
-          return { ingredient: match[1], category: match[2] };
-        }
-        return { ingredient: item, category: lastSearchParams.category };
-      });
-      
-      await getMultipleCategoryRecipes(ingredientsArray);
+      await getMultipleCategoryRecipes(mealIngredients);
     } else {
       // Egyszerű újragenerálás
       await regenerateRecipe();
@@ -236,25 +241,9 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setCurrentRecipe(null);
     setViewMode('single');
     setShowIngredientSelection(false);
+    setMealIngredients({});
     setLastSearchParams({ category: "", ingredient: "", mealType: "" });
   };
-
-  // Transform mealTypes to match FoodData interface
-  const transformedMealTypes = Object.keys(mealTypes).reduce((acc, mealType) => {
-    acc[mealType] = {
-      categories: categories
-    };
-    return acc;
-  }, {} as { [key: string]: { categories: { [key: string]: string[] } } });
-
-  const foodData = {
-    mealTypes: transformedMealTypes,
-    categories: categories,
-    getFilteredIngredients: getFilteredIngredients,
-    getRecipesByMealType: getRecipesByMealType
-  };
-
-  console.log('🗂️ FoodData átadva komponenseknek:', foodData);
 
   if (dataLoading) {
     return <LoadingChef />;
@@ -265,6 +254,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setSelectedMealType(mealType);
     setShowIngredientSelection(false);
     setCurrentRecipe(null);
+    setMealIngredients({});
   };
 
   const handleGetRandomRecipe = async () => {
@@ -309,23 +299,48 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
           <MealTypeSelector
             selectedMealType={selectedMealType}
             onSelectMealType={handleMealTypeSelect}
-            foodData={foodData}
+            foodData={{
+              mealTypes: mealTypes,
+              categories: categories,
+              getFilteredIngredients: getFilteredIngredients,
+              getRecipesByMealType: getRecipesByMealType
+            }}
             onGetRandomRecipe={handleGetRandomRecipe}
             onShowMultiCategorySelection={handleShowIngredientSelection}
           />
 
           {selectedMealType && showIngredientSelection && (
-            <MultiCategoryIngredientSelector
-              selectedMealType={selectedMealType}
-              foodData={foodData}
-              onGetMultipleCategoryRecipes={getMultipleCategoryRecipes}
-              getFavoriteForIngredient={(ingredient: string, category: string) => {
-                console.log('🔍 SingleRecipeApp - Multi kategória kedvenc ellenőrzés:', { ingredient, category });
-                const result = getFavoriteForIngredient(ingredient, category);
-                console.log('✅ SingleRecipeApp - Multi kategória kedvenc eredmény:', result);
+            <SharedIngredientSelector
+              selectedMeals={[selectedMealType]}
+              categories={categories}
+              getFilteredIngredients={getFilteredIngredients}
+              getFavoriteForIngredient={(ingredient: string, category?: string) => {
+                console.log('🔍 SingleRecipeApp - Shared kedvenc ellenőrzés:', { ingredient, category });
+                const result = getFavoriteForIngredient(ingredient, category || '');
+                console.log('✅ SingleRecipeApp - Shared kedvenc eredmény:', result);
                 return result;
               }}
+              getPreferenceForIngredient={(ingredient: string, category?: string) => {
+                console.log('🔍 SingleRecipeApp - Shared preferencia ellenőrzés:', { ingredient, category });
+                const result = getPreferenceForIngredient(ingredient, category || '');
+                console.log('✅ SingleRecipeApp - Shared preferencia eredmény:', result);
+                return result;
+              }}
+              onMealIngredientsChange={setMealIngredients}
+              initialMealIngredients={mealIngredients}
+              title="Alapanyag szűrés (opcionális)"
             />
+          )}
+
+          {selectedMealType && showIngredientSelection && Object.keys(mealIngredients).length > 0 && (
+            <div className="mb-6">
+              <button
+                onClick={() => getMultipleCategoryRecipes(mealIngredients)}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                🎯 Recept generálása kiválasztott alapanyagokkal
+              </button>
+            </div>
           )}
 
           <RecipeDisplay
