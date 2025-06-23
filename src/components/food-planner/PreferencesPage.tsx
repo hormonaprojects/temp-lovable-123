@@ -10,6 +10,12 @@ import {
   updateUserPreference,
   FoodPreference 
 } from "@/services/foodPreferencesQueries";
+import { 
+  getUserFavorites, 
+  addUserFavorite, 
+  removeUserFavorite, 
+  UserFavorite 
+} from "@/services/userFavorites";
 import { IngredientsGrid } from "./IngredientsGrid";
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,6 +33,7 @@ interface PreferencesPageProps {
 export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [userPreferences, setUserPreferences] = useState<FoodPreference[]>([]);
+  const [userFavorites, setUserFavorites] = useState<UserFavorite[]>([]);
   const [categoryIngredients, setCategoryIngredients] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,11 +56,12 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   const loadData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Preferenciák és kategória adatok betöltése...');
+      console.log('🔄 Preferenciák, kedvencek és kategória adatok betöltése...');
       
-      // Preferenciák és kategória adatok egyidejű betöltése
-      const [preferences, categoriesData] = await Promise.all([
+      // Minden adat egyidejű betöltése
+      const [preferences, favorites, categoriesData] = await Promise.all([
         fetchUserPreferences(user.id),
+        getUserFavorites(user.id),
         supabase.from('Ételkategóriák_Új').select('*')
       ]);
 
@@ -81,10 +89,12 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       });
 
       setUserPreferences(preferences);
+      setUserFavorites(favorites);
       setCategoryIngredients(categoryIngredientsMap);
       
       console.log('✅ Adatok betöltve:', {
         preferences: preferences.length,
+        favorites: favorites.length,
         categories: Object.keys(categoryIngredientsMap).length
       });
       
@@ -169,9 +179,52 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     }
   };
 
-  const handleFavoriteChange = (ingredient: string, isFavorite: boolean) => {
-    // For now, we don't handle favorites in preferences page
-    console.log('Favorite change:', { ingredient, category: selectedCategory, isFavorite });
+  const handleFavoriteChange = async (ingredient: string, isFavorite: boolean) => {
+    if (!selectedCategory) return;
+    
+    try {
+      console.log('🔄 Kedvenc frissítése:', { ingredient, category: selectedCategory, isFavorite });
+      
+      if (isFavorite) {
+        // Add to favorites
+        const success = await addUserFavorite(user.id, selectedCategory, ingredient);
+        if (success) {
+          // Update local state
+          const newFavorite: UserFavorite = {
+            id: crypto.randomUUID(),
+            user_id: user.id,
+            category: selectedCategory,
+            ingredient,
+            created_at: new Date().toISOString()
+          };
+          setUserFavorites(prev => [...prev, newFavorite]);
+          
+          // If favorite, also set preference to like
+          if (getPreferenceForIngredient(ingredient) !== 'like') {
+            await handlePreferenceUpdate(ingredient, 'like');
+          }
+          
+          console.log('✅ Kedvenc hozzáadva');
+        }
+      } else {
+        // Remove from favorites
+        const success = await removeUserFavorite(user.id, selectedCategory, ingredient);
+        if (success) {
+          // Update local state
+          setUserFavorites(prev => 
+            prev.filter(fav => !(fav.ingredient === ingredient && fav.category === selectedCategory))
+          );
+          console.log('✅ Kedvenc eltávolítva');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Kedvenc kezelési hiba:', error);
+      toast({
+        title: "Hiba történt",
+        description: "Nem sikerült frissíteni a kedvencet.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatsForCategory = (category: string) => {
@@ -179,26 +232,33 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     const categoryPrefs = userPreferences.filter(p => 
       p.category === category && availableIngredients.includes(p.ingredient)
     );
+    const categoryFavs = userFavorites.filter(f => 
+      f.category === category && availableIngredients.includes(f.ingredient)
+    );
     
     return {
       liked: categoryPrefs.filter(p => p.preference === 'like').length,
-      disliked: categoryPrefs.filter(p => p.preference === 'dislike').length
+      disliked: categoryPrefs.filter(p => p.preference === 'dislike').length,
+      favorites: categoryFavs.length
     };
   };
 
   const getTotalStats = () => {
     let totalLiked = 0;
     let totalDisliked = 0;
+    let totalFavorites = 0;
     
     categories.forEach(category => {
       const stats = getStatsForCategory(category);
       totalLiked += stats.liked;
       totalDisliked += stats.disliked;
+      totalFavorites += stats.favorites;
     });
     
     return {
       liked: totalLiked,
       disliked: totalDisliked,
+      favorites: totalFavorites,
       total: totalLiked + totalDisliked
     };
   };
@@ -213,7 +273,11 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   };
 
   const getFavoriteForIngredient = (ingredient: string): boolean => {
-    return false; // Placeholder
+    if (!selectedCategory) return false;
+    
+    return userFavorites.some(f => 
+      f.ingredient === ingredient && f.category === selectedCategory
+    );
   };
 
   if (loading) {
@@ -241,7 +305,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         </div>
 
         {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-green-600/20 border-green-400/50 text-white">
             <CardContent className="p-6 text-center">
               <div className="text-3xl font-bold text-green-400 mb-2">{totalStats.liked}</div>
@@ -252,6 +316,12 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
             <CardContent className="p-6 text-center">
               <div className="text-3xl font-bold text-red-400 mb-2">{totalStats.disliked}</div>
               <div className="text-white/80">Nem kedvelt alapanyag</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-pink-600/20 border-pink-400/50 text-white">
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-pink-400 mb-2">{totalStats.favorites}</div>
+              <div className="text-white/80">Kedvenc alapanyag</div>
             </CardContent>
           </Card>
           <Card className="bg-purple-600/20 border-purple-400/50 text-white">
@@ -296,6 +366,9 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                       </Badge>
                       <Badge className="bg-red-600/30 text-red-400 border-red-400/50 text-xs px-2 py-1">
                         👎 {stats.disliked}
+                      </Badge>
+                      <Badge className="bg-pink-600/30 text-pink-400 border-pink-400/50 text-xs px-2 py-1">
+                        💖 {stats.favorites}
                       </Badge>
                     </div>
                   </Button>
