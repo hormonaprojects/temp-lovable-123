@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import { MealTypeCardSelector } from "./MealTypeCardSelector";
@@ -9,6 +8,7 @@ import { GeneratedMealPlan } from "./GeneratedMealPlan";
 import { LoadingChef } from "@/components/ui/LoadingChef";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { useMealPlanGeneration } from "@/hooks/useMealPlanGeneration";
+import { filterRecipesByMultipleIngredients } from '@/services/recipeFilters';
 
 interface DailyMealPlannerProps {
   user: any;
@@ -44,7 +44,9 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
   const {
     generatedRecipes,
     isGenerating,
-    handleGetMultipleCategoryRecipes
+    handleGetMultipleCategoryRecipes,
+    setGeneratedRecipes,
+    setIsGenerating
   } = useMealPlanGeneration({
     selectedMeals,
     getRecipesByMealType,
@@ -130,15 +132,68 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       singleMealIngredients[mealType] = [];
     }
     
-    // Temporarily set selected meals to only this meal type
-    const originalSelectedMeals = selectedMeals;
-    setSelectedMeals([mealType]);
+    // Generate similar recipe for only this meal type
+    await handleGetSingleMealTypeRecipe(mealType, singleMealIngredients);
+  };
+
+  // New function to generate recipe for a single meal type while preserving others
+  const handleGetSingleMealTypeRecipe = async (targetMealType: string, mealIngredients: MealIngredients) => {
+    if (isGenerating) {
+      return;
+    }
+
+    setIsGenerating(true);
     
-    // Generate similar recipe
-    await handleGetMultipleCategoryRecipes(singleMealIngredients);
-    
-    // Restore original selected meals
-    setSelectedMeals(originalSelectedMeals);
+    try {
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Get current generated recipes
+      const currentRecipes = [...generatedRecipes];
+      
+      // Generate new recipe for the target meal type
+      const mealSpecificIngredients = mealIngredients[targetMealType] || [];
+      const mealTypeRecipes = getRecipesByMealType(targetMealType);
+
+      let validRecipes = [];
+
+      if (mealSpecificIngredients.length > 0) {
+        const ingredientNames = mealSpecificIngredients.map(ing => ing.ingredient);
+        validRecipes = filterRecipesByMultipleIngredients(mealTypeRecipes, ingredientNames);
+      } else {
+        validRecipes = mealTypeRecipes;
+      }
+
+      if (validRecipes.length > 0) {
+        const randomIndex = Math.floor(Math.random() * validRecipes.length);
+        const selectedSupabaseRecipe = validRecipes[randomIndex];
+        const standardRecipe = convertToStandardRecipe(selectedSupabaseRecipe);
+        
+        const recipeWithMeta = {
+          ...standardRecipe,
+          mealType: targetMealType,
+          category: mealSpecificIngredients.length > 0 ? mealSpecificIngredients.map(ing => ing.category).join(", ") : "Minden kategória",
+          ingredient: mealSpecificIngredients.length > 0 ? mealSpecificIngredients.map(ing => ing.ingredient).join(", ") : "Minden alapanyag"
+        };
+        
+        // Replace the recipe for this meal type in the current recipes array
+        const updatedRecipes = currentRecipes.map(recipe => 
+          recipe.mealType === targetMealType ? recipeWithMeta : recipe
+        );
+        
+        // If no existing recipe for this meal type, add it
+        if (!currentRecipes.some(recipe => recipe.mealType === targetMealType)) {
+          updatedRecipes.push(recipeWithMeta);
+        }
+
+        await minLoadingTime;
+        setGeneratedRecipes(updatedRecipes);
+      }
+      
+    } catch (error) {
+      console.error('❌ Hasonló recept generálási hiba:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // Preference search function
