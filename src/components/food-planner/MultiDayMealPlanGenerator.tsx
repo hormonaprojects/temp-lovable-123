@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -214,6 +214,22 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     );
   }
 
+  useEffect(() => {
+    if (multiDayPlan.length > 0) {
+      // Small delay to ensure the content is rendered
+      setTimeout(() => {
+        const summaryElement = document.querySelector('.meal-plan-summary');
+        if (summaryElement) {
+          summaryElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          });
+        }
+      }, 500);
+    }
+  }, [multiDayPlan.length]);
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Day Count Selector */}
@@ -336,8 +352,8 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
             </Card>
           ))}
 
-          {/* Summary Statistics */}
-          <Card className="bg-white/5 backdrop-blur-lg border-white/10 shadow-xl">
+          {/* Summary Statistics - Add the CSS class for scrolling */}
+          <Card className="meal-plan-summary bg-white/5 backdrop-blur-lg border-white/10 shadow-xl">
             <CardContent className="p-4 sm:p-6">
               <div className="text-center">
                 <h3 className="text-white font-bold text-lg mb-3">📊 Étrend összesítő</h3>
