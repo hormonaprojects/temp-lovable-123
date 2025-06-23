@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChefHat, Clock, RotateCcw, Trash2 } from "lucide-react";
+import { ChefHat, Clock, RotateCcw, Trash2 } from "lucide-react";
 import { Recipe } from "@/types/recipe";
 import { RecipeContent } from "./RecipeContent";
 import { RecipeModal } from "./RecipeModal";
@@ -13,6 +12,7 @@ import { useMultiDayPlanGeneration } from "@/hooks/useMultiDayPlanGeneration";
 import { SharedMealTypeSelector } from "./shared/SharedMealTypeSelector";
 import { SharedIngredientSelector } from "./shared/SharedIngredientSelector";
 import { SharedGenerationButton } from "./shared/SharedGenerationButton";
+import { DayCountSelector } from "./DayCountSelector";
 import { useToast } from "@/hooks/use-toast";
 
 interface MultiDayMealPlan {
@@ -70,8 +70,6 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
     getRecipesByMealType,
     convertToStandardRecipe
   });
-
-  const dayOptions = [3, 5, 7];
 
   // Define meal order for consistent display
   const mealOrder = ['reggeli', 'tízórai', 'ebéd', 'uzsonna', 'vacsora'];
@@ -218,38 +216,11 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Day Selection */}
-      <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-white text-xl font-bold flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-green-400" />
-            Többnapos Étrendtervező
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-6">
-            <div className="text-center">
-              <p className="text-white/80 mb-4">Válaszd ki, hány napra szeretnél étrendet:</p>
-              <div className="flex justify-center gap-4">
-                {dayOptions.map((days) => (
-                  <Button
-                    key={days}
-                    onClick={() => setSelectedDays(days)}
-                    variant="outline"
-                    className={`px-6 py-3 transition-all duration-200 ${
-                      selectedDays === days
-                        ? 'bg-green-600/30 border-green-400/50 text-white shadow-lg scale-105'
-                        : 'bg-white/5 border-white/20 text-white hover:bg-white/15 hover:border-white/40'
-                    }`}
-                  >
-                    {days} nap
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Day Count Selector */}
+      <DayCountSelector
+        selectedDays={selectedDays}
+        onDaysChange={setSelectedDays}
+      />
 
       {/* Shared Meal Type Selector */}
       <SharedMealTypeSelector
