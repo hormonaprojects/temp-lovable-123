@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
+import { MultiCategoryIngredientSelector } from "./MultiCategoryIngredientSelector";
 import { RecipeDisplay } from "./RecipeDisplay";
 import { MultiDayMealPlanGenerator } from "./MultiDayMealPlanGenerator";
 import { DailyMealPlanner } from "./DailyMealPlanner";
@@ -8,7 +9,6 @@ import { Recipe } from "@/types/recipe";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { LoadingChef } from "@/components/ui/LoadingChef";
 import { filterRecipesByMultipleIngredients } from "@/services/recipeFilters";
-import { SharedIngredientSelector } from "./shared/SharedIngredientSelector";
 
 interface MultiDayMealPlan {
   day: number;
@@ -23,10 +23,6 @@ interface SelectedIngredient {
   ingredient: string;
 }
 
-interface MealIngredients {
-  [mealType: string]: SelectedIngredient[];
-}
-
 interface SingleRecipeAppProps {
   user: any;
   onToggleDailyPlanner: () => void;
@@ -38,7 +34,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'single' | 'daily' | 'multi'>('single');
   const [showIngredientSelection, setShowIngredientSelection] = useState(false);
-  const [currentMealIngredients, setCurrentMealIngredients] = useState<MealIngredients>({});
   const [lastSearchParams, setLastSearchParams] = useState<{
     category: string;
     ingredient: string;
@@ -56,8 +51,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     convertToStandardRecipe,
     getFavoriteForIngredient,
     refreshFavorites,
-    recipes,
-    userPreferences
+    recipes
   } = useSupabaseData(user.id);
 
   // Kedvencek újratöltése amikor a komponens mountálódik
@@ -112,27 +106,9 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     }
   };
 
-  const handleMealIngredientsChange = (mealIngredients: MealIngredients) => {
-    setCurrentMealIngredients(mealIngredients);
-  };
-
-  const getPreferenceForIngredient = (ingredient: string, category: string): 'like' | 'dislike' | 'neutral' => {
-    const preference = userPreferences.find(pref => 
-      pref.ingredient.toLowerCase() === ingredient.toLowerCase() &&
-      pref.category.toLowerCase() === category.toLowerCase()
-    );
-    return preference ? preference.preference : 'neutral';
-  };
-
-  const getMultipleCategoryRecipes = async (mealIngredients: MealIngredients) => {
-    if (!selectedMealType) {
-      console.log('❌ Hiányzó meal type:', { selectedMealType });
-      return;
-    }
-
-    const selectedIngredients = mealIngredients[selectedMealType] || [];
-    if (selectedIngredients.length === 0) {
-      console.log('❌ Nincs kiválasztott alapanyag');
+  const getMultipleCategoryRecipes = async (selectedIngredients: SelectedIngredient[]) => {
+    if (!selectedMealType || selectedIngredients.length === 0) {
+      console.log('❌ Hiányzó meal type vagy alapanyagok:', { selectedMealType, selectedIngredients });
       return;
     }
 
@@ -303,10 +279,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setShowIngredientSelection(true);
   };
 
-  const handleGenerateWithIngredients = async () => {
-    await getMultipleCategoryRecipes(currentMealIngredients);
-  };
-
   return (
     <div className="max-w-6xl mx-auto p-3 sm:p-6">
       {/* Compact Hero Section */}
@@ -337,38 +309,23 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
           <MealTypeSelector
             selectedMealType={selectedMealType}
             onSelectMealType={handleMealTypeSelect}
-            foodData={{
-              categories: categories,
-              getFilteredIngredients: getFilteredIngredients,
-              getRecipesByMealType: getRecipesByMealType
-            }}
+            foodData={foodData}
             onGetRandomRecipe={handleGetRandomRecipe}
             onShowMultiCategorySelection={handleShowIngredientSelection}
           />
 
           {selectedMealType && showIngredientSelection && (
-            <SharedIngredientSelector
-              selectedMeals={[selectedMealType]}
-              categories={categories}
-              getFilteredIngredients={getFilteredIngredients}
-              getFavoriteForIngredient={getFavoriteForIngredient}
-              getPreferenceForIngredient={getPreferenceForIngredient}
-              onMealIngredientsChange={handleMealIngredientsChange}
-              initialMealIngredients={currentMealIngredients}
-              showIngredientSelection={showIngredientSelection}
-              title="Alapanyag szűrés (opcionális)"
+            <MultiCategoryIngredientSelector
+              selectedMealType={selectedMealType}
+              foodData={foodData}
+              onGetMultipleCategoryRecipes={getMultipleCategoryRecipes}
+              getFavoriteForIngredient={(ingredient: string, category: string) => {
+                console.log('🔍 SingleRecipeApp - Multi kategória kedvenc ellenőrzés:', { ingredient, category });
+                const result = getFavoriteForIngredient(ingredient, category);
+                console.log('✅ SingleRecipeApp - Multi kategória kedvenc eredmény:', result);
+                return result;
+              }}
             />
-          )}
-
-          {selectedMealType && showIngredientSelection && Object.values(currentMealIngredients).flat().length > 0 && (
-            <div className="mb-6 flex justify-center">
-              <button
-                onClick={handleGenerateWithIngredients}
-                className="bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-700/90 hover:to-pink-700/90 backdrop-blur-sm border border-purple-300/20 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
-              >
-                🎯 Recept generálása alapanyagokkal ({Object.values(currentMealIngredients).flat().length})
-              </button>
-            </div>
           )}
 
           <RecipeDisplay
