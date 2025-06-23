@@ -82,11 +82,11 @@ export function IngredientCard({
         animationDelay: `${index * 0.1}s`
       }}
     >
-      <div className="p-2">
+      <div className="p-2 sm:p-3">
         {/* EGYSÉGES kedvenc jelölés - RÓZSASZÍN SZÍV a jobb felső sarokban */}
         {favorite && (
           <div className="absolute top-1 right-1 z-10">
-            <Heart className="w-4 h-4 text-pink-500 fill-pink-500 drop-shadow-sm" />
+            <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-pink-500 fill-pink-500 drop-shadow-sm" />
           </div>
         )}
         
@@ -111,25 +111,25 @@ export function IngredientCard({
         </div>
         
         {/* Ingredient Name */}
-        <h3 className="text-xs font-semibold text-gray-800 text-center mb-2 leading-tight break-words hyphens-auto px-1 min-h-[2rem] flex items-center justify-center">
+        <h3 className="text-xs sm:text-sm font-semibold text-gray-800 text-center mb-3 leading-tight break-words hyphens-auto px-1 min-h-[2rem] sm:min-h-[2.5rem] flex items-center justify-center">
           {ingredient}
         </h3>
         
-        {/* Preference and Favorite Buttons */}
-        <div className="flex justify-center gap-1">
+        {/* Preference and Favorite Buttons - MOBIL OPTIMALIZÁLT */}
+        <div className="flex justify-center gap-2 sm:gap-1">
           <Button
             onClick={() => handlePreferenceClick('like')}
             variant={preference === 'like' ? 'default' : 'outline'}
             size="sm"
             className={`
-              w-6 h-6 p-0 transition-all duration-200 rounded-sm
+              w-8 h-8 sm:w-6 sm:h-6 p-0 transition-all duration-200 rounded-md sm:rounded-sm
               ${preference === 'like' 
                 ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg' 
                 : 'hover:bg-green-50 hover:border-green-300 hover:text-green-600'
               }
             `}
           >
-            <ThumbsUp className="w-3 h-3" />
+            <ThumbsUp className="w-4 h-4 sm:w-3 sm:h-3" />
           </Button>
           
           <Button
@@ -137,14 +137,14 @@ export function IngredientCard({
             variant={preference === 'dislike' ? 'default' : 'outline'}
             size="sm"
             className={`
-              w-6 h-6 p-0 transition-all duration-200 rounded-sm
+              w-8 h-8 sm:w-6 sm:h-6 p-0 transition-all duration-200 rounded-md sm:rounded-sm
               ${preference === 'dislike' 
                 ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg' 
                 : 'hover:bg-red-50 hover:border-red-300 hover:text-red-600'
               }
             `}
           >
-            <ThumbsDown className="w-3 h-3" />
+            <ThumbsDown className="w-4 h-4 sm:w-3 sm:h-3" />
           </Button>
           
           <Button
@@ -152,14 +152,14 @@ export function IngredientCard({
             variant={favorite ? 'default' : 'outline'}
             size="sm"
             className={`
-              w-6 h-6 p-0 transition-all duration-200 rounded-sm border-2
+              w-8 h-8 sm:w-6 sm:h-6 p-0 transition-all duration-200 rounded-md sm:rounded-sm border-2
               ${favorite 
                 ? 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-lg border-pink-400' 
                 : 'hover:bg-pink-50 hover:border-pink-300 hover:text-pink-600 border-pink-200'
               }
             `}
           >
-            <Heart className={`w-3 h-3 ${favorite ? 'fill-current' : ''}`} />
+            <Heart className={`w-4 h-4 sm:w-3 sm:h-3 ${favorite ? 'fill-current' : ''}`} />
           </Button>
         </div>
       </div>
