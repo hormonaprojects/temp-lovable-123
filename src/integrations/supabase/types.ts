@@ -347,6 +347,63 @@ export type Database = {
           },
         ]
       }
+      recept_alapanyagv2: {
+        Row: {
+          "Élelmiszer ID": string | null
+          Élelmiszerek: string | null
+          ID: string
+          Mennyiség: number | null
+          Mértékegység: string | null
+          Recept_ID: number | null
+        }
+        Insert: {
+          "Élelmiszer ID"?: string | null
+          Élelmiszerek?: string | null
+          ID: string
+          Mennyiség?: number | null
+          Mértékegység?: string | null
+          Recept_ID?: number | null
+        }
+        Update: {
+          "Élelmiszer ID"?: string | null
+          Élelmiszerek?: string | null
+          ID?: string
+          Mennyiség?: number | null
+          Mértékegység?: string | null
+          Recept_ID?: number | null
+        }
+        Relationships: []
+      }
+      receptekv2: {
+        Row: {
+          Elkészítése: string | null
+          Feherje_g: number | null
+          Kép: string | null
+          "Recept ID": number
+          Receptnév: string | null
+          Szenhidrat_g: number | null
+          Zsir_g: number | null
+        }
+        Insert: {
+          Elkészítése?: string | null
+          Feherje_g?: number | null
+          Kép?: string | null
+          "Recept ID": number
+          Receptnév?: string | null
+          Szenhidrat_g?: number | null
+          Zsir_g?: number | null
+        }
+        Update: {
+          Elkészítése?: string | null
+          Feherje_g?: number | null
+          Kép?: string | null
+          "Recept ID"?: number
+          Receptnév?: string | null
+          Szenhidrat_g?: number | null
+          Zsir_g?: number | null
+        }
+        Relationships: []
+      }
       user_favorites: {
         Row: {
           category: string

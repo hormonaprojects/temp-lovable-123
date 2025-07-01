@@ -1,4 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
+import { fetchCombinedRecipes } from './newDatabaseQueries';
 
 export const fetchCategories = async () => {
   const { data, error } = await supabase
@@ -26,17 +28,10 @@ export const fetchMealTypes = async () => {
   return data;
 };
 
+// Új függvény: az új adatbázis struktúrából tölti be a recepteket
 export const fetchRecipes = async () => {
-  const { data, error } = await supabase
-    .from('Adatbázis')
-    .select('*');
-
-  if (error) {
-    console.error('Receptek betöltési hiba:', error);
-    throw error;
-  }
-
-  return data;
+  console.log('🔄 Receptek betöltése új adatbázis struktúrából...');
+  return await fetchCombinedRecipes();
 };
 
 export const saveRecipeRating = async (recipeName: string, rating: number, userId: string) => {

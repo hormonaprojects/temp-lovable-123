@@ -1,67 +1,50 @@
-
-import { SupabaseRecipe } from '@/types/supabase';
-import { UserPreference } from '../preferenceFilters';
-import { getRecipesByMealType } from './mealTypeFilters';
-import { filterRecipesByIngredient, filterRecipesByMultipleIngredients, getAllRecipeIngredients, hasIngredientMatch } from './ingredientFilters';
-import { filterRecipesByCategory } from './categoryFilters';
-
-// Re-export all filter functions from their respective modules
-export { 
-  getAllRecipeIngredients,
-  hasIngredientMatch,
+export {
+  getRecipesByMealType as oldGetRecipesByMealType,
   filterRecipesByIngredient,
-  filterRecipesByMultipleIngredients
-} from './ingredientFilters';
+  filterRecipesByMultipleIngredients as oldFilterRecipesByMultipleIngredients,
+  filterRecipesByCategory,
+  getRecipesByCategory as oldGetRecipesByCategory,
+  getAllRecipeIngredients,
+  hasIngredientMatch
+} from './mealTypeFilters';
 
-export { getRecipesByMealType } from './mealTypeFilters';
-export { filterRecipesByCategory } from './categoryFilters';
+// Új exportok az új adatbázis struktúrához
+export {
+  getRecipesByMealTypeNew,
+  filterRecipesByMultipleIngredientsNew,
+  getRecipesByCategoryNew
+} from './newDatabaseFilters';
 
-// Komplex szűrés kategória + alapanyag + étkezési típus alapján
-export const getRecipesByCategory = (
-  recipes: SupabaseRecipe[],
-  mealTypeRecipes: Record<string, string[]>,
-  categories: Record<string, string[]>,
-  category: string,
-  ingredient?: string,
-  mealType?: string,
-  userPreferences?: UserPreference[]
-): SupabaseRecipe[] => {
-  console.log(`🔍 Komplex szűrés - Kategória: ${category}, Alapanyag: ${ingredient}, Étkezési típus: ${mealType}`);
-  
-  let filteredRecipes = recipes;
-
-  // 1. LÉPÉS: Étkezési típus szűrés (ha van)
-  if (mealType) {
-    filteredRecipes = getRecipesByMealType(filteredRecipes, mealTypeRecipes, mealType, userPreferences);
-    console.log(`📋 Étkezési típus után: ${filteredRecipes.length} recept`);
-    
-    if (filteredRecipes.length === 0) {
-      console.log('❌ Nincs recept ehhez az étkezési típushoz');
-      return [];
-    }
+// Átmeneti kompatibilitás érdekében átirányítjuk a hívásokat
+export const getRecipesByMealType = (recipes: any, mealTypeRecipes: any, mealType: string, userPreferences: any = []) => {
+  // Ha az új típusú recepteket kapjuk, használjuk az új függvényt
+  if (recipes.length > 0 && 'hozzávalók' in recipes[0]) {
+    const { getRecipesByMealTypeNew } = require('./newDatabaseFilters');
+    return getRecipesByMealTypeNew(recipes, mealTypeRecipes, mealType, userPreferences);
   }
+  // Különben a régi függvényt
+  const { getRecipesByMealType: oldGetRecipesByMealType } = require('./mealTypeFilters');
+  return oldGetRecipesByMealType(recipes, mealTypeRecipes, mealType, userPreferences);
+};
 
-  // 2. LÉPÉS: Konkrét alapanyag szűrés (ha van)
-  if (ingredient) {
-    filteredRecipes = filterRecipesByIngredient(filteredRecipes, ingredient);
-    console.log(`🎯 Alapanyag szűrés után: ${filteredRecipes.length} recept`);
-    
-    if (filteredRecipes.length === 0) {
-      console.log(`❌ Nincs recept "${ingredient}" alapanyaggal`);
-      return [];
-    }
+export const filterRecipesByMultipleIngredients = (recipes: any, requiredIngredients: string[]) => {
+  // Ha az új típusú recepteket kapjuk, használjuk az új függvényt
+  if (recipes.length > 0 && 'hozzávalók' in recipes[0]) {
+    const { filterRecipesByMultipleIngredientsNew } = require('./newDatabaseFilters');
+    return filterRecipesByMultipleIngredientsNew(recipes, requiredIngredients);
   }
-  // 3. LÉPÉS: Kategória szűrés (ha nincs konkrét alapanyag)
-  else if (category) {
-    filteredRecipes = filterRecipesByCategory(filteredRecipes, categories, category);
-    console.log(`🥕 Kategória szűrés után: ${filteredRecipes.length} recept`);
-    
-    if (filteredRecipes.length === 0) {
-      console.log(`❌ Nincs recept "${category}" kategóriából`);
-      return [];
-    }
-  }
+  // Különben a régi függvényt
+  const { filterRecipesByMultipleIngredients: oldFilterRecipesByMultipleIngredients } = require('./ingredientFilters');
+  return oldFilterRecipesByMultipleIngredients(recipes, requiredIngredients);
+};
 
-  console.log(`✅ Végső eredmény: ${filteredRecipes.length} recept`);
-  return filteredRecipes;
+export const getRecipesByCategory = (recipes: any, mealTypeRecipes: any, categories: any, category: string, ingredient?: string, mealType?: string, userPreferences: any = []) => {
+  // Ha az új típusú recepteket kapjuk, használjuk az új függvényt
+  if (recipes.length > 0 && 'hozzávalók' in recipes[0]) {
+    const { getRecipesByCategoryNew } = require('./newDatabaseFilters');
+    return getRecipesByCategoryNew(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
+  }
+  // Különben a régi függvényt
+  const { getRecipesByCategory: oldGetRecipesByCategory } = require('./categoryFilters');
+  return oldGetRecipesByCategory(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
 };

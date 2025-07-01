@@ -1,9 +1,11 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { SupabaseRecipe, MealTypeData } from '@/types/supabase';
+import { MealTypeData } from '@/types/supabase';
+import { CombinedRecipe } from '@/types/newDatabase';
 import { fetchCategories, fetchMealTypes, fetchRecipes, saveRecipeRating } from '@/services/supabaseQueries';
 import { processCategories, processMealTypes, createMealTypesDisplay } from '@/utils/dataProcessors';
-import { convertToStandardRecipe } from '@/utils/recipeConverter';
+import { convertNewRecipeToStandard } from '@/utils/newRecipeConverter';
 import { getRecipesByMealType, getRecipesByCategory } from '@/services/recipeFilters';
 import { getUserPreferences, filterIngredientsByPreferences, UserPreference } from '@/services/preferenceFilters';
 import { getUserFavorites, isFavoriteIngredient, UserFavorite, addUserFavorite, removeUserFavorite } from '@/services/userFavorites';
@@ -11,7 +13,7 @@ import { getUserFavorites, isFavoriteIngredient, UserFavorite, addUserFavorite, 
 export function useSupabaseData(userId?: string) {
   const [categories, setCategories] = useState<Record<string, string[]>>({});
   const [mealTypes, setMealTypes] = useState<MealTypeData>({});
-  const [recipes, setRecipes] = useState<SupabaseRecipe[]>([]);
+  const [recipes, setRecipes] = useState<CombinedRecipe[]>([]);
   const [mealTypeRecipes, setMealTypeRecipes] = useState<Record<string, string[]>>({});
   const [userPreferences, setUserPreferences] = useState<UserPreference[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,15 +58,15 @@ export function useSupabaseData(userId?: string) {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        console.log('🔄 Valódi adatok betöltése Supabase-ből...');
+        console.log('🔄 ÚJ adatbázis struktúra betöltése Supabase-ből...');
         
         const [categoriesData, mealTypesData, recipesData] = await Promise.all([
           fetchCategories(),
           fetchMealTypes(),
-          fetchRecipes()
+          fetchRecipes() // Ez most az új kombinált recepteket tölti be
         ]);
 
-        console.log('📊 Nyers adatok betöltve:', {
+        console.log('📊 Nyers adatok betöltve az ÚJ struktúrából:', {
           categories: categoriesData?.length || 0,
           mealTypes: mealTypesData?.length || 0,
           recipes: recipesData?.length || 0
@@ -81,7 +83,7 @@ export function useSupabaseData(userId?: string) {
         setMealTypeRecipes(processedMealTypeRecipes);
         setRecipes(recipesData || []);
         
-        console.log('✅ Adatok sikeresen betöltve:', {
+        console.log('✅ ÚJ adatok sikeresen betöltve:', {
           categories: Object.keys(processedCategories).length,
           mealTypes: Object.keys(processedMealTypes).length,
           totalRecipesInMealTypes: Object.values(processedMealTypes).reduce((acc, recipes) => acc + recipes.length, 0),
@@ -89,10 +91,10 @@ export function useSupabaseData(userId?: string) {
         });
 
       } catch (error) {
-        console.error('❌ Adatok betöltési hiba:', error);
+        console.error('❌ ÚJ adatok betöltési hiba:', error);
         toast({
           title: "Hiba",
-          description: "Nem sikerült betölteni az adatokat az adatbázisból.",
+          description: "Nem sikerült betölteni az adatokat az új adatbázisból.",
           variant: "destructive"
         });
       } finally {
@@ -107,7 +109,7 @@ export function useSupabaseData(userId?: string) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('🔄 Valódi adatok újratöltése Supabase-ből...');
+      console.log('🔄 ÚJ adatok újratöltése Supabase-ből...');
       
       const [categoriesData, mealTypesData, recipesData] = await Promise.all([
         fetchCategories(),
@@ -124,13 +126,13 @@ export function useSupabaseData(userId?: string) {
       setMealTypeRecipes(processedMealTypeRecipes);
       setRecipes(recipesData || []);
       
-      console.log('✅ Adatok sikeresen újratöltve');
+      console.log('✅ ÚJ adatok sikeresen újratöltve');
 
     } catch (error) {
-      console.error('❌ Adatok újratöltési hiba:', error);
+      console.error('❌ ÚJ adatok újratöltési hiba:', error);
       toast({
         title: "Hiba",
-        description: "Nem sikerült betölteni az adatokat az adatbázisból.",
+        description: "Nem sikerült betölteni az adatokat az új adatbázisból.",
         variant: "destructive"
       });
     } finally {
@@ -139,14 +141,14 @@ export function useSupabaseData(userId?: string) {
   }, [toast]);
 
   // FIXED: Stable functions using actual objects/arrays as dependencies
-  const getRecipesByMealTypeHandler = useCallback((mealType: string): SupabaseRecipe[] => {
+  const getRecipesByMealTypeHandler = useCallback((mealType: string): CombinedRecipe[] => {
     if (!recipes.length || !Object.keys(mealTypeRecipes).length) {
       return [];
     }
     return getRecipesByMealType(recipes, mealTypeRecipes, mealType, userPreferences);
   }, [recipes, mealTypeRecipes, userPreferences]);
 
-  const getRecipesByCategoryHandler = useCallback((category: string, ingredient?: string, mealType?: string): SupabaseRecipe[] => {
+  const getRecipesByCategoryHandler = useCallback((category: string, ingredient?: string, mealType?: string): CombinedRecipe[] => {
     if (!recipes.length || !Object.keys(categories).length) {
       return [];
     }
@@ -163,7 +165,7 @@ export function useSupabaseData(userId?: string) {
     return filterIngredientsByPreferences(allIngredients, category, userPreferences);
   }, [categories, userPreferences]);
 
-  const getRandomRecipe = useCallback((): SupabaseRecipe | null => {
+  const getRandomRecipe = useCallback((): CombinedRecipe | null => {
     if (recipes.length === 0) return null;
     return recipes[Math.floor(Math.random() * recipes.length)];
   }, [recipes]);
@@ -236,7 +238,7 @@ export function useSupabaseData(userId?: string) {
     getRecipesByCategory: getRecipesByCategoryHandler,
     getFilteredIngredients,
     getRandomRecipe,
-    convertToStandardRecipe,
+    convertToStandardRecipe: convertNewRecipeToStandard,
     saveRating,
     refetch: loadData,
     refreshPreferences: loadUserPreferences,
