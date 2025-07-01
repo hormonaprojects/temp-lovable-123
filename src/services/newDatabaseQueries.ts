@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ReceptekV2, ReceptAlapanyagV2, CombinedRecipe } from '@/types/newDatabase';
 
@@ -178,6 +179,9 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
     console.log('📋 Recept ID-k (első 5):', receptek.slice(0, 5).map(r => r['Recept ID']));
     console.log('📋 Alapanyag Recept_ID-k (első 10):', [...new Set(alapanyagok.slice(0, 10).map(a => a['Recept_ID']))]);
 
+    // TESZTELÉS: Adjunk hozzá RLS ellenőrzést is
+    console.log('🔍 RLS teszt: current user auth.uid()');
+    
     // Csoportosítjuk az alapanyagokat recept ID szerint - JAVÍTOTT VERZIÓ
     console.log('🔄 Alapanyagok csoportosítása Recept_ID szerint...');
     const alapanyagokByReceptId = alapanyagok.reduce((acc, alapanyag) => {
