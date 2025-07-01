@@ -8,71 +8,69 @@ export const getRecipesByMealTypeNew = (
   mealType: string,
   userPreferences: UserPreference[] = []
 ): CombinedRecipe[] => {
-  console.log('🔍 Receptek keresése meal type alapján (ID-ALAPÚ módszer):', { 
+  console.log('🔍 Receptek keresése meal type alapján:', { 
     mealType, 
     totalRecipes: recipes.length,
     recipesWithMealType: recipes.filter(r => r.mealType).length,
     userPreferences: userPreferences.length
   });
   
-  // ELSŐ PRIORITÁS: Az új mealType mező alapján szűrünk (ID-alapú kapcsolat)
+  // ELSŐ PRIORITÁS: Az mealType mező alapján szűrünk (Étkezések táblából származó)
   const directMealTypeMatches = recipes.filter(recipe => {
-    const recipeMealType = recipe.mealType?.toLowerCase();
+    if (!recipe.mealType) return false;
+    
+    const recipeMealType = recipe.mealType.toLowerCase();
     const searchMealType = mealType.toLowerCase();
     
     const isMatch = recipeMealType === searchMealType ||
-                   (searchMealType === 'tízórai' && recipeMealType === 'tizórai') ||
+                   (searchMealType === 'tízórai' && recipeMealType === 'tízórai') ||
                    (searchMealType === 'tizórai' && recipeMealType === 'tízórai');
     
     if (isMatch) {
-      console.log(`✅ ID-alapú találat: "${recipe.név}" (${recipe.id}) → ${recipeMealType}`);
+      console.log(`✅ Meal type találat: "${recipe.név}" (${recipe.id}) → ${recipeMealType}`);
     }
     
     return isMatch;
   });
   
-  console.log(`🎯 Direkt meal type találatok (ID-alapú): ${directMealTypeMatches.length} recept`);
+  console.log(`🎯 Meal type találatok: ${directMealTypeMatches.length} recept`);
   
-  if (directMealTypeMatches.length > 0) {
-    console.log('✅ ID-alapú meal type szűrés használva');
-    const filteredByPreferences = applyUserPreferences(directMealTypeMatches, userPreferences);
-    console.log(`📊 Preferenciák alkalmazása után: ${filteredByPreferences.length} recept`);
-    return filteredByPreferences;
+  let finalRecipes = directMealTypeMatches;
+  
+  // Ha nincs közvetlen meal type találat, próbálkozzunk a név-alapú fallback-kel
+  if (finalRecipes.length === 0) {
+    console.log('⚠️ Nincs közvetlen meal type találat, fallback a név-alapú módszerre...');
+    
+    const mealTypeRecipeNames = mealTypeRecipes[mealType] || [];
+    console.log(`📋 ${mealType} típusú receptek nevei (név-alapú módszer):`, mealTypeRecipeNames.length, 'db');
+    
+    if (mealTypeRecipeNames.length > 0) {
+      finalRecipes = recipes.filter(recipe => {
+        const recipeName = recipe.név.toLowerCase();
+        const hasMatch = mealTypeRecipeNames.some(mealRecipeName => {
+          const mealRecipeNameLower = mealRecipeName.toLowerCase();
+          return recipeName.includes(mealRecipeNameLower) ||
+                 mealRecipeNameLower.includes(recipeName) ||
+                 recipeName === mealRecipeNameLower;
+        });
+        
+        if (hasMatch) {
+          console.log(`✅ Név-alapú találat: "${recipe.név}" (${recipe.id})`);
+        }
+        
+        return hasMatch;
+      });
+    }
   }
   
-  // MÁSODIK PRIORITÁS: Fallback a régi név-alapú módszerre
-  console.log('⚠️ Nincs ID-alapú meal type találat, fallback a név-alapú módszerre...');
-  
-  const mealTypeRecipeNames = mealTypeRecipes[mealType] || [];
-  console.log(`📋 ${mealType} típusú receptek nevei (név-alapú módszer):`, mealTypeRecipeNames.length, 'db');
-  
-  if (mealTypeRecipeNames.length === 0) {
-    console.warn(`⚠️ Nincs ${mealType} típusú recept sem ID-alapon, sem név alapon`);
+  if (finalRecipes.length === 0) {
+    console.warn(`⚠️ Nincs ${mealType} típusú recept sem közvetlen, sem név-alapú módszerrel`);
     return [];
   }
 
-  // Név-alapú szűrés fallback-ként
-  const filteredRecipes = recipes.filter(recipe => {
-    const recipeName = recipe.név.toLowerCase();
-    const hasMatch = mealTypeRecipeNames.some(mealRecipeName => {
-      const mealRecipeNameLower = mealRecipeName.toLowerCase();
-      const isMatch = recipeName.includes(mealRecipeNameLower) ||
-                     mealRecipeNameLower.includes(recipeName) ||
-                     recipeName === mealRecipeNameLower;
-      
-      if (isMatch) {
-        console.log(`✅ Név-alapú találat: "${recipe.név}" (${recipe.id})`);
-      }
-      
-      return isMatch;
-    });
-    
-    return hasMatch;
-  });
-
-  console.log(`✅ Talált receptek ${mealType} típushoz (név-alapú fallback):`, filteredRecipes.length);
+  console.log(`✅ Talált receptek ${mealType} típushoz:`, finalRecipes.length);
   
-  const filteredByPreferences = applyUserPreferences(filteredRecipes, userPreferences);
+  const filteredByPreferences = applyUserPreferences(finalRecipes, userPreferences);
   console.log(`📊 Preferenciák alkalmazása után: ${filteredByPreferences.length} recept`);
   return filteredByPreferences;
 };
@@ -139,7 +137,7 @@ export const filterRecipesByMultipleIngredientsNew = (
   recipes: CombinedRecipe[],
   requiredIngredients: string[]
 ): CombinedRecipe[] => {
-  console.log('🔍 Több alapanyag alapján szűrés (ID-alapú módszer):', requiredIngredients);
+  console.log('🔍 Több alapanyag alapján szűrés:', requiredIngredients);
   
   if (requiredIngredients.length === 0) {
     console.log('⚠️ Nincs megadva alapanyag, minden recept visszaküldése');
@@ -181,7 +179,7 @@ export const getRecipesByCategoryNew = (
   mealType?: string,
   userPreferences: UserPreference[] = []
 ): CombinedRecipe[] => {
-  console.log('🔍 Receptek keresése kategória alapján (ID-alapú módszer):', { 
+  console.log('🔍 Receptek keresése kategória alapján:', { 
     category, 
     ingredient, 
     mealType,
