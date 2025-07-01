@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ReceptekV2, ReceptAlapanyagV2, CombinedRecipe } from '@/types/newDatabase';
 
 export const fetchReceptekV2 = async (): Promise<ReceptekV2[]> => {
-  console.log('🔄 Receptek lekérése...');
+  console.log('🔄 Receptek lekérése az új receptek táblából...');
   
   const { data, error } = await supabase
     .from('receptek')
@@ -26,7 +26,7 @@ export const fetchReceptekV2 = async (): Promise<ReceptekV2[]> => {
 };
 
 export const fetchReceptAlapanyagV2 = async (): Promise<ReceptAlapanyagV2[]> => {
-  console.log('🔄 Recept alapanyag lekérése...');
+  console.log('🔄 Recept alapanyag lekérése az új recept_alapanyag táblából...');
   
   const { data, error } = await supabase
     .from('recept_alapanyag')
@@ -66,7 +66,7 @@ const normalizeText = (text: string): string => {
     .replace(/[^\w\s]/g, '');
 };
 
-// Meal types meghatározása az Étkezések tábla alapján - JAVÍTOTT VERZIÓ
+// Meal types meghatározása az Étkezések tábla alapján
 const determineMealTypesForRecipe = async (recipeName: string): Promise<string[]> => {
   console.log('🔍 Meal types meghatározása recepthez:', recipeName);
   
@@ -131,21 +131,6 @@ const determineMealTypesForRecipe = async (recipeName: string): Promise<string[]
     });
   } else {
     console.log(`⚠️ "${recipeName}" nem található az Étkezések táblában`);
-    // Próbáljunk részleges egyezést
-    const partialMatches = mealTypesData.filter(row => {
-      const rowRecipeName = row['Recept Neve'];
-      if (!rowRecipeName) return false;
-      
-      const normalizedRowName = normalizeText(rowRecipeName);
-      const words = normalizedRecipeName.split(' ').filter(word => word.length > 2);
-      
-      return words.some(word => normalizedRowName.includes(word));
-    });
-    
-    if (partialMatches.length > 0) {
-      console.log(`🔍 Részleges egyezések találva: ${partialMatches.length} db`);
-      console.log('📋 Részleges egyezések:', partialMatches.map(row => row['Recept Neve']).slice(0, 3));
-    }
   }
 
   return mealTypes;
@@ -179,10 +164,7 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
     console.log('📋 Recept ID-k (első 5):', receptek.slice(0, 5).map(r => r['Recept ID']));
     console.log('📋 Alapanyag Recept_ID-k (első 10):', [...new Set(alapanyagok.slice(0, 10).map(a => a['Recept_ID']))]);
 
-    // TESZTELÉS: Adjunk hozzá RLS ellenőrzést is
-    console.log('🔍 RLS teszt: current user auth.uid()');
-    
-    // Csoportosítjuk az alapanyagokat recept ID szerint - JAVÍTOTT VERZIÓ
+    // Csoportosítjuk az alapanyagokat recept ID szerint
     console.log('🔄 Alapanyagok csoportosítása Recept_ID szerint...');
     const alapanyagokByReceptId = alapanyagok.reduce((acc, alapanyag) => {
       const receptId = alapanyag['Recept_ID'];

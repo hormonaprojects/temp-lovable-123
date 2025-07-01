@@ -379,7 +379,6 @@ export type Database = {
           Elkészítése: string | null
           Feherje_g: number | null
           Kép: string | null
-          meal_type: string | null
           "Recept ID": number
           Receptnév: string | null
           Szenhidrat_g: number | null
@@ -389,7 +388,6 @@ export type Database = {
           Elkészítése?: string | null
           Feherje_g?: number | null
           Kép?: string | null
-          meal_type?: string | null
           "Recept ID": number
           Receptnév?: string | null
           Szenhidrat_g?: number | null
@@ -399,7 +397,6 @@ export type Database = {
           Elkészítése?: string | null
           Feherje_g?: number | null
           Kép?: string | null
-          meal_type?: string | null
           "Recept ID"?: number
           Receptnév?: string | null
           Szenhidrat_g?: number | null

@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { fetchCombinedRecipes } from './newDatabaseQueries';
-import { SupabaseRecipe } from '@/types/supabase';
 
 export const fetchCategories = async () => {
   console.log('🔄 Kategóriák betöltése új táblából...');
@@ -33,9 +32,9 @@ export const fetchMealTypes = async () => {
   return data;
 };
 
-// ÚJ ADATBÁZIS STRUKTÚRA - receptekv2 + recept_alapanyagv2 + Étkezések
+// ÚJ ADATBÁZIS STRUKTÚRA - csak receptek + recept_alapanyag + Étkezések
 export const fetchRecipes = async () => {
-  console.log('🔄 Receptek betöltése ÚJ adatbázis struktúrából (receptekv2 + recept_alapanyagv2 + Étkezések)...');
+  console.log('🔄 Receptek betöltése ÚJ adatbázis struktúrából (receptek + recept_alapanyag + Étkezések)...');
   
   try {
     // Csak az új struktúrát használjuk
