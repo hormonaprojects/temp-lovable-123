@@ -347,7 +347,7 @@ export type Database = {
           },
         ]
       }
-      recept_alapanyagv2: {
+      recept_alapanyag: {
         Row: {
           "Élelmiszer ID": string | null
           Élelmiszerek: string | null
@@ -374,7 +374,7 @@ export type Database = {
         }
         Relationships: []
       }
-      receptekv2: {
+      receptek: {
         Row: {
           Elkészítése: string | null
           Feherje_g: number | null

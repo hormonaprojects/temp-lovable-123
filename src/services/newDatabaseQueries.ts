@@ -1,25 +1,24 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ReceptekV2, ReceptAlapanyagV2, CombinedRecipe } from '@/types/newDatabase';
 
 export const fetchReceptekV2 = async (): Promise<ReceptekV2[]> => {
-  console.log('🔄 ReceptekV2 lekérése...');
+  console.log('🔄 Receptek lekérése...');
   
   const { data, error } = await supabase
-    .from('receptekv2')
+    .from('receptek')
     .select('*');
 
   if (error) {
-    console.error('❌ receptekv2 tábla lekérési hiba:', error);
+    console.error('❌ receptek tábla lekérési hiba:', error);
     throw error;
   }
 
   if (!data || data.length === 0) {
-    console.warn('⚠️ Nincs adat a receptekv2 táblában!');
+    console.warn('⚠️ Nincs adat a receptek táblában!');
     return [];
   }
 
-  console.log('✅ ReceptekV2 betöltve:', data.length, 'db');
+  console.log('✅ Receptek betöltve:', data.length, 'db');
   console.log('📋 Első recept példa:', data[0]);
   
   return data;
@@ -29,16 +28,16 @@ export const fetchReceptAlapanyagV2 = async (): Promise<ReceptAlapanyagV2[]> => 
   console.log('🔄 Recept alapanyag lekérése...');
   
   const { data, error } = await supabase
-    .from('recept_alapanyagv2')
+    .from('recept_alapanyag')
     .select('*');
 
   if (error) {
-    console.error('❌ recept_alapanyagv2 tábla lekérési hiba:', error);
+    console.error('❌ recept_alapanyag tábla lekérési hiba:', error);
     throw error;
   }
 
   if (!data || data.length === 0) {
-    console.warn('⚠️ Nincs adat a recept_alapanyagv2 táblában!');
+    console.warn('⚠️ Nincs adat a recept_alapanyag táblában!');
     return [];
   }
 
@@ -153,7 +152,7 @@ const determineMealTypesForRecipe = async (recipeName: string): Promise<string[]
 
 export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
   try {
-    console.log('🔄 ÚJ adatbázis struktúra betöltése (receptekv2 + recept_alapanyagv2 + Étkezések)...');
+    console.log('🔄 ÚJ adatbázis struktúra betöltése (receptek + recept_alapanyag + Étkezések)...');
     
     const [receptek, alapanyagok] = await Promise.all([
       fetchReceptekV2(),
@@ -166,7 +165,7 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
     });
 
     if (receptek.length === 0) {
-      console.warn('⚠️ ReceptekV2 tábla üres!');
+      console.warn('⚠️ Receptek tábla üres!');
       return [];
     }
 
