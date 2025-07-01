@@ -66,7 +66,7 @@ const normalizeText = (text: string): string => {
     .replace(/[^\w\s]/g, '');
 };
 
-// Meal types meghatározása az Étkezések tábla alapján
+// Meal types meghatározása az Étkezések tábla alapján RECEPTNÉV szerint
 const determineMealTypesForRecipe = async (recipeName: string): Promise<string[]> => {
   console.log('🔍 Meal types meghatározása recepthez:', recipeName);
   
