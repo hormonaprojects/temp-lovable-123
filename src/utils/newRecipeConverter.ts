@@ -6,11 +6,11 @@ export const convertNewRecipeToStandard = (newRecipe: CombinedRecipe): Recipe =>
   return {
     név: newRecipe.név,
     elkészítés: newRecipe.elkészítés,
-    kép: newRecipe.kép,
-    szénhidrát: newRecipe.szénhidrát,
-    fehérje: newRecipe.fehérje,
-    zsír: newRecipe.zsír,
+    képUrl: newRecipe.kép,
+    szénhidrát: newRecipe.szénhidrát.toString(),
+    fehérje: newRecipe.fehérje.toString(),
+    zsír: newRecipe.zsír.toString(),
     hozzávalók: newRecipe.hozzávalók,
-    mealTypes: newRecipe.mealTypes // Több meal type átadása
+    mealTypes: newRecipe.mealTypes
   };
 };
