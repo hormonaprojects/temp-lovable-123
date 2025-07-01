@@ -5,27 +5,17 @@ import { ReceptekV2, ReceptAlapanyagV2, CombinedRecipe } from '@/types/newDataba
 export const fetchReceptekV2 = async (): Promise<ReceptekV2[]> => {
   console.log('🔄 ReceptekV2 lekérése...');
   
-  // Próbáljuk mindkét táblanevet
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('receptekv2')
     .select('*');
 
-  if (error || !data || data.length === 0) {
-    console.log('⚠️ receptekv2 tábla nem elérhető vagy üres, próbáljuk receptekV2-t');
-    const response = await supabase
-      .from('receptekV2')
-      .select('*');
-    
-    if (response.error) {
-      console.error('❌ Egyik receptek tábla sem elérhető:', response.error);
-      throw response.error;
-    }
-    
-    data = response.data;
+  if (error) {
+    console.error('❌ receptekv2 tábla lekérési hiba:', error);
+    throw error;
   }
 
   if (!data || data.length === 0) {
-    console.warn('⚠️ Nincs adat a receptek táblákban!');
+    console.warn('⚠️ Nincs adat a receptekv2 táblában!');
     return [];
   }
 
@@ -38,27 +28,17 @@ export const fetchReceptekV2 = async (): Promise<ReceptekV2[]> => {
 export const fetchReceptAlapanyagV2 = async (): Promise<ReceptAlapanyagV2[]> => {
   console.log('🔄 Recept alapanyag lekérése...');
   
-  // Próbáljuk mindkét táblanevet
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('recept_alapanyagv2')
     .select('*');
 
-  if (error || !data || data.length === 0) {
-    console.log('⚠️ recept_alapanyagv2 tábla nem elérhető vagy üres, próbáljuk recept_alapanyagV2-t');
-    const response = await supabase
-      .from('recept_alapanyagV2')
-      .select('*');
-    
-    if (response.error) {
-      console.error('❌ Egyik alapanyag tábla sem elérhető:', response.error);
-      throw response.error;
-    }
-    
-    data = response.data;
+  if (error) {
+    console.error('❌ recept_alapanyagv2 tábla lekérési hiba:', error);
+    throw error;
   }
 
   if (!data || data.length === 0) {
-    console.warn('⚠️ Nincs adat az alapanyag táblákban!');
+    console.warn('⚠️ Nincs adat a recept_alapanyagv2 táblában!');
     return [];
   }
 
@@ -195,12 +175,12 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       return [];
     }
 
-    // Debug: Nézzük meg a receptek ID-jeit
-    console.log('📋 Recept ID-k:', receptek.slice(0, 5).map(r => r['Recept ID']));
-    console.log('📋 Alapanyag Recept_ID-k:', [...new Set(alapanyagok.slice(0, 10).map(a => a['Recept_ID']))]);
+    // Debug: Nézzük meg a receptek ID-jeit és alapanyag Recept_ID-ket
+    console.log('📋 Recept ID-k (első 5):', receptek.slice(0, 5).map(r => r['Recept ID']));
+    console.log('📋 Alapanyag Recept_ID-k (első 10):', [...new Set(alapanyagok.slice(0, 10).map(a => a['Recept_ID']))]);
 
-    // Csoportosítjuk az alapanyagokat recept ID szerint
-    console.log('🔄 Alapanyagok csoportosítása RECEPT_ID szerint...');
+    // Csoportosítjuk az alapanyagokat recept ID szerint - JAVÍTOTT VERZIÓ
+    console.log('🔄 Alapanyagok csoportosítása Recept_ID szerint...');
     const alapanyagokByReceptId = alapanyagok.reduce((acc, alapanyag) => {
       const receptId = alapanyag['Recept_ID'];
       if (!receptId) {
@@ -237,7 +217,11 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
     }, {} as Record<number, string[]>);
 
     console.log('📊 Alapanyagok csoportosítva:', Object.keys(alapanyagokByReceptId).length, 'recept ID-hoz');
-    console.log('📋 ID-k egyezések:', Object.keys(alapanyagokByReceptId).slice(0, 5));
+    
+    // Mutassuk meg néhány példát
+    Object.entries(alapanyagokByReceptId).slice(0, 3).forEach(([receptId, ingredients]) => {
+      console.log(`📋 Recept ID ${receptId}: ${ingredients.length} alapanyag - ${ingredients.slice(0, 2).join(', ')}${ingredients.length > 2 ? '...' : ''}`);
+    });
 
     // Kombináljuk a recepteket az alapanyagokkal és meal type-okkal
     const combinedRecipes: CombinedRecipe[] = [];
@@ -287,6 +271,9 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
     console.log('📋 Első 3 recept részletei:');
     combinedRecipes.slice(0, 3).forEach(recipe => {
       console.log(`- ${recipe.név}: ${recipe.hozzávalók.length} alapanyag, ${recipe.mealTypes.length} meal type`);
+      if (recipe.hozzávalók.length > 0) {
+        console.log(`  Alapanyagok: ${recipe.hozzávalók.slice(0, 3).join(', ')}${recipe.hozzávalók.length > 3 ? '...' : ''}`);
+      }
     });
     
     return combinedRecipes;
