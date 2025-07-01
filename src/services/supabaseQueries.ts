@@ -3,34 +3,38 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchCombinedRecipes } from './newDatabaseQueries';
 
 export const fetchCategories = async () => {
+  console.log('🔄 Kategóriák betöltése új táblából...');
   const { data, error } = await supabase
     .from('Ételkategóriák_Új')
     .select('*');
 
   if (error) {
-    console.error('Kategóriák betöltési hiba:', error);
+    console.error('❌ Kategóriák betöltési hiba:', error);
     throw error;
   }
 
+  console.log('✅ Kategóriák betöltve:', data?.length || 0, 'db');
   return data;
 };
 
 export const fetchMealTypes = async () => {
+  console.log('🔄 Étkezések betöltése...');
   const { data, error } = await supabase
     .from('Étkezések')
     .select('*');
 
   if (error) {
-    console.error('Étkezések betöltési hiba:', error);
+    console.error('❌ Étkezések betöltési hiba:', error);
     throw error;
   }
 
+  console.log('✅ Étkezések betöltve:', data?.length || 0, 'db');
   return data;
 };
 
-// Minden recept lekérés az új adatbázis struktúrát használja
+// Minden recept lekérés az új adatbázis struktúrát használja (fallback-kel)
 export const fetchRecipes = async () => {
-  console.log('🔄 Receptek betöltése ÚJ adatbázis struktúrából...');
+  console.log('🔄 Receptek betöltése kombinált módszerrel (új + fallback)...');
   return await fetchCombinedRecipes();
 };
 

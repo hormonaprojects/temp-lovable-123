@@ -32,6 +32,22 @@ export const fetchReceptAlapanyagV2 = async (): Promise<ReceptAlapanyagV2[]> => 
   return data || [];
 };
 
+// Fallback: ha az új táblák üresek, próbáljuk meg a régi adatbázisból betölteni
+export const fetchLegacyRecipes = async () => {
+  console.log('🔄 Fallback: régi adatbázis lekérése...');
+  const { data, error } = await supabase
+    .from('Adatbázis')
+    .select('*');
+
+  if (error) {
+    console.error('❌ Régi adatbázis betöltési hiba:', error);
+    throw error;
+  }
+
+  console.log('✅ Régi adatbázis betöltve:', data?.length || 0, 'db');
+  return data || [];
+};
+
 export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
   try {
     console.log('🔄 Új adatbázis struktúra betöltése...');
@@ -46,9 +62,41 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       alapanyagok: alapanyagok.length
     });
 
+    // Ha az új táblák üresek, fallback a régi adatbázisra
     if (receptek.length === 0) {
-      console.warn('⚠️ Nincs recept az adatbázisban');
-      return [];
+      console.warn('⚠️ Új táblák üresek, fallback a régi adatbázisra...');
+      const legacyData = await fetchLegacyRecipes();
+      
+      // Konvertáljuk a régi formátumot az új formátumra
+      return legacyData.map((recipe, index) => ({
+        id: index + 1,
+        név: recipe.Recept_Neve || 'Névtelen recept',
+        elkészítés: recipe.Elkészítés || 'Nincs leírás',
+        kép: recipe['Kép URL'] || '',
+        szénhidrát: recipe.Szenhidrat_g || 0,
+        fehérje: recipe.Feherje_g || 0,
+        zsír: recipe.Zsir_g || 0,
+        hozzávalók: [
+          recipe.Hozzavalo_1,
+          recipe.Hozzavalo_2,
+          recipe.Hozzavalo_3,
+          recipe.Hozzavalo_4,
+          recipe.Hozzavalo_5,
+          recipe.Hozzavalo_6,
+          recipe.Hozzavalo_7,
+          recipe.Hozzavalo_8,
+          recipe.Hozzavalo_9,
+          recipe.Hozzavalo_10,
+          recipe.Hozzavalo_11,
+          recipe.Hozzavalo_12,
+          recipe.Hozzavalo_13,
+          recipe.Hozzavalo_14,
+          recipe.Hozzavalo_15,
+          recipe.Hozzavalo_16,
+          recipe.Hozzavalo_17,
+          recipe.Hozzavalo_18
+        ].filter(ingredient => ingredient && ingredient.trim() !== '')
+      }));
     }
 
     // Csoportosítjuk az alapanyagokat recept ID szerint

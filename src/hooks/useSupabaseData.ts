@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { MealTypeData } from '@/types/supabase';
@@ -53,19 +54,19 @@ export function useSupabaseData(userId?: string) {
     }
   }, [userId, loadUserPreferences, loadUserFavorites]);
 
-  // Alapvető adatok betöltése - egyszer futtatjuk
+  // Alapvető adatok betöltése - kombinálja az új és régi adatbázis struktúrát
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        console.log('🔄 Konszolidens ÚJ adatbázis struktúra betöltése...');
+        console.log('🔄 KOMBINÁLT adatbázis struktúra betöltése (új + fallback)...');
         
         const [categoriesData, mealTypesData, recipesData] = await Promise.all([
           fetchCategories(),
           fetchMealTypes(),
-          fetchRecipes() // Ez most mindig az új kombinált recepteket tölti be
+          fetchRecipes() // Ez már tartalmazza a fallback logikát
         ]);
 
-        console.log('📊 Adatok betöltve ÚJ struktúrából:', {
+        console.log('📊 Adatok betöltve KOMBINÁLT struktúrából:', {
           categories: categoriesData?.length || 0,
           mealTypes: mealTypesData?.length || 0,
           recipes: recipesData?.length || 0
@@ -80,18 +81,28 @@ export function useSupabaseData(userId?: string) {
         setMealTypeRecipes(processedMealTypeRecipes);
         setRecipes(recipesData || []);
         
-        console.log('✅ KONZISZTENS ÚJ adatok sikeresen betöltve:', {
+        console.log('✅ KOMBINÁLT adatok sikeresen betöltve:', {
           categories: Object.keys(processedCategories).length,
           mealTypes: Object.keys(processedMealTypes).length,
           totalRecipesInMealTypes: Object.values(processedMealTypes).reduce((acc, recipes) => acc + recipes.length, 0),
           recipes: recipesData?.length || 0
         });
 
+        // Ha még mindig nincsenek receptek, próbáljunk máshogy
+        if ((recipesData?.length || 0) === 0) {
+          console.warn('⚠️ Még mindig nincsenek receptek - ellenőrizd az adatbázis kapcsolatot!');
+          toast({
+            title: "Figyelmeztetés",
+            description: "Nincsenek elérhető receptek az adatbázisban. Ellenőrizd az adatbázis kapcsolatot.",
+            variant: "destructive"
+          });
+        }
+
       } catch (error) {
-        console.error('❌ ÚJ adatok betöltési hiba:', error);
+        console.error('❌ KOMBINÁLT adatok betöltési hiba:', error);
         toast({
           title: "Hiba",
-          description: "Nem sikerült betölteni az adatokat az új adatbázisból.",
+          description: "Nem sikerült betölteni az adatokat az adatbázisból.",
           variant: "destructive"
         });
       } finally {
@@ -106,7 +117,7 @@ export function useSupabaseData(userId?: string) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('🔄 ÚJ adatok újratöltése...');
+      console.log('🔄 KOMBINÁLT adatok újratöltése...');
       
       const [categoriesData, mealTypesData, recipesData] = await Promise.all([
         fetchCategories(),
@@ -123,13 +134,13 @@ export function useSupabaseData(userId?: string) {
       setMealTypeRecipes(processedMealTypeRecipes);
       setRecipes(recipesData || []);
       
-      console.log('✅ ÚJ adatok sikeresen újratöltve');
+      console.log('✅ KOMBINÁLT adatok sikeresen újratöltve');
 
     } catch (error) {
-      console.error('❌ ÚJ adatok újratöltési hiba:', error);
+      console.error('❌ KOMBINÁLT adatok újratöltési hiba:', error);
       toast({
         title: "Hiba",
-        description: "Nem sikerült betölteni az adatokat az új adatbázisból.",
+        description: "Nem sikerült betölteni az adatokat az adatbázisból.",
         variant: "destructive"
       });
     } finally {
@@ -140,15 +151,21 @@ export function useSupabaseData(userId?: string) {
   // FIXED: Stable functions using actual objects/arrays as dependencies
   const getRecipesByMealTypeHandler = useCallback((mealType: string): CombinedRecipe[] => {
     if (!recipes.length || !Object.keys(mealTypeRecipes).length) {
+      console.log('⚠️ Nincsenek betöltött receptek vagy meal type adatok');
       return [];
     }
+    
+    console.log('🔍 Receptek lekérése meal type alapján:', mealType, 'összes recept:', recipes.length);
     return getRecipesByMealType(recipes, mealTypeRecipes, mealType, userPreferences);
   }, [recipes, mealTypeRecipes, userPreferences]);
 
   const getRecipesByCategoryHandler = useCallback((category: string, ingredient?: string, mealType?: string): CombinedRecipe[] => {
     if (!recipes.length || !Object.keys(categories).length) {
+      console.log('⚠️ Nincsenek betöltött receptek vagy kategória adatok');
       return [];
     }
+    
+    console.log('🔍 Receptek lekérése kategória alapján:', category, 'ingredient:', ingredient, 'mealType:', mealType);
     return getRecipesByCategory(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
   }, [recipes, categories, mealTypeRecipes, userPreferences]);
 

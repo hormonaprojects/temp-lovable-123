@@ -1,12 +1,14 @@
 
-// Új moduláris filter rendszer exportjai
+// Új moduláris filter rendszer exportjai - MINDEN az új adatbázis struktúrán keresztül
 export {
-  getRecipesByMealType as oldGetRecipesByMealType
-} from './mealTypeFilters';
+  getRecipesByMealTypeNew as getRecipesByMealType,
+  filterRecipesByMultipleIngredientsNew as filterRecipesByMultipleIngredients,
+  getRecipesByCategoryNew as getRecipesByCategory
+} from './newDatabaseFilters';
 
+// Legacy funkciók átirányítása az új rendszerre
 export {
   filterRecipesByIngredient,
-  filterRecipesByMultipleIngredients as oldFilterRecipesByMultipleIngredients,
   getAllRecipeIngredients,
   hasIngredientMatch
 } from './ingredientFilters';
@@ -15,28 +17,13 @@ export {
   filterRecipesByCategory
 } from './categoryFilters';
 
-// Új adatbázis struktúra exportjai
+// Régi exportok kompatibilitásért (deprecated)
 export {
-  getRecipesByMealTypeNew,
-  filterRecipesByMultipleIngredientsNew,
-  getRecipesByCategoryNew
-} from './newDatabaseFilters';
+  getRecipesByMealType as oldGetRecipesByMealType
+} from './mealTypeFilters';
 
-// MINDENT az új adatbázis struktúrán keresztül irányítunk
-export const getRecipesByMealType = (recipes: any, mealTypeRecipes: any, mealType: string, userPreferences: any = []) => {
-  console.log('🔍 getRecipesByMealType - MINDIG az új adatbázis struktúrát használjuk');
-  const { getRecipesByMealTypeNew } = require('./newDatabaseFilters');
-  return getRecipesByMealTypeNew(recipes, mealTypeRecipes, mealType, userPreferences);
-};
+export {
+  filterRecipesByMultipleIngredients as oldFilterRecipesByMultipleIngredients
+} from './ingredientFilters';
 
-export const filterRecipesByMultipleIngredients = (recipes: any, requiredIngredients: string[]) => {
-  console.log('🔍 filterRecipesByMultipleIngredients - MINDIG az új adatbázis struktúrát használjuk');
-  const { filterRecipesByMultipleIngredientsNew } = require('./newDatabaseFilters');
-  return filterRecipesByMultipleIngredientsNew(recipes, requiredIngredients);
-};
-
-export const getRecipesByCategory = (recipes: any, mealTypeRecipes: any, categories: any, category: string, ingredient?: string, mealType?: string, userPreferences: any = []) => {
-  console.log('🔍 getRecipesByCategory - MINDIG az új adatbázis struktúrát használjuk');
-  const { getRecipesByCategoryNew } = require('./newDatabaseFilters');
-  return getRecipesByCategoryNew(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
-};
+console.log('🔄 Recipe filters betöltve - MINDEN az új adatbázis struktúrát használja (fallback-kel)');
