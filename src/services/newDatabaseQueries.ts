@@ -48,6 +48,84 @@ export const fetchLegacyRecipes = async () => {
   return data || [];
 };
 
+// Új funkció: Étkezési típusok lekérése és receptekhez rendelése
+export const assignMealTypesToRecipes = async (receptek: ReceptekV2[]): Promise<ReceptekV2[]> => {
+  console.log('🔄 Étkezési típusok hozzárendelése receptekhez...');
+  
+  // Lekérjük az Étkezések tábla adatait
+  const { data: mealTypesData, error } = await supabase
+    .from('Étkezések')
+    .select('*');
+
+  if (error) {
+    console.error('❌ Étkezések tábla lekérési hiba:', error);
+    return receptek;
+  }
+
+  console.log('📊 Étkezések tábla adatai:', mealTypesData);
+
+  if (!mealTypesData || mealTypesData.length === 0) {
+    console.warn('⚠️ Nincs adat az Étkezések táblában');
+    return receptek;
+  }
+
+  // Minden étkezési típus sorához létrehozunk egy mapping objektumot
+  const mealTypeMapping: Record<string, string[]> = {};
+  
+  mealTypesData.forEach(row => {
+    const recipeName = row['Recept Neve'];
+    if (recipeName) {
+      // Minden étkezési típust ellenőrzünk
+      const mealTypes = ['Reggeli', 'Tízórai', 'Ebéd', 'Uzsonna', 'Vacsora', 'Leves', 'Előétel', 'Desszert', 'Köret'];
+      
+      mealTypes.forEach(mealType => {
+        if (row[mealType] && row[mealType].toLowerCase().includes('x')) {
+          if (!mealTypeMapping[mealType.toLowerCase()]) {
+            mealTypeMapping[mealType.toLowerCase()] = [];
+          }
+          mealTypeMapping[mealType.toLowerCase()].push(recipeName.toLowerCase());
+        }
+      });
+    }
+  });
+
+  console.log('📋 Meal type mapping:', mealTypeMapping);
+
+  // Frissítjük a recepteket a meal_type mezővel
+  const updatedReceptek = receptek.map(recept => {
+    const receptName = recept['Receptnév']?.toLowerCase() || '';
+    let assignedMealType = '';
+
+    // Keressük meg, hogy melyik étkezési típushoz tartozik ez a recept
+    for (const [mealType, recipeNames] of Object.entries(mealTypeMapping)) {
+      if (recipeNames.some(name => 
+        name.includes(receptName) || 
+        receptName.includes(name) ||
+        name === receptName
+      )) {
+        assignedMealType = mealType;
+        break;
+      }
+    }
+
+    if (assignedMealType) {
+      console.log(`✅ "${recept['Receptnév']}" hozzárendelve: ${assignedMealType}`);
+    } else {
+      console.log(`⚠️ "${recept['Receptnév']}" nem található az Étkezések táblában`);
+    }
+
+    return {
+      ...recept,
+      meal_type: assignedMealType || null
+    };
+  });
+
+  const assignedCount = updatedReceptek.filter(r => r.meal_type).length;
+  console.log(`📊 Összesen ${assignedCount}/${updatedReceptek.length} recepthez rendelve étkezési típus`);
+
+  return updatedReceptek;
+};
+
 export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
   try {
     console.log('🔄 Új adatbázis struktúra betöltése...');
@@ -68,6 +146,9 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       return [];
     }
 
+    // Hozzárendeljük az étkezési típusokat
+    const receptekWithMealTypes = await assignMealTypesToRecipes(receptek);
+
     // Csoportosítjuk az alapanyagokat recept ID szerint
     const alapanyagokByReceptId = alapanyagok.reduce((acc, alapanyag) => {
       const receptId = alapanyag['Recept_ID'];
@@ -80,38 +161,23 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       const mertekegyseg = alapanyag['Mértékegység'] || '';
       const elelmiszer = alapanyag['Élelmiszerek'] || '';
       
-      // Debug log az egyes alapanyagokhoz
-      console.log(`📝 Alapanyag Recept_ID ${receptId}:`, {
-        mennyiseg,
-        mertekegyseg,
-        elelmiszer
-      });
-      
       const formattedIngredient = `${mennyiseg} ${mertekegyseg} ${elelmiszer}`.trim();
       if (formattedIngredient && formattedIngredient !== '  ') {
         acc[receptId].push(formattedIngredient);
-        console.log(`✅ Hozzáadva: "${formattedIngredient}" a ${receptId} ID-hez`);
       }
       
       return acc;
     }, {} as Record<number, string[]>);
 
     console.log('📊 Alapanyagok csoportosítva:', Object.keys(alapanyagokByReceptId).length, 'recept ID-hoz');
-    
-    // Debug log minden recept ID-hez tartozó alapanyagokról
-    Object.entries(alapanyagokByReceptId).forEach(([receptId, ingredients]) => {
-      console.log(`🔍 Recept ID ${receptId} alapanyagai:`, ingredients);
-    });
 
     // Kombináljuk a recepteket az alapanyagokkal
-    const combinedRecipes: CombinedRecipe[] = receptek.map(recept => {
+    const combinedRecipes: CombinedRecipe[] = receptekWithMealTypes.map(recept => {
       const receptId = recept['Recept ID'];
       const hozzavalok = alapanyagokByReceptId[receptId] || [];
       
       if (hozzavalok.length === 0) {
         console.warn(`⚠️ Nincs alapanyag a ${receptId} ID-jú recepthez: ${recept['Receptnév']}`);
-      } else {
-        console.log(`✅ ${receptId} ID-hoz (${recept['Receptnév']}) tartozó alapanyagok:`, hozzavalok);
       }
       
       return {
@@ -122,17 +188,14 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
         szénhidrát: recept['Szenhidrat_g'] || 0,
         fehérje: recept['Feherje_g'] || 0,
         zsír: recept['Zsir_g'] || 0,
-        hozzávalók: hozzavalok
+        hozzávalók: hozzavalok,
+        mealType: recept.meal_type || undefined // Hozzáadjuk a meal type-ot
       };
     });
 
     console.log('✅ Kombinált receptek létrehozva:', combinedRecipes.length);
     console.log('📊 Receptek hozzávalókkal:', combinedRecipes.filter(r => r.hozzávalók.length > 0).length);
-    
-    // Debug log az első pár recepthez
-    combinedRecipes.slice(0, 5).forEach(recipe => {
-      console.log(`🔍 ${recipe.név} (ID: ${recipe.id}) hozzávalói:`, recipe.hozzávalók);
-    });
+    console.log('📊 Receptek étkezési típussal:', combinedRecipes.filter(r => r.mealType).length);
     
     return combinedRecipes;
   } catch (error) {
