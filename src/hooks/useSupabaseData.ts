@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { MealTypeData } from '@/types/supabase';
@@ -54,19 +53,19 @@ export function useSupabaseData(userId?: string) {
     }
   }, [userId, loadUserPreferences, loadUserFavorites]);
 
-  // FIXED: Initial data loading - runs only once on component mount
+  // Alapvető adatok betöltése - egyszer futtatjuk
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        console.log('🔄 ÚJ adatbázis struktúra betöltése Supabase-ből...');
+        console.log('🔄 Konszolidens ÚJ adatbázis struktúra betöltése...');
         
         const [categoriesData, mealTypesData, recipesData] = await Promise.all([
           fetchCategories(),
           fetchMealTypes(),
-          fetchRecipes() // Ez most az új kombinált recepteket tölti be
+          fetchRecipes() // Ez most mindig az új kombinált recepteket tölti be
         ]);
 
-        console.log('📊 Nyers adatok betöltve az ÚJ struktúrából:', {
+        console.log('📊 Adatok betöltve ÚJ struktúrából:', {
           categories: categoriesData?.length || 0,
           mealTypes: mealTypesData?.length || 0,
           recipes: recipesData?.length || 0
@@ -76,14 +75,12 @@ export function useSupabaseData(userId?: string) {
         const processedMealTypeRecipes = processMealTypes(mealTypesData || []);
         const processedMealTypes = createMealTypesDisplay(processedMealTypeRecipes);
 
-        console.log('📊 Feldolgozott kategóriák:', processedCategories);
-
         setCategories(processedCategories);
         setMealTypes(processedMealTypes);
         setMealTypeRecipes(processedMealTypeRecipes);
         setRecipes(recipesData || []);
         
-        console.log('✅ ÚJ adatok sikeresen betöltve:', {
+        console.log('✅ KONZISZTENS ÚJ adatok sikeresen betöltve:', {
           categories: Object.keys(processedCategories).length,
           mealTypes: Object.keys(processedMealTypes).length,
           totalRecipesInMealTypes: Object.values(processedMealTypes).reduce((acc, recipes) => acc + recipes.length, 0),
@@ -103,13 +100,13 @@ export function useSupabaseData(userId?: string) {
     };
 
     loadInitialData();
-  }, []); // Empty dependency array - runs only once!
+  }, []); // Üres dependency array - csak egyszer fut!
 
-  // Separate loadData function for manual refetch
+  // Külön loadData funkció manuális újratöltéshez
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('🔄 ÚJ adatok újratöltése Supabase-ből...');
+      console.log('🔄 ÚJ adatok újratöltése...');
       
       const [categoriesData, mealTypesData, recipesData] = await Promise.all([
         fetchCategories(),

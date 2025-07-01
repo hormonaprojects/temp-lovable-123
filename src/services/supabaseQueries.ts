@@ -28,9 +28,9 @@ export const fetchMealTypes = async () => {
   return data;
 };
 
-// Új függvény: az új adatbázis struktúrából tölti be a recepteket
+// Minden recept lekérés az új adatbázis struktúrát használja
 export const fetchRecipes = async () => {
-  console.log('🔄 Receptek betöltése új adatbázis struktúrából...');
+  console.log('🔄 Receptek betöltése ÚJ adatbázis struktúrából...');
   return await fetchCombinedRecipes();
 };
 
