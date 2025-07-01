@@ -1,4 +1,5 @@
 
+
 export {
   getRecipesByMealType as oldGetRecipesByMealType
 } from './mealTypeFilters';
@@ -11,8 +12,7 @@ export {
 } from './ingredientFilters';
 
 export {
-  filterRecipesByCategory,
-  getRecipesByCategory as oldGetRecipesByCategory
+  filterRecipesByCategory
 } from './categoryFilters';
 
 // Új exportok az új adatbázis struktúrához
@@ -51,7 +51,8 @@ export const getRecipesByCategory = (recipes: any, mealTypeRecipes: any, categor
     const { getRecipesByCategoryNew } = require('./newDatabaseFilters');
     return getRecipesByCategoryNew(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
   }
-  // Különben a régi függvényt
-  const { getRecipesByCategory: oldGetRecipesByCategory } = require('./categoryFilters');
-  return oldGetRecipesByCategory(recipes, mealTypeRecipes, categories, category, ingredient, mealType, userPreferences);
+  // Különben a régi függvényt - ezt implementálni kell
+  console.log('Old getRecipesByCategory called - this needs to be implemented');
+  return [];
 };
+
