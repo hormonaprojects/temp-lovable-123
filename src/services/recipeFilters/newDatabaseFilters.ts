@@ -11,66 +11,39 @@ export const getRecipesByMealTypeNew = (
   console.log('🔍 Receptek keresése meal type alapján:', { 
     mealType, 
     totalRecipes: recipes.length,
-    recipesWithMealType: recipes.filter(r => r.mealType).length,
+    recipesWithMealTypes: recipes.filter(r => r.mealTypes.length > 0).length,
     userPreferences: userPreferences.length
   });
   
-  // ELSŐ PRIORITÁS: Az mealType mező alapján szűrünk (Étkezések táblából származó)
-  const directMealTypeMatches = recipes.filter(recipe => {
-    if (!recipe.mealType) return false;
+  // Szűrés az Étkezések tábla alapján meghatározott meal types alapján
+  const filteredRecipes = recipes.filter(recipe => {
+    if (!recipe.mealTypes || recipe.mealTypes.length === 0) return false;
     
-    const recipeMealType = recipe.mealType.toLowerCase();
     const searchMealType = mealType.toLowerCase();
+    const hasMatch = recipe.mealTypes.some(recipeMealType => {
+      const recipeMealTypeLower = recipeMealType.toLowerCase();
+      return recipeMealTypeLower === searchMealType ||
+             (searchMealType === 'tízórai' && recipeMealTypeLower === 'tízórai') ||
+             (searchMealType === 'tizórai' && recipeMealTypeLower === 'tízórai');
+    });
     
-    const isMatch = recipeMealType === searchMealType ||
-                   (searchMealType === 'tízórai' && recipeMealType === 'tízórai') ||
-                   (searchMealType === 'tizórai' && recipeMealType === 'tízórai');
-    
-    if (isMatch) {
-      console.log(`✅ Meal type találat: "${recipe.név}" (${recipe.id}) → ${recipeMealType}`);
+    if (hasMatch) {
+      console.log(`✅ Meal type találat: "${recipe.név}" (${recipe.id}) → ${recipe.mealTypes.join(', ')}`);
     }
     
-    return isMatch;
+    return hasMatch;
   });
   
-  console.log(`🎯 Meal type találatok: ${directMealTypeMatches.length} recept`);
+  console.log(`🎯 Meal type találatok: ${filteredRecipes.length} recept`);
   
-  let finalRecipes = directMealTypeMatches;
-  
-  // Ha nincs közvetlen meal type találat, próbálkozzunk a név-alapú fallback-kel
-  if (finalRecipes.length === 0) {
-    console.log('⚠️ Nincs közvetlen meal type találat, fallback a név-alapú módszerre...');
-    
-    const mealTypeRecipeNames = mealTypeRecipes[mealType] || [];
-    console.log(`📋 ${mealType} típusú receptek nevei (név-alapú módszer):`, mealTypeRecipeNames.length, 'db');
-    
-    if (mealTypeRecipeNames.length > 0) {
-      finalRecipes = recipes.filter(recipe => {
-        const recipeName = recipe.név.toLowerCase();
-        const hasMatch = mealTypeRecipeNames.some(mealRecipeName => {
-          const mealRecipeNameLower = mealRecipeName.toLowerCase();
-          return recipeName.includes(mealRecipeNameLower) ||
-                 mealRecipeNameLower.includes(recipeName) ||
-                 recipeName === mealRecipeNameLower;
-        });
-        
-        if (hasMatch) {
-          console.log(`✅ Név-alapú találat: "${recipe.név}" (${recipe.id})`);
-        }
-        
-        return hasMatch;
-      });
-    }
-  }
-  
-  if (finalRecipes.length === 0) {
-    console.warn(`⚠️ Nincs ${mealType} típusú recept sem közvetlen, sem név-alapú módszerrel`);
+  if (filteredRecipes.length === 0) {
+    console.warn(`⚠️ Nincs ${mealType} típusú recept az Étkezések tábla alapján`);
     return [];
   }
 
-  console.log(`✅ Talált receptek ${mealType} típushoz:`, finalRecipes.length);
+  console.log(`✅ Talált receptek ${mealType} típushoz:`, filteredRecipes.length);
   
-  const filteredByPreferences = applyUserPreferences(finalRecipes, userPreferences);
+  const filteredByPreferences = applyUserPreferences(filteredRecipes, userPreferences);
   console.log(`📊 Preferenciák alkalmazása után: ${filteredByPreferences.length} recept`);
   return filteredByPreferences;
 };

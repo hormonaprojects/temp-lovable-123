@@ -5,12 +5,12 @@ import { Recipe } from '@/types/recipe';
 export const convertNewRecipeToStandard = (newRecipe: CombinedRecipe): Recipe => {
   return {
     név: newRecipe.név,
-    hozzávalók: newRecipe.hozzávalók,
     elkészítés: newRecipe.elkészítés,
-    elkészítésiIdő: 'Ismeretlen', // Nincs ez az adat az új struktúrában
-    fehérje: newRecipe.fehérje.toString() + 'g',
-    szénhidrát: newRecipe.szénhidrát.toString() + 'g',
-    zsír: newRecipe.zsír.toString() + 'g',
-    képUrl: newRecipe.kép || ''
+    kép: newRecipe.kép,
+    szénhidrát: newRecipe.szénhidrát,
+    fehérje: newRecipe.fehérje,
+    zsír: newRecipe.zsír,
+    hozzávalók: newRecipe.hozzávalók,
+    mealTypes: newRecipe.mealTypes // Több meal type átadása
   };
 };

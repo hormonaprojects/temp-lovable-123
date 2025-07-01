@@ -7,7 +7,7 @@ export interface ReceptekV2 {
   'Szenhidrat_g': number;
   'Feherje_g': number;
   'Zsir_g': number;
-  'meal_type'?: string; // Hozzáadott mező
+  // meal_type mező eltávolítva - az Étkezések táblából származik
 }
 
 export interface ReceptAlapanyagV2 {
@@ -28,5 +28,5 @@ export interface CombinedRecipe {
   fehérje: number;
   zsír: number;
   hozzávalók: string[];
-  mealType?: string; // Hozzáadott mező
+  mealTypes: string[]; // Több étkezési típus tárolása tömbben
 }
