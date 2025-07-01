@@ -1,12 +1,19 @@
+
 export {
-  getRecipesByMealType as oldGetRecipesByMealType,
+  getRecipesByMealType as oldGetRecipesByMealType
+} from './mealTypeFilters';
+
+export {
   filterRecipesByIngredient,
   filterRecipesByMultipleIngredients as oldFilterRecipesByMultipleIngredients,
-  filterRecipesByCategory,
-  getRecipesByCategory as oldGetRecipesByCategory,
   getAllRecipeIngredients,
   hasIngredientMatch
-} from './mealTypeFilters';
+} from './ingredientFilters';
+
+export {
+  filterRecipesByCategory,
+  getRecipesByCategory as oldGetRecipesByCategory
+} from './categoryFilters';
 
 // Új exportok az új adatbázis struktúrához
 export {
