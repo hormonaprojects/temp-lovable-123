@@ -62,41 +62,10 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       alapanyagok: alapanyagok.length
     });
 
-    // Ha az új táblák üresek, fallback a régi adatbázisra
+    // KRITIKUS: Csak az új táblák adatait használjuk, nincs fallback
     if (receptek.length === 0) {
-      console.warn('⚠️ Új táblák üresek, fallback a régi adatbázisra...');
-      const legacyData = await fetchLegacyRecipes();
-      
-      // Konvertáljuk a régi formátumot az új formátumra
-      return legacyData.map((recipe, index) => ({
-        id: index + 1,
-        név: recipe.Recept_Neve || 'Névtelen recept',
-        elkészítés: recipe.Elkészítés || 'Nincs leírás',
-        kép: recipe['Kép URL'] || '',
-        szénhidrát: recipe.Szenhidrat_g || 0,
-        fehérje: recipe.Feherje_g || 0,
-        zsír: recipe.Zsir_g || 0,
-        hozzávalók: [
-          recipe.Hozzavalo_1,
-          recipe.Hozzavalo_2,
-          recipe.Hozzavalo_3,
-          recipe.Hozzavalo_4,
-          recipe.Hozzavalo_5,
-          recipe.Hozzavalo_6,
-          recipe.Hozzavalo_7,
-          recipe.Hozzavalo_8,
-          recipe.Hozzavalo_9,
-          recipe.Hozzavalo_10,
-          recipe.Hozzavalo_11,
-          recipe.Hozzavalo_12,
-          recipe.Hozzavalo_13,
-          recipe.Hozzavalo_14,
-          recipe.Hozzavalo_15,
-          recipe.Hozzavalo_16,
-          recipe.Hozzavalo_17,
-          recipe.Hozzavalo_18
-        ].filter(ingredient => ingredient && ingredient.trim() !== '')
-      }));
+      console.warn('⚠️ Új táblák üresek, de NEM használjuk a fallback-et!');
+      return [];
     }
 
     // Csoportosítjuk az alapanyagokat recept ID szerint
@@ -106,20 +75,33 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
         acc[receptId] = [];
       }
       
-      // Formázott alapanyag string: "Mennyiség Mértékegység Élelmiszer"
+      // JAVÍTÁS: Pontosan formázott alapanyag string a táblában található adatok alapján
       const mennyiseg = alapanyag['Mennyiség'] || '';
       const mertekegyseg = alapanyag['Mértékegység'] || '';
       const elelmiszer = alapanyag['Élelmiszerek'] || '';
       
+      // Debug log az egyes alapanyagokhoz
+      console.log(`📝 Alapanyag Recept_ID ${receptId}:`, {
+        mennyiseg,
+        mertekegyseg,
+        elelmiszer
+      });
+      
       const formattedIngredient = `${mennyiseg} ${mertekegyseg} ${elelmiszer}`.trim();
-      if (formattedIngredient) {
+      if (formattedIngredient && formattedIngredient !== '  ') {
         acc[receptId].push(formattedIngredient);
+        console.log(`✅ Hozzáadva: "${formattedIngredient}" a ${receptId} ID-hez`);
       }
       
       return acc;
     }, {} as Record<number, string[]>);
 
     console.log('📊 Alapanyagok csoportosítva:', Object.keys(alapanyagokByReceptId).length, 'recept ID-hoz');
+    
+    // Debug log minden recept ID-hez tartozó alapanyagokról
+    Object.entries(alapanyagokByReceptId).forEach(([receptId, ingredients]) => {
+      console.log(`🔍 Recept ID ${receptId} alapanyagai:`, ingredients);
+    });
 
     // Kombináljuk a recepteket az alapanyagokkal
     const combinedRecipes: CombinedRecipe[] = receptek.map(recept => {
@@ -128,6 +110,8 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       
       if (hozzavalok.length === 0) {
         console.warn(`⚠️ Nincs alapanyag a ${receptId} ID-jú recepthez: ${recept['Receptnév']}`);
+      } else {
+        console.log(`✅ ${receptId} ID-hoz (${recept['Receptnév']}) tartozó alapanyagok:`, hozzavalok);
       }
       
       return {
@@ -144,6 +128,11 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
 
     console.log('✅ Kombinált receptek létrehozva:', combinedRecipes.length);
     console.log('📊 Receptek hozzávalókkal:', combinedRecipes.filter(r => r.hozzávalók.length > 0).length);
+    
+    // Debug log az első pár recepthez
+    combinedRecipes.slice(0, 5).forEach(recipe => {
+      console.log(`🔍 ${recipe.név} (ID: ${recipe.id}) hozzávalói:`, recipe.hozzávalók);
+    });
     
     return combinedRecipes;
   } catch (error) {

@@ -32,9 +32,9 @@ export const fetchMealTypes = async () => {
   return data;
 };
 
-// Minden recept lekérés az új adatbázis struktúrát használja (fallback-kel)
+// KRITIKUS: Minden recept lekérés KIZÁRÓLAG az új adatbázis struktúrát használja
 export const fetchRecipes = async () => {
-  console.log('🔄 Receptek betöltése kombinált módszerrel (új + fallback)...');
+  console.log('🔄 Receptek betöltése KIZÁRÓLAG az új táblákból...');
   return await fetchCombinedRecipes();
 };
 
