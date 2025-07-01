@@ -8,10 +8,11 @@ export const getRecipesByMealTypeNew = (
   mealType: string,
   userPreferences: UserPreference[] = []
 ): CombinedRecipe[] => {
-  console.log('🔍 Receptek keresése meal type alapján (ÚJ módszer):', { 
+  console.log('🔍 Receptek keresése meal type alapján (JAVÍTOTT módszer):', { 
     mealType, 
     totalRecipes: recipes.length,
-    recipesWithMealType: recipes.filter(r => r.mealType).length
+    recipesWithMealType: recipes.filter(r => r.mealType).length,
+    userPreferences: userPreferences.length
   });
   
   // ELŐSZÖR: Az új mealType mező alapján szűrünk
@@ -28,7 +29,9 @@ export const getRecipesByMealTypeNew = (
   
   if (directMealTypeMatches.length > 0) {
     console.log('✅ Meal type alapú szűrés használva');
-    return applyUserPreferences(directMealTypeMatches, userPreferences);
+    const filteredByPreferences = applyUserPreferences(directMealTypeMatches, userPreferences);
+    console.log(`📊 Preferenciák alkalmazása után: ${filteredByPreferences.length} recept`);
+    return filteredByPreferences;
   }
   
   // MÁSODSORBAN: Fallback a régi módszerre
@@ -39,33 +42,7 @@ export const getRecipesByMealTypeNew = (
   
   if (mealTypeRecipeNames.length === 0) {
     console.warn(`⚠️ Nincs ${mealType} típusú recept a mealTypeRecipes-ben`);
-    
-    // Fallback: keressünk a recept nevekben közvetlenül
-    const directMatches = recipes.filter(recipe => {
-      const recipeName = recipe.név.toLowerCase();
-      const mealTypeLower = mealType.toLowerCase();
-      
-      // Egyszerű szöveg alapú keresés
-      const hasDirectMatch = recipeName.includes(mealTypeLower) ||
-                           (mealTypeLower === 'reggeli' && (recipeName.includes('reggeli') || recipeName.includes('breakfast'))) ||
-                           (mealTypeLower === 'ebéd' && (recipeName.includes('ebéd') || recipeName.includes('lunch'))) ||
-                           (mealTypeLower === 'vacsora' && (recipeName.includes('vacsora') || recipeName.includes('dinner'))) ||
-                           (mealTypeLower === 'tízórai' && (recipeName.includes('tízórai') || recipeName.includes('snack'))) ||
-                           (mealTypeLower === 'uzsonna' && (recipeName.includes('uzsonna') || recipeName.includes('snack')));
-      
-      return hasDirectMatch;
-    });
-    
-    console.log(`🔍 Fallback keresés eredménye: ${directMatches.length} recept`);
-    
-    if (directMatches.length > 0) {
-      return applyUserPreferences(directMatches, userPreferences);
-    }
-    
-    // Ha még mindig nincs találat, adjunk vissza random recepteket
-    console.log('🎲 Nincs specifikus találat, random receptek visszaadása...');
-    const randomRecipes = recipes.slice(0, Math.min(5, recipes.length));
-    return applyUserPreferences(randomRecipes, userPreferences);
+    return [];
   }
 
   // Normál szűrés a meal type alapján
@@ -83,32 +60,67 @@ export const getRecipesByMealTypeNew = (
 
   console.log(`✅ Talált receptek ${mealType} típushoz:`, filteredRecipes.length);
   
-  return applyUserPreferences(filteredRecipes, userPreferences);
+  const filteredByPreferences = applyUserPreferences(filteredRecipes, userPreferences);
+  console.log(`📊 Preferenciák alkalmazása után: ${filteredByPreferences.length} recept`);
+  return filteredByPreferences;
 };
 
 const applyUserPreferences = (recipes: CombinedRecipe[], userPreferences: UserPreference[]): CombinedRecipe[] => {
   if (userPreferences.length === 0) {
+    console.log('📝 Nincsenek felhasználói preferenciák, minden recept megtartva');
     return recipes;
   }
 
+  console.log('🔍 Preferenciák alkalmazása:', userPreferences.length, 'preferencia');
+  
   const preferenceFilteredRecipes = recipes.filter(recipe => {
     // Ellenőrizzük, hogy a recept tartalmaz-e dislike-olt alapanyagot
     const hasDislikedIngredient = recipe.hozzávalók.some(ingredient => {
-      return userPreferences.some(pref => 
-        pref.preference === 'dislike' && 
-        ingredient.toLowerCase().includes(pref.ingredient.toLowerCase())
-      );
+      const ingredientLower = ingredient.toLowerCase();
+      return userPreferences.some(pref => {
+        if (pref.preference === 'dislike') {
+          const prefIngredientLower = pref.ingredient.toLowerCase();
+          const hasMatch = ingredientLower.includes(prefIngredientLower) ||
+                          prefIngredientLower.includes(ingredientLower);
+          
+          if (hasMatch) {
+            console.log(`❌ "${recipe.név}" kiszűrve: tartalmazza a nem kedvelt "${pref.ingredient}" alapanyagot`);
+            return true;
+          }
+        }
+        return false;
+      });
     });
-    
-    if (hasDislikedIngredient) {
-      console.log(`❌ "${recipe.név}" kiszűrve preferenciák miatt`);
-    }
     
     return !hasDislikedIngredient;
   });
   
-  console.log(`🎯 Preferenciák alkalmazása után: ${preferenceFilteredRecipes.length} recept`);
-  return preferenceFilteredRecipes;
+  console.log(`🎯 Preferenciák alkalmazása után: ${preferenceFilteredRecipes.length}/${recipes.length} recept maradt`);
+  
+  // Preferált receptek előre sorolása
+  const sortedRecipes = preferenceFilteredRecipes.sort((a, b) => {
+    const aLikedIngredients = a.hozzávalók.filter(ingredient => {
+      const ingredientLower = ingredient.toLowerCase();
+      return userPreferences.some(pref => 
+        pref.preference === 'like' && 
+        (ingredientLower.includes(pref.ingredient.toLowerCase()) ||
+         pref.ingredient.toLowerCase().includes(ingredientLower))
+      );
+    }).length;
+    
+    const bLikedIngredients = b.hozzávalók.filter(ingredient => {
+      const ingredientLower = ingredient.toLowerCase();
+      return userPreferences.some(pref => 
+        pref.preference === 'like' && 
+        (ingredientLower.includes(pref.ingredient.toLowerCase()) ||
+         pref.ingredient.toLowerCase().includes(ingredientLower))
+      );
+    }).length;
+    
+    return bLikedIngredients - aLikedIngredients; // Több kedvelt alapanyag = előrébb
+  });
+  
+  return sortedRecipes;
 };
 
 export const filterRecipesByMultipleIngredientsNew = (
@@ -161,7 +173,8 @@ export const getRecipesByCategoryNew = (
     category, 
     ingredient, 
     mealType,
-    totalRecipes: recipes.length
+    totalRecipes: recipes.length,
+    userPreferences: userPreferences.length
   });
   
   let filteredRecipes = [...recipes];
@@ -189,6 +202,11 @@ export const getRecipesByCategoryNew = (
       
       return hasIngredient;
     });
+  }
+  
+  // Ha nem volt meal type szűrés, alkalmazzuk a preferenciákat itt
+  if (!mealType && userPreferences.length > 0) {
+    filteredRecipes = applyUserPreferences(filteredRecipes, userPreferences);
   }
   
   console.log(`✅ Kategória szűrés eredménye: ${filteredRecipes.length} recept`);
