@@ -1,4 +1,3 @@
-
 import { Recipe } from "@/types/recipe";
 import { Clock, Users } from "lucide-react";
 
@@ -18,56 +17,58 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
   const formatInstructions = (instructions: string) => {
     if (!instructions) return [];
     
-    // Tisztítjuk meg az instrukciókat
     const cleanInstructions = instructions.trim();
     
     // Keresünk főcímeket (nagy kezdőbetű + kettőspont)
     const sectionPattern = /([A-ZÁÉÍÓÖŐÜŰ][^:]*:)/g;
-    const sections = cleanInstructions.split(sectionPattern).filter(part => part.trim());
+    const parts = cleanInstructions.split(sectionPattern).filter(part => part.trim());
     
     const formattedSections = [];
     
-    for (let i = 0; i < sections.length; i++) {
-      const section = sections[i].trim();
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i].trim();
       
-      if (section.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
-        // Ez egy főcím
-        const title = section;
+      // Ha ez egy főcím (kettősponttal végződik)
+      if (part.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
+        const title = part;
         
-        // A következő rész a főcím alatti tartalom
-        if (i + 1 < sections.length) {
-          const nextSection = sections[i + 1].trim();
-          if (nextSection && !nextSection.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
-            // Kombináljuk a főcímet a tartalommal
-            const cleanedSection = nextSection.replace(/^\d+\.\s*/gm, '').trim();
+        // Keressük a következő részt, ami a tartalom
+        if (i + 1 < parts.length) {
+          const nextPart = parts[i + 1].trim();
+          
+          // Ha a következő rész nem főcím, akkor ez a tartalom
+          if (nextPart && !nextPart.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
+            // Tisztítjuk a tartalmat (eltávolítjuk a számozást)
+            const cleanContent = nextPart.replace(/^\d+\.\s*/gm, '').trim();
             
+            // Kombináljuk a főcímet a tartalommal
             formattedSections.push({
               type: 'bullet',
-              content: `${title} ${cleanedSection}`
+              content: `${title} ${cleanContent}`
             });
             
-            i++; // Kihagyjuk a következő iterációt, mert már feldolgoztuk
+            i++; // Kihagyjuk a következő iterációt
           } else {
-            // Ha nincs tartalom a főcím után, akkor csak a főcímet adjuk hozzá
+            // Ha nincs tartalom utána, csak a főcímet adjuk hozzá
             formattedSections.push({
               type: 'bullet',
               content: title
             });
           }
         } else {
-          // Ha ez az utolsó elem, csak a főcímet adjuk hozzá
+          // Ha ez az utolsó elem
           formattedSections.push({
             type: 'bullet',
             content: title
           });
         }
-      } else if (section && !formattedSections.some(item => item.content.includes(section))) {
-        // Ha nincs főcím előtte, akkor egyszerűen hozzáadjuk
-        const cleanedSection = section.replace(/^\d+\.\s*/, '').trim();
-        if (cleanedSection) {
+      } else if (part) {
+        // Ha ez nem főcím és nem üres, akkor egyedülálló tartalom
+        const cleanContent = part.replace(/^\d+\.\s*/, '').trim();
+        if (cleanContent) {
           formattedSections.push({
             type: 'bullet',
-            content: cleanedSection
+            content: cleanContent
           });
         }
       }
