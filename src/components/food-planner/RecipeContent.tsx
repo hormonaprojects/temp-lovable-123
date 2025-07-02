@@ -18,7 +18,7 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
   const formatInstructions = (instructions: string) => {
     if (!instructions) return [];
     
-    // Tisztítjuk meg az instrukciókat és szétválasztjuk a főcímeket
+    // Tisztítjuk meg az instrukciókat
     const cleanInstructions = instructions.trim();
     
     // Keresünk főcímeket (nagy kezdőbetű + kettőspont)
@@ -27,46 +27,24 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
     const sections = cleanInstructions.split(sectionPattern).filter(part => part.trim());
     
     const formattedSections = [];
-    let stepCounter = 1;
     
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i].trim();
       
       if (section.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
-        // Ez egy főcím - reset step counter
-        stepCounter = 1;
+        // Ez egy főcím - hozzáadjuk bullet pontként
         formattedSections.push({
-          type: 'header',
+          type: 'bullet',
           content: section
         });
       } else if (section) {
-        // Ez egy lépés vagy lépések csoportja
-        // Először próbáljuk meg a számozott lépéseket felismerni
-        const numberedSteps = section.split(/(\d+\.)\s*/).filter(step => step.trim());
-        
-        if (numberedSteps.length > 2) {
-          // Van számozás a szövegben
-          for (let j = 1; j < numberedSteps.length; j += 2) {
-            const stepContent = numberedSteps[j + 1];
-            if (stepContent && stepContent.trim()) {
-              formattedSections.push({
-                type: 'step',
-                content: stepContent.trim(),
-                number: stepCounter++
-              });
-            }
-          }
-        } else {
-          // Nincs számozás, mondatok szerint bontjuk és számozzuk
-          const sentences = section.split(/[.!?]+/).filter(sentence => sentence.trim());
-          sentences.forEach((sentence) => {
-            if (sentence.trim()) {
-              formattedSections.push({
-                type: 'step',
-                content: sentence.trim(),
-                number: stepCounter++
-              });
-            }
+        // Ez a főcím alatt lévő szöveg - hozzáadjuk bullet pontként
+        // Ha van benne számozás, eltávolítjuk
+        const cleanedSection = section.replace(/^\d+\.\s*/, '').trim();
+        if (cleanedSection) {
+          formattedSections.push({
+            type: 'bullet',
+            content: cleanedSection
           });
         }
       }
@@ -155,33 +133,19 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
         </ul>
       </div>
 
-      {/* Elkészítés - javított formázással */}
+      {/* Elkészítés - egyszerű bullet pontokkal */}
       <div className="bg-white/5 rounded-lg p-3 sm:p-4 mx-2 sm:mx-0">
         <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
           👨‍🍳 Elkészítés:
         </h3>
-        <div className="space-y-3">
-          {formatInstructions(recipe.elkészítés).map((item, index) => {
-            if (item.type === 'header') {
-              return (
-                <div key={index} className="mt-4 first:mt-0">
-                  <h4 className="text-yellow-400 font-semibold text-sm sm:text-base mb-2">
-                    {item.content}
-                  </h4>
-                </div>
-              );
-            } else {
-              return (
-                <div key={index} className="flex gap-2">
-                  <span className="bg-yellow-400 text-black text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-5 flex items-center justify-center flex-shrink-0">
-                    {item.number}
-                  </span>
-                  <p className="text-white/90 flex-1 leading-relaxed text-xs sm:text-sm">{item.content}</p>
-                </div>
-              );
-            }
-          })}
-        </div>
+        <ul className="space-y-2">
+          {formatInstructions(recipe.elkészítés).map((item, index) => (
+            <li key={index} className="text-white/90 flex items-start gap-2 text-xs sm:text-sm">
+              <span className="text-yellow-400 mt-0.5">•</span>
+              <span className="leading-relaxed">{item.content}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
