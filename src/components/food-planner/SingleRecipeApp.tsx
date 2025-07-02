@@ -7,7 +7,7 @@ import { MultiDayMealPlanGenerator } from "./MultiDayMealPlanGenerator";
 import { DailyMealPlanner } from "./DailyMealPlanner";
 import { FunctionSelector } from "./FunctionSelector";
 import { Recipe } from "@/types/recipe";
-import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { useLazySupabaseData } from "@/hooks/useLazySupabaseData";
 import { LoadingChef } from "@/components/ui/LoadingChef";
 import { filterRecipesByMultipleIngredients } from "@/services/recipeFilters";
 
@@ -49,33 +49,41 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
   const { 
     categories, 
     mealTypes, 
-    loading: dataLoading, 
+    loading: dataLoading,
+    isInitialized,
+    loadBasicData,
+    loadUserPreferences,
+    loadUserFavorites,
     getRecipesByMealType,
     getRecipesByCategory,
     getRandomRecipe,
     getFilteredIngredients,
     convertToStandardRecipe,
     getFavoriteForIngredient,
-    getPreferenceForIngredient,
-    refreshFavorites,
-    recipes
-  } = useSupabaseData(user.id);
+    getPreferenceForIngredient
+  } = useLazySupabaseData(user.id);
 
-  // Kedvencek újratöltése amikor a komponens mountálódik
+  // Alapvető adatok betöltése amikor a komponens mountálódik
   useEffect(() => {
-    if (user?.id) {
-      console.log('🔄 Kedvencek újratöltése SingleRecipeApp-ben...');
-      refreshFavorites();
+    loadBasicData();
+  }, [loadBasicData]);
+
+  // User specifikus adatok betöltése
+  useEffect(() => {
+    if (user?.id && isInitialized) {
+      console.log('🔄 User adatok betöltése...');
+      loadUserPreferences();
+      loadUserFavorites();
     }
-  }, [user?.id, refreshFavorites]);
+  }, [user?.id, isInitialized, loadUserPreferences, loadUserFavorites]);
 
   // AUTOMATIKUS receptgenerálás amikor meal type változik
   useEffect(() => {
-    if (selectedMealType && !showIngredientSelection) {
+    if (selectedMealType && !showIngredientSelection && isInitialized) {
       console.log('🎯 Meal type változott, automatikus receptgenerálás:', selectedMealType);
       handleAutoGenerateRecipe();
     }
-  }, [selectedMealType]);
+  }, [selectedMealType, isInitialized]);
 
   const handleAutoGenerateRecipe = async () => {
     if (!selectedMealType) return;
@@ -86,9 +94,9 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     try {
       console.log('🔍 AUTOMATIKUS recept generálás preferenciákkal:', selectedMealType);
       
-      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1500));
       
-      const foundRecipes = getRecipesByMealType(selectedMealType);
+      const foundRecipes = await getRecipesByMealType(selectedMealType);
       console.log(`🎯 Automatikus keresés eredménye: ${foundRecipes.length} recept`);
 
       await minLoadingTime;
@@ -134,10 +142,9 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     try {
       console.log('🔍 TÖBB KATEGÓRIÁS alapanyaggal recept keresése:', { selectedMealType, selectedIngredients });
       
-      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
       
-      // 1. Lépés: Lekérjük az étkezési típusnak megfelelő recepteket
-      const mealTypeRecipes = getRecipesByMealType(selectedMealType);
+      const mealTypeRecipes = await getRecipesByMealType(selectedMealType);
       console.log(`📋 ${selectedMealType} étkezéshez tartozó receptek:`, mealTypeRecipes.length);
       
       if (mealTypeRecipes.length === 0) {
@@ -146,7 +153,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
         return;
       }
       
-      // 2. Lépés: Szűrjük a recepteket az alapanyagok alapján
       const ingredientNames = selectedIngredients.map(ing => ing.ingredient);
       console.log('🎯 Keresett alapanyagok:', ingredientNames);
       
@@ -178,10 +184,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     console.log('🔄 Hasonló recept generálása ugyanazokkal a paraméterekkel...');
     
     if (showIngredientSelection && Object.keys(mealIngredients).length > 0) {
-      // Ha van több kategóriás keresés, használjuk azt
       await getMultipleCategoryRecipes(mealIngredients);
     } else {
-      // Egyszerű újragenerálás
       await regenerateRecipe();
     }
   };
@@ -192,18 +196,18 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       setCurrentRecipe(null);
       
       try {
-        const minLoadingTime = new Promise(resolve => setTimeout(resolve, 3000));
+        const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
         
         console.log('🔄 SZIGORÚ újragenerálás ugyanazokkal a paraméterekkel (preferenciákkal):', lastSearchParams);
         
         let foundRecipes = [];
         
         if (lastSearchParams.category && lastSearchParams.ingredient) {
-          foundRecipes = getRecipesByCategory(lastSearchParams.category, lastSearchParams.ingredient, selectedMealType);
+          foundRecipes = await getRecipesByCategory(lastSearchParams.category, lastSearchParams.ingredient, selectedMealType);
         } else if (lastSearchParams.category) {
-          foundRecipes = getRecipesByCategory(lastSearchParams.category, undefined, selectedMealType);
+          foundRecipes = await getRecipesByCategory(lastSearchParams.category, undefined, selectedMealType);
         } else {
-          foundRecipes = getRecipesByMealType(selectedMealType);
+          foundRecipes = await getRecipesByMealType(selectedMealType);
         }
 
         await minLoadingTime;
@@ -245,7 +249,8 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     setLastSearchParams({ category: "", ingredient: "", mealType: "" });
   };
 
-  if (dataLoading) {
+  // Csak alapvető betöltés esetén mutassuk a loading screent
+  if (dataLoading && !isInitialized) {
     return <LoadingChef />;
   }
 
@@ -306,7 +311,10 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
               }, {} as { [key: string]: { categories: { [key: string]: string[] } } }),
               categories: categories,
               getFilteredIngredients: getFilteredIngredients,
-              getRecipesByMealType: getRecipesByMealType
+              getRecipesByMealType: async (mealType: string) => {
+                const recipes = await getRecipesByMealType(mealType);
+                return { length: recipes.length };
+              }
             }}
             onGetRandomRecipe={handleGetRandomRecipe}
             onShowMultiCategorySelection={handleShowIngredientSelection}
