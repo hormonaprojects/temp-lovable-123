@@ -95,6 +95,18 @@ export const processIngredientsForRecipes = (
 
   console.log('📊 Alapanyagok csoportosítva:', Object.keys(alapanyagokByReceptId).length, 'recept ID-hoz');
   
+  // KRITIKUS DEBUG: Nézzük meg hogy tényleg létrejöttek-e a kulcsok
+  const receptIdsWithIngredients = Object.keys(alapanyagokByReceptId).filter(id => alapanyagokByReceptId[parseInt(id)]?.length > 0);
+  console.log('🔥 KRITIKUS - Recept ID-k amikhez VANNAK alapanyagok:', receptIdsWithIngredients.slice(0, 20));
+  
+  // Mutassuk meg egy konkrét recept alapanyagait
+  if (receptIdsWithIngredients.length > 0) {
+    const firstRecipeId = receptIdsWithIngredients[0];
+    console.log(`🎯 Példa - Recept ${firstRecipeId} alapanyagai:`, alapanyagokByReceptId[parseInt(firstRecipeId)]);
+  }
+
+  console.log('📊 Alapanyagok csoportosítva:', Object.keys(alapanyagokByReceptId).length, 'recept ID-hoz');
+  
   // Debug: mutassuk meg néhány recept alapanyagait és az üreseket is
   Object.entries(alapanyagokByReceptId).slice(0, 10).forEach(([receptId, ingredients]) => {
     if (ingredients.length === 0) {
