@@ -93,6 +93,33 @@ export type Database = {
         }
         Relationships: []
       }
+      alapanyag: {
+        Row: {
+          Elelmiszer: string | null
+          "Fehérje/100g": string | null
+          ID: number
+          "Kaloria/100g": string | null
+          "Szénhidrát/100g": string | null
+          "Zsir/100g": string | null
+        }
+        Insert: {
+          Elelmiszer?: string | null
+          "Fehérje/100g"?: string | null
+          ID: number
+          "Kaloria/100g"?: string | null
+          "Szénhidrát/100g"?: string | null
+          "Zsir/100g"?: string | null
+        }
+        Update: {
+          Elelmiszer?: string | null
+          "Fehérje/100g"?: string | null
+          ID?: number
+          "Kaloria/100g"?: string | null
+          "Szénhidrát/100g"?: string | null
+          "Zsir/100g"?: string | null
+        }
+        Relationships: []
+      }
       Értékelések: {
         Row: {
           Dátum: string | null

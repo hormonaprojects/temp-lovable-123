@@ -17,7 +17,10 @@ export const getRecipesByMealTypeNew = (
   
   // Szűrés az Étkezések tábla alapján meghatározott meal types alapján
   const filteredRecipes = recipes.filter(recipe => {
-    if (!recipe.mealTypes || recipe.mealTypes.length === 0) return false;
+    if (!recipe.mealTypes || recipe.mealTypes.length === 0) {
+      console.log(`⚠️ "${recipe.név}" (${recipe.id}) - nincs meal type`);
+      return false;
+    }
     
     const searchMealType = mealType.toLowerCase();
     const hasMatch = recipe.mealTypes.some(recipeMealType => {
