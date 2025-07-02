@@ -36,6 +36,11 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
     Object.entries(alapanyagokByReceptId).slice(0, 5).forEach(([receptId, ingredients]) => {
       console.log(`🍽️ Debug - Recept ${receptId} alapanyagai:`, ingredients);
     });
+
+    // KRITIKUS DEBUG: Nézzük meg hogy van-e alapanyag egyáltalán
+    console.log('🔥 KRITIKUS DEBUG - alapanyagokByReceptId teljes objektum:', alapanyagokByReceptId);
+    console.log('🔥 Recept ID-k amikhez van alapanyag:', Object.keys(alapanyagokByReceptId).filter(id => alapanyagokByReceptId[parseInt(id)]?.length > 0));
+    console.log('🔥 Recept ID-k amikhez NINCS alapanyag:', Object.keys(alapanyagokByReceptId).filter(id => !alapanyagokByReceptId[parseInt(id)] || alapanyagokByReceptId[parseInt(id)].length === 0));
     const combinedRecipes: CombinedRecipe[] = [];
     
     console.log('🔄 Receptek feldolgozása meal type-okkal...');
@@ -48,8 +53,20 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       console.log(`🔍 Recept ${receptId} (${receptName}) hozzávalói:`, hozzavalok);
       console.log(`📊 Alapanyagok alapján - receptId: ${receptId}, találat: ${hozzavalok.length} db hozzávaló`);
       
+      // KRITIKUS DEBUG: Nézzük meg hogy van-e egyáltalán kulcs az alapanyagok objektumban
+      console.log(`🔥 Alapanyag kulcsok keresése - receptId: ${receptId}`);
+      console.log(`🔥 Van-e kulcs? ${alapanyagokByReceptId.hasOwnProperty(receptId)}`);
+      console.log(`🔥 Összes rendelkezésre álló kulcsok:`, Object.keys(alapanyagokByReceptId).slice(0, 10));
+      console.log(`🔥 Kulcs típusa - receptId: ${typeof receptId}, első alapanyag kulcs: ${typeof Object.keys(alapanyagokByReceptId)[0]}`);
+      
       if (hozzavalok.length === 0) {
         console.warn(`⚠️ NINCS HOZZÁVALÓ! Recept ${receptId} (${receptName}) - ellenőrizni kell az alapanyag táblában`);
+        
+        // További debug - nézzük meg hogy van-e hasonló kulcs
+        const stringReceptId = receptId.toString();
+        if (alapanyagokByReceptId[stringReceptId]) {
+          console.log(`🔍 String kulccsal TALÁLT: ${stringReceptId}`, alapanyagokByReceptId[stringReceptId]);
+        }
       }
       
       // Meal types meghatározása az előre betöltött Étkezések tábla alapján

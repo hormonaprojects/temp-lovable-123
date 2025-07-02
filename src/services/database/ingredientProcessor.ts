@@ -22,8 +22,19 @@ export const processIngredientsForRecipes = (
 
   // Csoportosítjuk az alapanyagokat recept ID szerint
   console.log('🔄 Alapanyagok csoportosítása Recept_ID szerint...');
-  const alapanyagokByReceptId = alapanyagokRaw.reduce((acc, alapanyag) => {
+  
+  // EXTRA DEBUG: Nézzük meg a nyers alapanyag adatokat
+  console.log('🔥 NYERS ALAPANYAG ADATOK - első 3 elem:', alapanyagokRaw.slice(0, 3));
+  console.log('🔥 Összes Recept_ID a nyers adatokban:', [...new Set(alapanyagokRaw.map(a => a['Recept_ID']).filter(id => id))].slice(0, 10));
+  
+  const alapanyagokByReceptId = alapanyagokRaw.reduce((acc, alapanyag, index) => {
     const receptId = alapanyag['Recept_ID'];
+    
+    // Debug minden 100. elemnél
+    if (index % 100 === 0) {
+      console.log(`🔍 Feldolgozás ${index}/${alapanyagokRaw.length} - Recept_ID: ${receptId}, Élelmiszer: ${alapanyag['Élelmiszerek']}`);
+    }
+    
     if (!receptId) {
       console.warn('⚠️ Hiányzó Recept_ID:', alapanyag);
       return acc;
