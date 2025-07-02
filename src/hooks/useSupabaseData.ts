@@ -55,15 +55,18 @@ export function useSupabaseData(userId?: string) {
     }
   }, [userId, loadUserPreferences, loadUserFavorites]);
 
-  // Alapvető adatok betöltése - CSAK EGYSZER!
+  // Alapvető adatok betöltése - CSAK EGYSZER! (most receptekkel együtt)
   useEffect(() => {
     let isMounted = true;
     
     const loadInitialData = async () => {
       try {
-        const [categoriesData, mealTypesData] = await Promise.all([
+        console.log('🔄 Alapadatok és receptek betöltése kezdődik...');
+        
+        const [categoriesData, mealTypesData, recipesData] = await Promise.all([
           fetchCategories(),
-          fetchMealTypes()
+          fetchMealTypes(),
+          fetchCombinedRecipes() // Receptek is betöltődnek egyből
         ]);
 
         if (!isMounted) return;
@@ -75,6 +78,13 @@ export function useSupabaseData(userId?: string) {
         setCategories(processedCategories);
         setMealTypes(processedMealTypes);
         setMealTypeRecipes(processedMealTypeRecipes);
+        setRecipes(recipesData || []); // Receptek betöltése
+        
+        console.log('✅ Összes adat betöltve:', {
+          kategoriak: Object.keys(processedCategories).length,
+          mealTypes: Object.keys(processedMealTypes).length,
+          receptek: recipesData?.length || 0
+        });
         
       } catch (error) {
         console.error('❌ Alapadatok betöltési hiba:', error);
