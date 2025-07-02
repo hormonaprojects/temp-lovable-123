@@ -1,4 +1,3 @@
-
 import { Recipe } from "@/types/recipe";
 import { Clock, Users } from "lucide-react";
 
@@ -37,9 +36,31 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
           type: 'bullet',
           content: section
         });
-      } else if (section) {
-        // Ez a főcím alatt lévő szöveg - hozzáadjuk bullet pontként
-        // Ha van benne számozás, eltávolítjuk
+        
+        // A következő rész a főcím alatti tartalom
+        if (i + 1 < sections.length) {
+          const nextSection = sections[i + 1].trim();
+          if (nextSection && !nextSection.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
+            // Ha van benne számozás, eltávolítjuk és minden mondatot külön bullet pontba teszünk
+            const cleanedSection = nextSection.replace(/^\d+\.\s*/gm, '').trim();
+            
+            // Mondatokra bontjuk (pont, felkiáltójel vagy kérdőjel után)
+            const sentences = cleanedSection.split(/[.!?]+/).filter(sentence => sentence.trim());
+            
+            sentences.forEach(sentence => {
+              if (sentence.trim()) {
+                formattedSections.push({
+                  type: 'bullet',
+                  content: sentence.trim()
+                });
+              }
+            });
+            
+            i++; // Kihagyjuk a következő iterációt, mert már feldolgoztuk
+          }
+        }
+      } else if (section && !formattedSections.some(item => item.content === section)) {
+        // Ha nincs főcím előtte, akkor egyszerűen hozzáadjuk
         const cleanedSection = section.replace(/^\d+\.\s*/, '').trim();
         if (cleanedSection) {
           formattedSections.push({
