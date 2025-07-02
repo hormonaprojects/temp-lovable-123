@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MealTypeSelector } from "./MealTypeSelector";
 import { SharedIngredientSelector } from "./shared/SharedIngredientSelector";
@@ -51,7 +50,9 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     mealTypes, 
     loading: dataLoading,
     isInitialized,
+    recipesLoaded,
     loadBasicData,
+    loadRecipes,
     loadUserPreferences,
     loadUserFavorites,
     getRecipesByMealType,
@@ -68,6 +69,14 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     loadBasicData();
   }, [loadBasicData]);
 
+  // RECEPTEK BETÖLTÉSE AZONNAL amikor a SingleRecipeApp betöltődik
+  useEffect(() => {
+    if (isInitialized && !recipesLoaded) {
+      console.log('🔄 SingleRecipeApp betöltve - receptek betöltése kezdődik...');
+      loadRecipes();
+    }
+  }, [isInitialized, recipesLoaded, loadRecipes]);
+
   // User specifikus adatok betöltése
   useEffect(() => {
     if (user?.id && isInitialized) {
@@ -77,16 +86,16 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
     }
   }, [user?.id, isInitialized, loadUserPreferences, loadUserFavorites]);
 
-  // AUTOMATIKUS receptgenerálás amikor meal type változik
+  // AUTOMATIKUS receptgenerálás amikor meal type változik - DE CSAK HA RECEPTEK MÁR BE VANNAK TÖLTVE
   useEffect(() => {
-    if (selectedMealType && !showIngredientSelection && isInitialized) {
+    if (selectedMealType && !showIngredientSelection && isInitialized && recipesLoaded) {
       console.log('🎯 Meal type változott, automatikus receptgenerálás:', selectedMealType);
       handleAutoGenerateRecipe();
     }
-  }, [selectedMealType, isInitialized]);
+  }, [selectedMealType, isInitialized, recipesLoaded]);
 
   const handleAutoGenerateRecipe = async () => {
-    if (!selectedMealType) return;
+    if (!selectedMealType || !recipesLoaded) return;
     
     setIsLoading(true);
     setCurrentRecipe(null);
