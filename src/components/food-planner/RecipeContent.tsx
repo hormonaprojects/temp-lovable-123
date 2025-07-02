@@ -27,43 +27,44 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
     const sections = cleanInstructions.split(sectionPattern).filter(part => part.trim());
     
     const formattedSections = [];
+    let stepCounter = 1;
     
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i].trim();
       
       if (section.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
-        // Ez egy főcím
+        // Ez egy főcím - reset step counter
+        stepCounter = 1;
         formattedSections.push({
           type: 'header',
           content: section
         });
       } else if (section) {
         // Ez egy lépés vagy lépések csoportja
-        // Számozott lépések keresése (1., 2., stb.)
+        // Először próbáljuk meg a számozott lépéseket felismerni
         const numberedSteps = section.split(/(\d+\.)\s*/).filter(step => step.trim());
         
         if (numberedSteps.length > 2) {
-          // Van számozás
+          // Van számozás a szövegben
           for (let j = 1; j < numberedSteps.length; j += 2) {
-            const stepNumber = numberedSteps[j];
             const stepContent = numberedSteps[j + 1];
             if (stepContent && stepContent.trim()) {
               formattedSections.push({
                 type: 'step',
                 content: stepContent.trim(),
-                number: stepNumber
+                number: stepCounter++
               });
             }
           }
         } else {
-          // Nincs számozás, mondatok szerint bontjuk
+          // Nincs számozás, mondatok szerint bontjuk és számozzuk
           const sentences = section.split(/[.!?]+/).filter(sentence => sentence.trim());
-          sentences.forEach((sentence, idx) => {
+          sentences.forEach((sentence) => {
             if (sentence.trim()) {
               formattedSections.push({
                 type: 'step',
                 content: sentence.trim(),
-                number: null
+                number: stepCounter++
               });
             }
           });
@@ -173,7 +174,7 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
               return (
                 <div key={index} className="flex gap-2">
                   <span className="bg-yellow-400 text-black text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-5 flex items-center justify-center flex-shrink-0">
-                    {item.number ? item.number.replace('.', '') : index + 1}
+                    {item.number}
                   </span>
                   <p className="text-white/90 flex-1 leading-relaxed text-xs sm:text-sm">{item.content}</p>
                 </div>
