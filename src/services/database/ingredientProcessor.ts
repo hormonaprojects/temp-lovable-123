@@ -9,6 +9,9 @@ export const processIngredientsForRecipes = (
   console.log('📊 Nyers alapanyagok száma:', alapanyagokRaw.length);
   console.log('📊 Master alapanyagok száma:', alapanyagokMaster.length);
 
+  // Debug: mutassuk meg néhány nyers alapanyagot
+  console.log('🔍 Első 3 nyers alapanyag példa:', alapanyagokRaw.slice(0, 3));
+
   // Alapanyag lookup map készítése ID alapján
   const alapanyagMap = new Map<string, Alapanyag>();
   alapanyagokMaster.forEach(alapanyag => {
@@ -48,7 +51,7 @@ export const processIngredientsForRecipes = (
     
     // Építsük fel a formázott alapanyag stringet
     let formattedIngredient = '';
-    if (mennyiseg && mennyiseg.toString().trim() !== '') {
+    if (mennyiseg && mennyiseg.toString().trim() !== '' && mennyiseg.toString() !== '0') {
       formattedIngredient += mennyiseg.toString();
     }
     if (mertekegyseg && mertekegyseg.trim() !== '') {
@@ -58,11 +61,22 @@ export const processIngredientsForRecipes = (
       formattedIngredient += (formattedIngredient ? ' ' : '') + finalElelmiszerNev;
     }
     
+    // Ha csak az élelmiszer név van, azt is adjuk hozzá
+    if (!formattedIngredient.trim() && finalElelmiszerNev && finalElelmiszerNev.trim() !== '') {
+      formattedIngredient = finalElelmiszerNev.trim();
+    }
+    
     if (formattedIngredient.trim()) {
       acc[receptId].push(formattedIngredient.trim());
       console.log(`✅ Hozzáadva: "${formattedIngredient.trim()}" (Recept ID: ${receptId})`);
     } else {
-      console.warn(`⚠️ Üres alapanyag (Recept ID: ${receptId}):`, { elelmiszerNev, mennyiseg, mertekegyseg });
+      console.warn(`⚠️ Üres alapanyag (Recept ID: ${receptId}):`, { 
+        elelmiszerNev, 
+        mennyiseg, 
+        mertekegyseg, 
+        elelmiszerID,
+        masterFound: elelmiszerID && alapanyagMap.has(elelmiszerID.toString())
+      });
     }
     
     return acc;
@@ -70,10 +84,18 @@ export const processIngredientsForRecipes = (
 
   console.log('📊 Alapanyagok csoportosítva:', Object.keys(alapanyagokByReceptId).length, 'recept ID-hoz');
   
-  // Debug: mutassuk meg néhány recept alapanyagait
-  Object.entries(alapanyagokByReceptId).slice(0, 3).forEach(([receptId, ingredients]) => {
-    console.log(`🍽️ Recept ${receptId} alapanyagai (${ingredients.length} db):`, ingredients);
+  // Debug: mutassuk meg néhány recept alapanyagait és az üreseket is
+  Object.entries(alapanyagokByReceptId).slice(0, 10).forEach(([receptId, ingredients]) => {
+    if (ingredients.length === 0) {
+      console.warn(`⚠️ ÜRES! Recept ${receptId} - nincs alapanyag!`);
+    } else {
+      console.log(`🍽️ Recept ${receptId} alapanyagai (${ingredients.length} db):`, ingredients);
+    }
   });
+
+  // Számoljuk meg az üres recepteket
+  const emptyRecipes = Object.entries(alapanyagokByReceptId).filter(([_, ingredients]) => ingredients.length === 0);
+  console.log(`📊 Üres receptek száma: ${emptyRecipes.length} / ${Object.keys(alapanyagokByReceptId).length}`);
   
   return alapanyagokByReceptId;
 };
