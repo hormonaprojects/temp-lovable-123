@@ -18,20 +18,60 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
   const formatInstructions = (instructions: string) => {
     if (!instructions) return [];
     
-    // Számozott lépések keresése (1., 2., stb.)
-    const numberedSteps = instructions.split(/\d+\./).filter(step => step.trim());
-    if (numberedSteps.length > 1) {
-      return numberedSteps.map(step => step.trim()).filter(step => step);
+    // Tisztítjuk meg az instrukciókat és szétválasztjuk a főcímeket
+    const cleanInstructions = instructions.trim();
+    
+    // Keresünk főcímeket (nagy kezdőbetű + kettőspont)
+    // Például: "Szósz elkészítése:", "Quinoa főzése:", stb.
+    const sectionPattern = /([A-ZÁÉÍÓÖŐÜŰ][^:]*:)/g;
+    const sections = cleanInstructions.split(sectionPattern).filter(part => part.trim());
+    
+    const formattedSections = [];
+    
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i].trim();
+      
+      if (section.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
+        // Ez egy főcím
+        formattedSections.push({
+          type: 'header',
+          content: section
+        });
+      } else if (section) {
+        // Ez egy lépés vagy lépések csoportja
+        // Számozott lépések keresése (1., 2., stb.)
+        const numberedSteps = section.split(/(\d+\.)\s*/).filter(step => step.trim());
+        
+        if (numberedSteps.length > 2) {
+          // Van számozás
+          for (let j = 1; j < numberedSteps.length; j += 2) {
+            const stepNumber = numberedSteps[j];
+            const stepContent = numberedSteps[j + 1];
+            if (stepContent && stepContent.trim()) {
+              formattedSections.push({
+                type: 'step',
+                content: stepContent.trim(),
+                number: stepNumber
+              });
+            }
+          }
+        } else {
+          // Nincs számozás, mondatok szerint bontjuk
+          const sentences = section.split(/[.!?]+/).filter(sentence => sentence.trim());
+          sentences.forEach((sentence, idx) => {
+            if (sentence.trim()) {
+              formattedSections.push({
+                type: 'step',
+                content: sentence.trim(),
+                number: null
+              });
+            }
+          });
+        }
+      }
     }
     
-    // Mondatok szétválasztása
-    const sentences = instructions.split(/[.!?]+/).filter(sentence => sentence.trim());
-    if (sentences.length > 1) {
-      return sentences.map(sentence => sentence.trim()).filter(sentence => sentence);
-    }
-    
-    // Ha nincs világos struktúra, az egészet egy lépésként visszaadjuk
-    return [instructions.trim()];
+    return formattedSections;
   };
 
   // Compact mód a többnapos étrendtervezőhöz
@@ -114,20 +154,32 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
         </ul>
       </div>
 
-      {/* Elkészítés - kompaktabb */}
+      {/* Elkészítés - javított formázással */}
       <div className="bg-white/5 rounded-lg p-3 sm:p-4 mx-2 sm:mx-0">
         <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
           👨‍🍳 Elkészítés:
         </h3>
-        <div className="space-y-2">
-          {formatInstructions(recipe.elkészítés).map((step, index) => (
-            <div key={index} className="flex gap-2">
-              <span className="bg-yellow-400 text-black text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-5 flex items-center justify-center flex-shrink-0">
-                {index + 1}
-              </span>
-              <p className="text-white/90 flex-1 leading-relaxed text-xs sm:text-sm">{step}</p>
-            </div>
-          ))}
+        <div className="space-y-3">
+          {formatInstructions(recipe.elkészítés).map((item, index) => {
+            if (item.type === 'header') {
+              return (
+                <div key={index} className="mt-4 first:mt-0">
+                  <h4 className="text-yellow-400 font-semibold text-sm sm:text-base mb-2">
+                    {item.content}
+                  </h4>
+                </div>
+              );
+            } else {
+              return (
+                <div key={index} className="flex gap-2">
+                  <span className="bg-yellow-400 text-black text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-5 flex items-center justify-center flex-shrink-0">
+                    {item.number ? item.number.replace('.', '') : index + 1}
+                  </span>
+                  <p className="text-white/90 flex-1 leading-relaxed text-xs sm:text-sm">{item.content}</p>
+                </div>
+              );
+            }
+          })}
         </div>
       </div>
     </div>
