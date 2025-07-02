@@ -19,50 +19,56 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
     
     const cleanInstructions = instructions.trim();
     
-    // Keresünk főcímeket (nagy kezdőbetű + kettőspont)
-    const sectionPattern = /([A-ZÁÉÍÓÖŐÜŰ][^:]*:)/g;
-    const parts = cleanInstructions.split(sectionPattern).filter(part => part.trim());
+    // Egyszerű mondat alapú felosztás és strukturálás
+    // Keresünk számozást (1., 2., stb.) vagy természetes mondatvégeket
+    const sentences = cleanInstructions
+      .split(/(?:\.|!)(?:\s|$)/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
     
     const formattedSections = [];
-    let currentSection = '';
+    let currentStep = '';
+    let stepNumber = 1;
     
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i].trim();
-      
-      // Ha ez egy főcím (kettősponttal végződik)
-      if (part.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
-        // Ha van korábbi section, azt lezárjuk
-        if (currentSection) {
+    for (const sentence of sentences) {
+      // Ha a mondat tartalmaz főcímet kettősponttal
+      if (sentence.includes(':')) {
+        // Ha van már gyűjtött szöveg, azt lezárjuk
+        if (currentStep) {
           formattedSections.push({
             type: 'bullet',
-            content: currentSection.trim()
+            content: currentStep.trim()
           });
+          currentStep = '';
         }
         
-        // Új section kezdése ezzel a főcímmel
-        currentSection = part;
-      } else if (part) {
-        // Ha ez nem főcím, akkor hozzáadjuk a jelenlegi sectionhoz
-        const cleanContent = part.replace(/^\d+\.\s*/gm, '').trim();
-        if (cleanContent) {
-          if (currentSection) {
-            currentSection += ' ' + cleanContent;
-          } else {
-            // Ha nincs főcím, akkor ez egy önálló tartalom
-            formattedSections.push({
-              type: 'bullet',
-              content: cleanContent
-            });
-          }
+        // Új lépés kezdése
+        currentStep = sentence + '.';
+      } else if (sentence) {
+        // Ha van már kezdett lépés, hozzáadjuk
+        if (currentStep) {
+          currentStep += ' ' + sentence + '.';
+        } else {
+          // Új lépés számozással
+          currentStep = `${stepNumber}. ${sentence}.`;
+          stepNumber++;
         }
       }
     }
     
-    // Az utolsó section hozzáadása
-    if (currentSection) {
+    // Az utolsó lépés hozzáadása
+    if (currentStep) {
       formattedSections.push({
         type: 'bullet',
-        content: currentSection.trim()
+        content: currentStep.trim()
+      });
+    }
+    
+    // Ha nincs strukturált tartalom, akkor az egészet egy bullet pontként adjuk hozzá
+    if (formattedSections.length === 0 && cleanInstructions) {
+      formattedSections.push({
+        type: 'bullet',
+        content: cleanInstructions
       });
     }
     
