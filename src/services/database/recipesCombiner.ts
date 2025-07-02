@@ -30,6 +30,12 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
     }
 
     const alapanyagokByReceptId = processIngredientsForRecipes(alapanyagokRaw, alapanyagokMaster);
+    console.log('📊 processIngredientsForRecipes eredménye:', Object.keys(alapanyagokByReceptId).length, 'recept feldolgozva');
+    
+    // Debug: mutassuk meg néhány recept alapanyagait
+    Object.entries(alapanyagokByReceptId).slice(0, 5).forEach(([receptId, ingredients]) => {
+      console.log(`🍽️ Debug - Recept ${receptId} alapanyagai:`, ingredients);
+    });
     const combinedRecipes: CombinedRecipe[] = [];
     
     console.log('🔄 Receptek feldolgozása meal type-okkal...');
@@ -41,6 +47,10 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       
       console.log(`🔍 Recept ${receptId} (${receptName}) hozzávalói:`, hozzavalok);
       console.log(`📊 Alapanyagok alapján - receptId: ${receptId}, találat: ${hozzavalok.length} db hozzávaló`);
+      
+      if (hozzavalok.length === 0) {
+        console.warn(`⚠️ NINCS HOZZÁVALÓ! Recept ${receptId} (${receptName}) - ellenőrizni kell az alapanyag táblában`);
+      }
       
       // Meal types meghatározása az előre betöltött Étkezések tábla alapján
       const mealTypes = determineMealTypesForRecipeFromData(receptName, mealTypesData);
