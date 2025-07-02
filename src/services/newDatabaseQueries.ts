@@ -123,7 +123,7 @@ const determineMealTypesForRecipe = async (recipeName: string): Promise<string[]
   const normalizedRecipeName = normalizeText(recipeName);
   const mealTypes: string[] = [];
 
-  // Pontosabb név-egyeztetés több módon
+  // Keresés az Étkezések táblában a recept nevével
   const matchingRows = mealTypesData.filter(row => {
     const rowRecipeName = row['Recept Neve'];
     if (!rowRecipeName) return false;
@@ -156,7 +156,7 @@ const determineMealTypesForRecipe = async (recipeName: string): Promise<string[]
       mealTypeColumns.forEach(mealType => {
         const cellValue = matchingRow[mealType];
         
-        // Jobban toleráns értékellenőrzés
+        // Jobban toleráns értékellenőrzés - X vagy x jelzi, hogy az étkezési típushoz tartozik
         if (cellValue && (
           cellValue.toString().toLowerCase().includes('x') || 
           cellValue.toString().toLowerCase().includes('igen') || 
@@ -202,18 +202,9 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       alapanyagokMaster: alapanyagokMaster.length
     });
 
+    // Ha nincs elég adat, ne folytassuk
     if (receptek.length === 0) {
-      console.warn('⚠️ Receptek tábla üres!');
-      return [];
-    }
-
-    if (alapanyagokRaw.length === 0) {
-      console.warn('⚠️ Recept_alapanyag tábla üres!');
-      return [];
-    }
-
-    if (alapanyagokMaster.length === 0) {
-      console.warn('⚠️ Alapanyag tábla üres!');
+      console.error('❌ KRITIKUS: Nincs egyetlen recept sem a receptek táblában!');
       return [];
     }
 
@@ -225,7 +216,7 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
 
     console.log('📋 Alapanyag map mérete:', alapanyagMap.size);
 
-    // Debug: Nézzük meg a receptek ID-jeit és alapanyag Recept_ID-ket
+    // Debug: Nézzük meg a receptek és alapanyagok ID-jeit
     console.log('📋 Recept ID-k (első 5):', receptek.slice(0, 5).map(r => r['Recept ID']));
     console.log('📋 Recept nevek (első 5):', receptek.slice(0, 5).map(r => r['Receptnév']));
     console.log('📋 Alapanyag Recept_ID-k (első 10):', [...new Set(alapanyagokRaw.slice(0, 10).map(a => a['Recept_ID']))]);
@@ -298,12 +289,8 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       // Meal types meghatározása az Étkezések tábla alapján RECEPTNÉV szerint
       const mealTypes = await determineMealTypesForRecipe(receptName);
       
-      if (hozzavalok.length === 0) {
-        console.warn(`⚠️ Nincs alapanyag a ${receptId} ID-jú recepthez: ${receptName}`);
-      }
-      
-      // Minden receptet hozzáadunk, függetlenül attól, hogy van-e meal type-ja
-      // Ha nincs meal type, akkor üres tömböt kap
+      // MINDEN receptet hozzáadunk, akkor is, ha nincs meal type-ja
+      // Az alapanyagok hiánya nem kizáró ok
       combinedRecipes.push({
         id: receptId,
         név: receptName,

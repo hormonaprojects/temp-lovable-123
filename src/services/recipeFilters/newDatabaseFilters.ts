@@ -1,4 +1,3 @@
-
 import { CombinedRecipe } from '@/types/newDatabase';
 import { UserPreference } from '@/services/preferenceFilters';
 
@@ -15,6 +14,9 @@ export const getRecipesByMealTypeNew = (
     userPreferences: userPreferences.length
   });
   
+  // Normalizáljuk az étkezési típust a kereséshez
+  const normalizedMealType = mealType.toLowerCase();
+  
   // Szűrés az Étkezések tábla alapján meghatározott meal types alapján
   const filteredRecipes = recipes.filter(recipe => {
     if (!recipe.mealTypes || recipe.mealTypes.length === 0) {
@@ -22,12 +24,16 @@ export const getRecipesByMealTypeNew = (
       return false;
     }
     
-    const searchMealType = mealType.toLowerCase();
     const hasMatch = recipe.mealTypes.some(recipeMealType => {
       const recipeMealTypeLower = recipeMealType.toLowerCase();
-      return recipeMealTypeLower === searchMealType ||
-             (searchMealType === 'tízórai' && recipeMealTypeLower === 'tízórai') ||
-             (searchMealType === 'tizórai' && recipeMealTypeLower === 'tízórai');
+      return recipeMealTypeLower === normalizedMealType ||
+             (normalizedMealType === 'tízórai' && recipeMealTypeLower === 'tízórai') ||
+             (normalizedMealType === 'tizórai' && recipeMealTypeLower === 'tízórai') ||
+             (normalizedMealType === 'reggeli' && recipeMealTypeLower === 'reggeli') ||
+             (normalizedMealType === 'ebéd' && recipeMealTypeLower === 'ebéd') ||
+             (normalizedMealType === 'ebed' && recipeMealTypeLower === 'ebéd') ||
+             (normalizedMealType === 'uzsonna' && recipeMealTypeLower === 'uzsonna') ||
+             (normalizedMealType === 'vacsora' && recipeMealTypeLower === 'vacsora');
     });
     
     if (hasMatch) {
@@ -41,6 +47,9 @@ export const getRecipesByMealTypeNew = (
   
   if (filteredRecipes.length === 0) {
     console.warn(`⚠️ Nincs ${mealType} típusú recept az Étkezések tábla alapján`);
+    console.log('📋 Elérhető meal type-ok az összes receptben:', 
+      [...new Set(recipes.flatMap(r => r.mealTypes))].sort()
+    );
     return [];
   }
 
