@@ -54,19 +54,23 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       console.log(`📊 Alapanyagok alapján - receptId: ${receptId}, találat: ${hozzavalok.length} db hozzávaló`);
       
       // KRITIKUS DEBUG: Nézzük meg hogy van-e egyáltalán kulcs az alapanyagok objektumban
-      console.log(`🔥 Alapanyag kulcsok keresése - receptId: ${receptId}`);
+      console.log(`🔥 Alapanyag kulcsok keresése - receptId: ${receptId} (típus: ${typeof receptId})`);
       console.log(`🔥 Van-e kulcs? ${alapanyagokByReceptId.hasOwnProperty(receptId)}`);
-      console.log(`🔥 Összes rendelkezésre álló kulcsok:`, Object.keys(alapanyagokByReceptId).slice(0, 10));
-      console.log(`🔥 Kulcs típusa - receptId: ${typeof receptId}, első alapanyag kulcs: ${typeof Object.keys(alapanyagokByReceptId)[0]}`);
+      
+      // Debug: keressük meg a közeli kulcsokat
+      const availableKeys = Object.keys(alapanyagokByReceptId).map(k => parseInt(k));
+      const isAvailable = availableKeys.includes(receptId);
+      console.log(`🔥 Elérhető kulcsok (első 10):`, availableKeys.slice(0, 10));
+      console.log(`🔥 A ${receptId} szerepel az elérhető kulcsok között? ${isAvailable}`);
       
       if (hozzavalok.length === 0) {
-        console.warn(`⚠️ NINCS HOZZÁVALÓ! Recept ${receptId} (${receptName}) - ellenőrizni kell az alapanyag táblában`);
+        console.warn(`⚠️ NINCS HOZZÁVALÓ! Recept ${receptId} (${receptName})`);
         
-        // További debug - nézzük meg hogy van-e hasonló kulcs
-        const stringReceptId = receptId.toString();
-        if (alapanyagokByReceptId[stringReceptId]) {
-          console.log(`🔍 String kulccsal TALÁLT: ${stringReceptId}`, alapanyagokByReceptId[stringReceptId]);
-        }
+        // Keressük meg a legközelebbi kulcsokat
+        const closestKeys = availableKeys.filter(k => Math.abs(k - receptId) <= 5);
+        console.log(`🔍 Közeli kulcsok (±5):`, closestKeys);
+      } else {
+        console.log(`✅ TALÁLT HOZZÁVALÓK! Recept ${receptId} (${receptName}):`, hozzavalok);
       }
       
       // Meal types meghatározása az előre betöltött Étkezések tábla alapján
