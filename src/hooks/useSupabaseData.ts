@@ -102,9 +102,31 @@ export function useSupabaseData(userId?: string) {
   // Receptek betöltése funkcióként - csak amikor szükséges
   const loadRecipes = useCallback(async (): Promise<CombinedRecipe[]> => {
     try {
-      console.log('🔄 ÚJ adatbázis receptek betöltése kezdődik...');
+      console.log('🔄 ÚJ adatbázis receptek betöltése kezdődik... (useSupabaseData hook)');
       const recipesData = await fetchCombinedRecipes();
-      console.log('✅ ÚJ adatbázis receptek betöltve:', recipesData.length, 'db');
+      console.log('✅ ÚJ adatbázis receptek betöltve:', recipesData.length, 'db (useSupabaseData hook)');
+      
+      // Debug: nézzük meg hogy milyen adatokkal rendelkezik az első néhány recept
+      if (recipesData && recipesData.length > 0) {
+        console.log('🔍 Első 3 recept példa (hozzávalókkal):', recipesData.slice(0, 3).map(r => ({
+          id: r.id,
+          név: r.név,
+          hozzávalók_db: r.hozzávalók?.length || 0,
+          hozzávalók: r.hozzávalók?.slice(0, 3) // Csak az első 3 hozzávaló
+        })));
+        
+        // Keressük meg a Spenótos quesadilla-t specifikusan
+        const spentosRecipe = recipesData.find(r => r.név.toLowerCase().includes('spenótos') && r.név.toLowerCase().includes('quesadilla'));
+        if (spentosRecipe) {
+          console.log('🎯 Spenótos quesadilla recept megtalálva:', {
+            id: spentosRecipe.id,
+            név: spentosRecipe.név,
+            hozzávalók_db: spentosRecipe.hozzávalók?.length || 0,
+            hozzávalók: spentosRecipe.hozzávalók
+          });
+        }
+      }
+      
       setRecipes(recipesData || []);
       return recipesData || [];
     } catch (error) {
