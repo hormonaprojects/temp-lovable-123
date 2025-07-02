@@ -26,26 +26,53 @@ export const fetchReceptekV2 = async (): Promise<ReceptekV2[]> => {
 };
 
 export const fetchReceptAlapanyagV2 = async (): Promise<ReceptAlapanyagV2[]> => {
-  console.log('🔄 Recept alapanyag lekérése a recept_alapanyag táblából...');
+  console.log('🔄 Recept alapanyag lekérése a recept_alapanyag táblából (paginálással)...');
   
-  const { data, error } = await supabase
-    .from('recept_alapanyag')
-    .select('*');
+  const pageSize = 1000;
+  let allData: ReceptAlapanyagV2[] = [];
+  let from = 0;
+  let hasMoreData = true;
 
-  if (error) {
-    console.error('❌ recept_alapanyag tábla lekérési hiba:', error);
-    throw error;
+  while (hasMoreData) {
+    const to = from + pageSize - 1;
+    console.log(`📄 Oldal betöltése: ${from}-${to}`);
+    
+    const { data, error } = await supabase
+      .from('recept_alapanyag')
+      .select('*')
+      .order('Recept_ID', { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      console.error('❌ recept_alapanyag tábla lekérési hiba:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      hasMoreData = false;
+      break;
+    }
+
+    allData = allData.concat(data);
+    console.log(`✅ Oldal betöltve: ${data.length} rekord (összes: ${allData.length})`);
+
+    // Ha kevesebb mint pageSize rekordot kaptunk, ez volt az utolsó oldal
+    if (data.length < pageSize) {
+      hasMoreData = false;
+    } else {
+      from += pageSize;
+    }
   }
 
-  if (!data || data.length === 0) {
+  if (allData.length === 0) {
     console.warn('⚠️ Nincs adat a recept_alapanyag táblában!');
     return [];
   }
 
-  console.log('✅ Recept alapanyag betöltve:', data.length, 'db');
-  console.log('📋 Első alapanyag példa:', data[0]);
+  console.log('✅ Összes recept alapanyag betöltve:', allData.length, 'db');
+  console.log('📋 Első alapanyag példa:', allData[0]);
   
-  return data;
+  return allData;
 };
 
 export const fetchAlapanyagok = async (): Promise<Alapanyag[]> => {
