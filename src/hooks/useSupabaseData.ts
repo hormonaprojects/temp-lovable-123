@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { MealTypeData } from '@/types/supabase';
 import { CombinedRecipe } from '@/types/newDatabase';
-import { fetchCategories, fetchMealTypes, fetchRecipes, saveRecipeRating } from '@/services/supabaseQueries';
+import { fetchCategories, fetchMealTypes, saveRecipeRating } from '@/services/supabaseQueries';
+import { fetchCombinedRecipes } from '@/services/newDatabaseQueries';
 import { processCategories, processMealTypes, createMealTypesDisplay } from '@/utils/dataProcessors';
 import { convertNewRecipeToStandard } from '@/utils/newRecipeConverter';
 import { getRecipesByMealType, getRecipesByCategory } from '@/services/recipeFilters';
@@ -101,7 +102,9 @@ export function useSupabaseData(userId?: string) {
   // Receptek betöltése funkcióként - csak amikor szükséges
   const loadRecipes = useCallback(async (): Promise<CombinedRecipe[]> => {
     try {
-      const recipesData = await fetchRecipes();
+      console.log('🔄 ÚJ adatbázis receptek betöltése kezdődik...');
+      const recipesData = await fetchCombinedRecipes();
+      console.log('✅ ÚJ adatbázis receptek betöltve:', recipesData.length, 'db');
       setRecipes(recipesData || []);
       return recipesData || [];
     } catch (error) {
