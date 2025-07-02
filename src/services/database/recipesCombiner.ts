@@ -40,6 +40,7 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       const hozzavalok = alapanyagokByReceptId[receptId] || [];
       
       console.log(`🔍 Recept ${receptId} (${receptName}) hozzávalói:`, hozzavalok);
+      console.log(`📊 Alapanyagok alapján - receptId: ${receptId}, találat: ${hozzavalok.length} db hozzávaló`);
       
       // Meal types meghatározása az előre betöltött Étkezések tábla alapján
       const mealTypes = determineMealTypesForRecipeFromData(receptName, mealTypesData);

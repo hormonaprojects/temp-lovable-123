@@ -18,13 +18,42 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
     if (!instructions) return [];
     
     const cleanInstructions = instructions.trim();
+    console.log('🔍 RecipeContent - Eredeti elkészítés:', cleanInstructions);
     
-    // Egyszerű mondat alapú felosztás és strukturálás
-    // Keresünk számozást (1., 2., stb.) vagy természetes mondatvégeket
+    // Először keresünk pontosan olyan formátumokat, mint amit a felhasználó mutatott
+    // Keresünk számozást (1., 2., stb.) vagy főcímeket kettősponttal
+    
+    // Ha már strukturált (tartalmaz számokat és kettőspontokat)
+    if (cleanInstructions.includes(':') && /\d+\./.test(cleanInstructions)) {
+      console.log('🎯 Strukturált elkészítés felismerve');
+      
+      // Szétválasztjuk a lépéseket számozás vagy főcím alapján
+      const steps = cleanInstructions
+        .split(/(?=\d+\.\s|•\s*[A-ZÁÉÍÓÖŐÜŰ])/)
+        .map(step => step.trim())
+        .filter(step => step.length > 0);
+      
+      const formattedSections = steps.map(step => ({
+        type: 'bullet' as const,
+        content: step
+      }));
+      
+      console.log('📝 Strukturált lépések:', formattedSections);
+      return formattedSections;
+    }
+    
+    // Ha nincs strukturálva, akkor mondat alapú felosztás
     const sentences = cleanInstructions
       .split(/(?:\.|!)(?:\s|$)/)
       .map(s => s.trim())
-      .filter(s => s.length > 0);
+      .filter(s => s.length > 0 && s.length > 10); // Túl rövid mondatok kiszűrése
+    
+    if (sentences.length === 0) {
+      return [{
+        type: 'bullet' as const,
+        content: cleanInstructions
+      }];
+    }
     
     const formattedSections = [];
     let currentStep = '';
@@ -32,7 +61,7 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
     
     for (const sentence of sentences) {
       // Ha a mondat tartalmaz főcímet kettősponttal
-      if (sentence.includes(':')) {
+      if (sentence.includes(':') && sentence.length > 15) {
         // Ha van már gyűjtött szöveg, azt lezárjuk
         if (currentStep) {
           formattedSections.push({
@@ -72,6 +101,7 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
       });
     }
     
+    console.log('📝 Formázott lépések:', formattedSections);
     return formattedSections;
   };
 
