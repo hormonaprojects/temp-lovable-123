@@ -1,3 +1,4 @@
+
 import { Recipe } from "@/types/recipe";
 import { Clock, Users } from "lucide-react";
 
@@ -21,7 +22,6 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
     const cleanInstructions = instructions.trim();
     
     // Keresünk főcímeket (nagy kezdőbetű + kettőspont)
-    // Például: "Szósz elkészítése:", "Quinoa főzése:", stb.
     const sectionPattern = /([A-ZÁÉÍÓÖŐÜŰ][^:]*:)/g;
     const sections = cleanInstructions.split(sectionPattern).filter(part => part.trim());
     
@@ -31,35 +31,37 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
       const section = sections[i].trim();
       
       if (section.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
-        // Ez egy főcím - hozzáadjuk bullet pontként
-        formattedSections.push({
-          type: 'bullet',
-          content: section
-        });
+        // Ez egy főcím
+        const title = section;
         
         // A következő rész a főcím alatti tartalom
         if (i + 1 < sections.length) {
           const nextSection = sections[i + 1].trim();
           if (nextSection && !nextSection.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
-            // Ha van benne számozás, eltávolítjuk és minden mondatot külön bullet pontba teszünk
+            // Kombináljuk a főcímet a tartalommal
             const cleanedSection = nextSection.replace(/^\d+\.\s*/gm, '').trim();
             
-            // Mondatokra bontjuk (pont, felkiáltójel vagy kérdőjel után)
-            const sentences = cleanedSection.split(/[.!?]+/).filter(sentence => sentence.trim());
-            
-            sentences.forEach(sentence => {
-              if (sentence.trim()) {
-                formattedSections.push({
-                  type: 'bullet',
-                  content: sentence.trim()
-                });
-              }
+            formattedSections.push({
+              type: 'bullet',
+              content: `${title} ${cleanedSection}`
             });
             
             i++; // Kihagyjuk a következő iterációt, mert már feldolgoztuk
+          } else {
+            // Ha nincs tartalom a főcím után, akkor csak a főcímet adjuk hozzá
+            formattedSections.push({
+              type: 'bullet',
+              content: title
+            });
           }
+        } else {
+          // Ha ez az utolsó elem, csak a főcímet adjuk hozzá
+          formattedSections.push({
+            type: 'bullet',
+            content: title
+          });
         }
-      } else if (section && !formattedSections.some(item => item.content === section)) {
+      } else if (section && !formattedSections.some(item => item.content.includes(section))) {
         // Ha nincs főcím előtte, akkor egyszerűen hozzáadjuk
         const cleanedSection = section.replace(/^\d+\.\s*/, '').trim();
         if (cleanedSection) {
@@ -154,7 +156,7 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
         </ul>
       </div>
 
-      {/* Elkészítés - egyszerű bullet pontokkal */}
+      {/* Elkészítés - főcímek a bullet pontok elején */}
       <div className="bg-white/5 rounded-lg p-3 sm:p-4 mx-2 sm:mx-0">
         <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
           👨‍🍳 Elkészítés:
