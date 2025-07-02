@@ -54,8 +54,10 @@ export function useSupabaseData(userId?: string) {
     }
   }, [userId, loadUserPreferences, loadUserFavorites]);
 
-  // Alapvető adatok betöltése - kombinálja az új és régi adatbázis struktúrát
+  // Alapvető adatok betöltése - CSAK EGYSZER!
   useEffect(() => {
+    let isMounted = true;
+    
     const loadInitialData = async () => {
       try {
         console.log('🔄 KOMBINÁLT adatbázis struktúra betöltése (új + fallback)...');
@@ -63,8 +65,10 @@ export function useSupabaseData(userId?: string) {
         const [categoriesData, mealTypesData, recipesData] = await Promise.all([
           fetchCategories(),
           fetchMealTypes(),
-          fetchRecipes() // Ez már tartalmazza a fallback logikát
+          fetchRecipes()
         ]);
+
+        if (!isMounted) return; // Ne frissítsük a state-et, ha a komponens már unmount-olt
 
         console.log('📊 Adatok betöltve KOMBINÁLT struktúrából:', {
           categories: categoriesData?.length || 0,
@@ -88,7 +92,6 @@ export function useSupabaseData(userId?: string) {
           recipes: recipesData?.length || 0
         });
 
-        // Ha még mindig nincsenek receptek, próbáljunk máshogy
         if ((recipesData?.length || 0) === 0) {
           console.warn('⚠️ Még mindig nincsenek receptek - ellenőrizd az adatbázis kapcsolatot!');
           toast({
@@ -100,17 +103,25 @@ export function useSupabaseData(userId?: string) {
 
       } catch (error) {
         console.error('❌ KOMBINÁLT adatok betöltési hiba:', error);
-        toast({
-          title: "Hiba",
-          description: "Nem sikerült betölteni az adatokat az adatbázisból.",
-          variant: "destructive"
-        });
+        if (isMounted) {
+          toast({
+            title: "Hiba",
+            description: "Nem sikerült betölteni az adatokat az adatbázisból.",
+            variant: "destructive"
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadInitialData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []); // Üres dependency array - csak egyszer fut!
 
   // Külön loadData funkció manuális újratöltéshez

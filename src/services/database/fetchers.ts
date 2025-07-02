@@ -43,6 +43,7 @@ export const fetchReceptAlapanyagV2 = async (): Promise<ReceptAlapanyagV2[]> => 
   }
 
   console.log('✅ Recept alapanyag betöltve:', data.length, 'db');
+  console.log('📋 Első alapanyag példa:', data[0]);
   
   return data;
 };
@@ -65,6 +66,7 @@ export const fetchAlapanyagok = async (): Promise<Alapanyag[]> => {
   }
 
   console.log('✅ Alapanyagok betöltve:', data.length, 'db');
+  console.log('📋 Első alapanyag példa:', data[0]);
   
   return data;
 };
