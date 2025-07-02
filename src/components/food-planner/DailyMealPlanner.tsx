@@ -69,8 +69,8 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
   };
 
   const getRecipeCount = (mealType: string) => {
-    const recipes = getRecipesByMealType(mealType);
-    return recipes ? recipes.length : 0;
+    // Simplified for now - will load recipes when needed
+    return 0;
   };
 
   const handleMealIngredientsChange = (mealIngredients: MealIngredients) => {
@@ -138,7 +138,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       
       // Generate new recipe for the target meal type
       const mealSpecificIngredients = mealIngredients[targetMealType] || [];
-      const mealTypeRecipes = getRecipesByMealType(targetMealType);
+      const mealTypeRecipes = await getRecipesByMealType(targetMealType);
 
       let validRecipes = [];
 

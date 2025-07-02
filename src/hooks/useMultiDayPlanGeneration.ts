@@ -20,7 +20,7 @@ interface MealIngredients {
 }
 
 interface UseMultiDayPlanGenerationProps {
-  getRecipesByMealType: (mealType: string) => any[];
+  getRecipesByMealType: (mealType: string) => Promise<any[]>;
   convertToStandardRecipe: (recipe: any) => Recipe;
 }
 
@@ -69,16 +69,13 @@ export function useMultiDayPlanGeneration({
           console.log(`🔍 ${mealType} recept keresése...`);
           
           const mealSpecificIngredients = mealIngredients[mealType] || [];
-          let foundRecipes = getRecipesByMealType(mealType);
+          let foundRecipes = await getRecipesByMealType(mealType);
           
           // Apply ingredient filtering if ingredients are selected
           if (mealSpecificIngredients.length > 0) {
             const ingredientNames = mealSpecificIngredients.map(ing => ing.ingredient);
             foundRecipes = filterRecipesByMultipleIngredients(foundRecipes, ingredientNames);
-            console.log(`🎯 ${mealType} - szűrés után ${foundRecipes.length} recept`);
           }
-          
-          console.log(`📋 ${mealType} - ${foundRecipes.length} recept található`);
           
           if (foundRecipes.length > 0) {
             const randomIndex = Math.floor(Math.random() * foundRecipes.length);
@@ -120,17 +117,15 @@ export function useMultiDayPlanGeneration({
     console.log(`🔄 Egyetlen recept újragenerálása: ${day}. nap, ${mealType}`);
     
     try {
-      let foundRecipes = getRecipesByMealType(mealType);
+      let foundRecipes = await getRecipesByMealType(mealType);
       
       // Apply ingredient filtering if ingredients are selected
       if (ingredients.length > 0) {
         const ingredientNames = ingredients.map(ing => ing.ingredient);
         foundRecipes = filterRecipesByMultipleIngredients(foundRecipes, ingredientNames);
-        console.log(`🎯 ${mealType} - szűrés után ${foundRecipes.length} recept`);
       }
       
       if (foundRecipes.length === 0) {
-        console.log(`❌ ${mealType}: Nincs elérhető recept`);
         return null;
       }
       

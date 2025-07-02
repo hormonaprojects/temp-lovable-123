@@ -13,7 +13,7 @@ interface MealIngredients {
 
 interface UseMealPlanGenerationProps {
   selectedMeals: string[];
-  getRecipesByMealType: (mealType: string) => any[];
+  getRecipesByMealType: (mealType: string) => Promise<any[]>;
   convertToStandardRecipe: (recipe: any) => any;
 }
 
@@ -42,7 +42,7 @@ export function useMealPlanGeneration({
 
       for (const mealType of selectedMeals) {
         const mealSpecificIngredients = mealIngredients[mealType] || [];
-        const mealTypeRecipes = getRecipesByMealType(mealType);
+        const mealTypeRecipes = await getRecipesByMealType(mealType);
 
         let validRecipes = [];
 
