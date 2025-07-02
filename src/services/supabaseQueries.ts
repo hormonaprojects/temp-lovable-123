@@ -32,12 +32,11 @@ export const fetchMealTypes = async () => {
   return data;
 };
 
-// ÚJ ADATBÁZIS STRUKTÚRA - csak receptek + recept_alapanyag + Étkezések
+// CSAK ÚJ ADATBÁZIS STRUKTÚRA - receptek + recept_alapanyag + alapanyag + Étkezések
 export const fetchRecipes = async () => {
-  console.log('🔄 Receptek betöltése ÚJ adatbázis struktúrából (receptek + recept_alapanyag + Étkezések)...');
+  console.log('🔄 Receptek betöltése ÚJ adatbázis struktúrából (receptek + recept_alapanyag + alapanyag + Étkezések)...');
   
   try {
-    // Csak az új struktúrát használjuk
     const newRecipes = await fetchCombinedRecipes();
     
     if (newRecipes && newRecipes.length > 0) {
