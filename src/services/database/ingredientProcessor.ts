@@ -50,6 +50,11 @@ export const processIngredientsForRecipes = (
     const mennyiseg = alapanyag['Mennyiség'] || '';
     const mertekegyseg = alapanyag['Mértékegység'] || '';
     
+    // KRITIKUS DEBUG: Az ELSŐ problémás recept debug-olása
+    if (receptId === 124) {
+      console.log(`🎯 RECEPT 124 DEBUG - Recept_ID: ${receptId} (típus: ${typeof receptId}), Élelmiszer: ${elelmiszerNev}, Mennyiség: ${mennyiseg}, Mértékegység: ${mertekegyseg}`);
+    }
+    
     console.log(`🔍 Feldolgozás - Recept ID: ${receptId}, Élelmiszer: ${elelmiszerNev}, Mennyiség: ${mennyiseg}, Mértékegység: ${mertekegyseg}`);
     
     // Ha van Élelmiszer ID, használjuk az alapanyag táblából az adatokat
