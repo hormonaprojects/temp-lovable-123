@@ -26,32 +26,6 @@ export const fetchReceptekV2 = async (): Promise<ReceptekV2[]> => {
 
   if (!data || data.length === 0) {
     console.warn('⚠️ Nincs adat a receptek táblában!');
-    console.log('📋 Próbáljuk ellenőrizni a tábla létezését...');
-    
-    // Alternatív próbálkozás - lehet hogy máshogy hívják a táblát
-    const { data: altData, error: altError } = await supabase
-      .from('Adatbázis')
-      .select('*');
-    
-    if (altError) {
-      console.error('❌ Adatbázis tábla sem elérhető:', altError);
-      return [];
-    }
-    
-    if (altData && altData.length > 0) {
-      console.log('✅ Adatbázis tábla elérhető, konvertálás...');
-      // Konvertáljuk az Adatbázis tábla formátumát a receptek formátumára
-      return altData.map((item, index) => ({
-        'Recept ID': index + 1,
-        'Receptnév': item.Recept_Neve || 'Névtelen recept',
-        'Elkészítése': item.Elkészítés || 'Nincs leírás',
-        'Kép': item['Kép URL'] || '',
-        'Szenhidrat_g': item.Szenhidrat_g || 0,
-        'Feherje_g': item.Feherje_g || 0,
-        'Zsir_g': item.Zsir_g || 0
-      }));
-    }
-    
     return [];
   }
 
@@ -75,38 +49,7 @@ export const fetchReceptAlapanyagV2 = async (): Promise<ReceptAlapanyagV2[]> => 
 
   if (!data || data.length === 0) {
     console.warn('⚠️ Nincs adat a recept_alapanyag táblában!');
-    console.log('📋 Próbáljuk az Adatbázis táblából kinyerni...');
-    
-    // Ha nincs külön recept_alapanyag tábla, próbáljuk az Adatbázis táblából
-    const { data: altData, error: altError } = await supabase
-      .from('Adatbázis')
-      .select('*');
-    
-    if (altError || !altData) {
-      console.error('❌ Nem sikerült az alapanyagokat betölteni');
-      return [];
-    }
-    
-    // Konvertáljuk az Adatbázis tábla alapanyagait
-    const convertedData: ReceptAlapanyagV2[] = [];
-    altData.forEach((item, receptIndex) => {
-      for (let i = 1; i <= 18; i++) {
-        const ingredient = item[`Hozzavalo_${i}`];
-        if (ingredient && ingredient.trim()) {
-          convertedData.push({
-            'ID': `${receptIndex}_${i}`,
-            'Recept_ID': receptIndex + 1,
-            'Élelmiszerek': ingredient.trim(),
-            'Élelmiszer ID': '',
-            'Mennyiség': 0,
-            'Mértékegység': ''
-          });
-        }
-      }
-    });
-    
-    console.log('✅ Alapanyagok konvertálva az Adatbázis táblából:', convertedData.length, 'db');
-    return convertedData;
+    return [];
   }
 
   console.log('✅ Recept alapanyag betöltve:', data.length, 'db');
@@ -265,7 +208,7 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       return [];
     }
 
-    // Alapanyag lookup map készítése ID szerint
+    // Alapanyag lookup map készítése ID alapján
     const alapanyagMap = new Map<string, Alapanyag>();
     alapanyagokMaster.forEach(alapanyag => {
       alapanyagMap.set(alapanyag.ID.toString(), alapanyag);
