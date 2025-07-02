@@ -24,54 +24,46 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
     const parts = cleanInstructions.split(sectionPattern).filter(part => part.trim());
     
     const formattedSections = [];
+    let currentSection = '';
     
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i].trim();
       
       // Ha ez egy főcím (kettősponttal végződik)
       if (part.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
-        const title = part;
+        // Ha van korábbi section, azt lezárjuk
+        if (currentSection) {
+          formattedSections.push({
+            type: 'bullet',
+            content: currentSection.trim()
+          });
+        }
         
-        // Keressük a következő részt, ami a tartalom
-        if (i + 1 < parts.length) {
-          const nextPart = parts[i + 1].trim();
-          
-          // Ha a következő rész nem főcím, akkor ez a tartalom
-          if (nextPart && !nextPart.match(/^[A-ZÁÉÍÓÖŐÜŰ][^:]*:$/)) {
-            // Tisztítjuk a tartalmat (eltávolítjuk a számozást)
-            const cleanContent = nextPart.replace(/^\d+\.\s*/gm, '').trim();
-            
-            // Kombináljuk a főcímet a tartalommal
-            formattedSections.push({
-              type: 'bullet',
-              content: `${title} ${cleanContent}`
-            });
-            
-            i++; // Kihagyjuk a következő iterációt
+        // Új section kezdése ezzel a főcímmel
+        currentSection = part;
+      } else if (part) {
+        // Ha ez nem főcím, akkor hozzáadjuk a jelenlegi sectionhoz
+        const cleanContent = part.replace(/^\d+\.\s*/gm, '').trim();
+        if (cleanContent) {
+          if (currentSection) {
+            currentSection += ' ' + cleanContent;
           } else {
-            // Ha nincs tartalom utána, csak a főcímet adjuk hozzá
+            // Ha nincs főcím, akkor ez egy önálló tartalom
             formattedSections.push({
               type: 'bullet',
-              content: title
+              content: cleanContent
             });
           }
-        } else {
-          // Ha ez az utolsó elem
-          formattedSections.push({
-            type: 'bullet',
-            content: title
-          });
-        }
-      } else if (part) {
-        // Ha ez nem főcím és nem üres, akkor egyedülálló tartalom
-        const cleanContent = part.replace(/^\d+\.\s*/, '').trim();
-        if (cleanContent) {
-          formattedSections.push({
-            type: 'bullet',
-            content: cleanContent
-          });
         }
       }
+    }
+    
+    // Az utolsó section hozzáadása
+    if (currentSection) {
+      formattedSections.push({
+        type: 'bullet',
+        content: currentSection.trim()
+      });
     }
     
     return formattedSections;
