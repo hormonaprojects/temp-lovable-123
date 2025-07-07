@@ -243,15 +243,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
           <MealTypeSelector
             selectedMealType={selectedMealType}
             onSelectMealType={handleMealTypeSelect}
-            foodData={{
-              mealTypes: Object.keys(mealTypes).reduce((acc, key) => {
-                acc[key] = { categories: categories };
-                return acc;
-              }, {} as { [key: string]: { categories: { [key: string]: string[] } } }),
-              categories: categories,
-              getFilteredIngredients: getFilteredIngredients,
-              getRecipesByMealType: getRecipesByMealType
-            }}
             onGetRandomRecipe={handleGetRandomRecipe}
             onShowMultiCategorySelection={handleShowIngredientSelection}
           />

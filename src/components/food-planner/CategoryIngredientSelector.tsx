@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,17 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Utensils, Sparkles, Star, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { 
+  fetchIngredientCategories, 
+  fetchIngredientsByCategory, 
+  NewIngredient, 
+  IngredientCategory 
+} from "@/services/newIngredientQueries";
 
-interface FoodData {
-  mealTypes: { [key: string]: { categories: { [key: string]: string[] } } };
-  categories: { [key: string]: string[] };
-  getFilteredIngredients: (category: string) => string[];
-  getRecipesByMealType: (mealType: string) => any[];
-}
+// FoodData interface törölve - már nem szükséges az új rendszerben
 
 interface CategoryIngredientSelectorProps {
   selectedMealType: string;
-  foodData: FoodData;
   onGetRecipe: (category: string, ingredient: string) => void;
   multipleIngredients?: boolean;
   onGetMultipleRecipes?: (category: string, ingredients: string[]) => void;
@@ -27,21 +27,47 @@ interface CategoryIngredientSelectorProps {
 
 export function CategoryIngredientSelector({ 
   selectedMealType, 
-  foodData, 
   onGetRecipe, 
   multipleIngredients = false,
   onGetMultipleRecipes,
   getFavoriteForIngredient,
   getPreferenceForIngredient
 }: CategoryIngredientSelectorProps) {
+  // ÚJ RENDSZER: state változók
+  const [categories, setCategories] = useState<IngredientCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [singleSelectedIngredient, setSingleSelectedIngredient] = useState<string>("");
+  const [categoryIngredients, setCategoryIngredients] = useState<Record<string, string[]>>({});
 
-  const availableCategories = Object.keys(foodData.categories);
+  // ÚJ RENDSZER: betöltés
+  useEffect(() => {
+    const loadNewIngredientSystem = async () => {
+      console.log('🔄 ÚJ CategoryIngredientSelector - adatok betöltése...');
+      
+      const categoriesData = await fetchIngredientCategories();
+      setCategories(categoriesData);
+      
+      // Load ingredients for each category
+      const ingredientsMap: Record<string, string[]> = {};
+      for (const category of categoriesData) {
+        const ingredients = await fetchIngredientsByCategory(category.Kategoria_ID);
+        ingredientsMap[category.Kategoriak] = ingredients.map(ing => ing.Elelmiszer_nev);
+      }
+      setCategoryIngredients(ingredientsMap);
+      
+      console.log('✅ ÚJ CategoryIngredientSelector adatok betöltve:', {
+        categories: categoriesData.length,
+        totalIngredients: Object.values(ingredientsMap).reduce((sum, ings) => sum + ings.length, 0)
+      });
+    };
+    
+    loadNewIngredientSystem();
+  }, []);
   
   const getSortedIngredients = (category: string): string[] => {
-    const ingredients = foodData.getFilteredIngredients(category);
+    // ÚJ RENDSZER: használjuk a categoryIngredients map-et
+    const ingredients = categoryIngredients[category] || [];
     
     if (!getFavoriteForIngredient && !getPreferenceForIngredient) {
       return ingredients.sort((a, b) => a.localeCompare(b));
@@ -84,6 +110,7 @@ export function CategoryIngredientSelector({
   };
 
   const availableIngredients = selectedCategory ? getSortedIngredients(selectedCategory) : [];
+  const availableCategories = categories.map(cat => cat.Kategoriak); // ÚJ RENDSZER
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);

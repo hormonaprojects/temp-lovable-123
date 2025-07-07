@@ -6,7 +6,6 @@ import { UnifiedMealTypeSelector } from "./shared/UnifiedMealTypeSelector";
 interface MealTypeSelectorProps {
   selectedMealType: string;
   onSelectMealType: (mealType: string) => void;
-  foodData: any;
   onGetRandomRecipe: () => void;
   onShowMultiCategorySelection: () => void;
 }
@@ -14,13 +13,12 @@ interface MealTypeSelectorProps {
 export function MealTypeSelector({
   selectedMealType,
   onSelectMealType,
-  foodData,
   onGetRandomRecipe,
   onShowMultiCategorySelection
 }: MealTypeSelectorProps) {
+  // ÚJ RENDSZER: Recipe count számítás már nem szükséges itt
   const getRecipeCount = (mealType: string) => {
-    const recipes = foodData.getRecipesByMealType(mealType);
-    return recipes ? recipes.length : 0;
+    return 0; // Placeholder - az új rendszerben dinamikusan számolódik
   };
 
   return (
