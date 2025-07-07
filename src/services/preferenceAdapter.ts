@@ -97,13 +97,21 @@ export const filterRecipesByPreferencesAdapter = async (
       return [];
     }
 
-    // Receptek szűrése a matching Recept_ID-k alapján (típuskonverzió!)
+    // Receptek szűrése a matching Recept_ID-k alapján (típuskonverzió javítás!)
     const filtered = recipes.filter(recipe => {
-      const recipeIdNumber = parseInt(recipe.id.toString());
-      const isMatch = filteredRecipeIds.includes(recipeIdNumber);
+      // A recipe.id lehet string vagy number, a filteredRecipeIds number array
+      const recipeIdAsNumber = typeof recipe.id === 'string' ? parseInt(recipe.id) : recipe.id;
+      const recipeIdAsString = recipe.id.toString();
+      
+      const isMatchNumber = filteredRecipeIds.includes(recipeIdAsNumber);
+      const isMatchString = filteredRecipeIds.map(id => id.toString()).includes(recipeIdAsString);
+      
+      const isMatch = isMatchNumber || isMatchString;
       
       if (isMatch) {
-        console.log(`✅ Recept találat: ${recipe.név} (ID: ${recipe.id})`);
+        console.log(`✅ Recept találat: ${recipe.név} (ID: ${recipe.id}, típus: ${typeof recipe.id})`);
+      } else {
+        console.log(`❌ Nincs találat: ${recipe.név} (ID: ${recipe.id}, típus: ${typeof recipe.id}, keresett IDs: ${filteredRecipeIds})`);
       }
       
       return isMatch;
