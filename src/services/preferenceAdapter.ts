@@ -117,11 +117,6 @@ export const filterRecipesByPreferencesAdapter = async (
       
       if (isMatch) {
         console.log(`✅ Recept találat: ${recipe.név} (ID: ${recipe.id}, típus: ${typeof recipe.id})`);
-      } else {
-        // Csak az első 3 nem-találatnál írjuk ki a debug infót, nehogy ellepje a console-t
-        if (filtered.length < 3) {
-          console.log(`❌ Nincs találat: ${recipe.név} (ID: ${recipe.id}, típus: ${typeof recipe.id}, keresett IDs: ${filteredRecipeIds})`);
-        }
       }
       
       return isMatch;
