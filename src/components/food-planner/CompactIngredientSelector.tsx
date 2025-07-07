@@ -125,21 +125,25 @@ export function CompactIngredientSelector({
     }
   };
 
+  // Get current category ingredients
+  const currentCategoryIngredients = selectedCategory ? 
+    (categoryIngredients[selectedCategory]?.map(ing => ing.Elelmiszer_nev) || []) : [];
+
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Kategória választó */}
       <div className="space-y-2">
         <label className="text-white/90 text-sm font-medium block">
-          🏷️ Alapanyag szűrő
+          🏷️ Alapanyag szűrő (ÚJ rendszer)
         </label>
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
           <SelectTrigger className="w-full bg-white/10 border-white/20 text-white text-sm sm:text-base">
             <SelectValue placeholder="Válassz kategóriát..." />
           </SelectTrigger>
           <SelectContent>
-            {Object.keys(categories).map((category) => (
-              <SelectItem key={category} value={category} className="text-sm sm:text-base">
-                {category}
+            {categories.map((category) => (
+              <SelectItem key={category.Kategoria_ID} value={category.Kategoriak} className="text-sm sm:text-base">
+                {category.Kategoriak}
               </SelectItem>
             ))}
           </SelectContent>
@@ -170,7 +174,7 @@ export function CompactIngredientSelector({
       {/* Alapanyagok grid */}
       <CompactIngredientGrid
         selectedCategory={selectedCategory}
-        getFilteredIngredients={getFilteredIngredients}
+        ingredients={currentCategoryIngredients}
         getFavoriteForIngredient={getFavoriteForIngredient}
         getPreferenceForIngredient={getPreferenceForIngredient}
         onIngredientToggle={handleIngredientToggle}
@@ -178,10 +182,10 @@ export function CompactIngredientSelector({
         getIngredientButtonClass={getIngredientButtonClass}
       />
 
-      {selectedCategory && getFilteredIngredients(selectedCategory).length === 0 && (
+      {selectedCategory && currentCategoryIngredients.length === 0 && (
         <div className="text-center py-4">
           <p className="text-white/60 text-sm">
-            Nincs elérhető alapanyag ebben a kategóriában (preferenciáid alapján)
+            Nincs elérhető alapanyag ebben a kategóriában (ÚJ rendszer)
           </p>
         </div>
       )}

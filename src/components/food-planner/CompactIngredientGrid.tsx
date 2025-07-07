@@ -5,7 +5,7 @@ import { sortIngredientsByPreference } from '@/services/ingredientSorting';
 
 interface CompactIngredientGridProps {
   selectedCategory: string;
-  getFilteredIngredients: (category: string) => string[];
+  ingredients: string[];
   getFavoriteForIngredient?: (ingredient: string, category: string) => boolean;
   getPreferenceForIngredient?: (ingredient: string, category: string) => 'like' | 'dislike' | 'neutral';
   onIngredientToggle: (ingredient: string) => void;
@@ -15,7 +15,7 @@ interface CompactIngredientGridProps {
 
 export function CompactIngredientGrid({
   selectedCategory,
-  getFilteredIngredients,
+  ingredients,
   getFavoriteForIngredient,
   getPreferenceForIngredient,
   onIngredientToggle,
@@ -25,9 +25,7 @@ export function CompactIngredientGrid({
   if (!selectedCategory) return null;
 
   const getDisplayedIngredients = () => {
-    let ingredients = getFilteredIngredients(selectedCategory);
-    
-    // Centralizált sorrendezés használata
+    // Use the ingredients prop directly and apply sorting
     return sortIngredientsByPreference(
       ingredients,
       (ingredient) => getFavoriteForIngredient?.(ingredient, selectedCategory) || false,

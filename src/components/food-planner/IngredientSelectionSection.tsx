@@ -88,8 +88,6 @@ export function IngredientSelectionSection({
               </div>
               
               <CompactIngredientSelector
-                categories={foodData.categories}
-                getFilteredIngredients={foodData.getFilteredIngredients}
                 onIngredientsChange={(ingredients) => handleIngredientsChange(mealKey, ingredients)}
                 getFavoriteForIngredient={(ingredient: string, category: string) => 
                   getFavoriteForIngredient(ingredient)
