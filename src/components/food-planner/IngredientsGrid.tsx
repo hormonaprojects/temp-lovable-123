@@ -1,6 +1,8 @@
 
+import { useState, useEffect } from "react";
 import { IngredientCard } from "./IngredientCard";
 import { sortIngredientsByPreference } from "@/services/ingredientSorting";
+import { supabase } from "@/integrations/supabase/client";
 
 interface IngredientsGridProps {
   ingredients: string[];
@@ -21,6 +23,38 @@ export function IngredientsGrid({
   onFavoriteChange,
   hideDisliked = true
 }: IngredientsGridProps) {
+  const [ingredientImages, setIngredientImages] = useState<Record<string, string>>({});
+
+  // Lekérjük az alapanyag képeket az adatbázisból
+  useEffect(() => {
+    const fetchIngredientImages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('elelmiszer_kep')
+          .select('Elelmiszer_nev, Kep');
+
+        if (error) {
+          console.error('❌ Alapanyag képek lekérési hiba:', error);
+          return;
+        }
+
+        if (data) {
+          const imageMap: Record<string, string> = {};
+          data.forEach(item => {
+            if (item.Elelmiszer_nev && item.Kep) {
+              imageMap[item.Elelmiszer_nev] = item.Kep;
+            }
+          });
+          setIngredientImages(imageMap);
+          console.log('✅ Alapanyag képek betöltve:', Object.keys(imageMap).length, 'db');
+        }
+      } catch (error) {
+        console.error('❌ Alapanyag képek betöltési hiba:', error);
+      }
+    };
+
+    fetchIngredientImages();
+  }, []);
   const getSortedIngredients = () => {
     if (!hideDisliked) {
       return [...ingredients].sort((a, b) => {
@@ -74,6 +108,7 @@ export function IngredientsGrid({
       {displayedIngredients.map((ingredient, index) => {
         const preference = getPreferenceForIngredient(ingredient);
         const favorite = getFavoriteForIngredient(ingredient);
+        const imageUrl = ingredientImages[ingredient];
         
         return (
           <IngredientCard
@@ -82,6 +117,7 @@ export function IngredientsGrid({
             preference={preference}
             favorite={favorite}
             index={index}
+            imageUrl={imageUrl}
             onPreferenceChange={onPreferenceChange}
             onFavoriteChange={onFavoriteChange}
           />

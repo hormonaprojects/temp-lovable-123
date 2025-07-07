@@ -2,13 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThumbsUp, ThumbsDown, Heart } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
 
 interface IngredientCardProps {
   ingredient: string;
   preference: 'like' | 'dislike' | 'neutral';
   favorite: boolean;
   index: number;
+  imageUrl?: string;
   onPreferenceChange: (ingredient: string, preference: 'like' | 'dislike' | 'neutral') => void;
   onFavoriteChange: (ingredient: string, isFavorite: boolean) => void;
 }
@@ -17,28 +17,11 @@ export function IngredientCard({
   ingredient, 
   preference, 
   favorite,
-  index, 
+  index,
+  imageUrl,
   onPreferenceChange,
   onFavoriteChange 
 }: IngredientCardProps) {
-  const getIngredientImage = (ingredient: string): string => {
-    const normalizedIngredient = ingredient
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\./g, '');
-    
-    return supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.jpg`).data.publicUrl;
-  };
-
-  const getPngImageUrl = (ingredient: string): string => {
-    const normalizedIngredient = ingredient
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\./g, '');
-    
-    return supabase.storage.from('alapanyag').getPublicUrl(`${normalizedIngredient}.png`).data.publicUrl;
-  };
-
   const handlePreferenceClick = (newPreference: 'like' | 'dislike') => {
     const currentPreference = preference || 'neutral';
     const finalPreference = currentPreference === newPreference ? 'neutral' : newPreference;
@@ -55,8 +38,8 @@ export function IngredientCard({
     }
   };
 
-  const jpgImageUrl = getIngredientImage(ingredient);
-  const pngImageUrl = getPngImageUrl(ingredient);
+  // Használjuk az adatbázisból származó kép URL-t
+  const defaultImageUrl = '/placeholder.svg'; // Fallback kép
 
   // EGYSÉGES vizuális megjelenítés prioritások szerint
   let cardClasses = "relative overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 animate-fadeInUp border-2 ";
@@ -93,19 +76,12 @@ export function IngredientCard({
         {/* Ingredient Image */}
         <div className="w-full aspect-square mb-2 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
           <img
-            src={jpgImageUrl}
+            src={imageUrl || defaultImageUrl}
             alt={ingredient}
             className="w-full h-full object-cover rounded-lg"
             onError={(e) => {
-              console.log('❌ JPG kép betöltési hiba, próbálkozás PNG-vel:', ingredient);
-              (e.target as HTMLImageElement).src = pngImageUrl;
-              (e.target as HTMLImageElement).onerror = () => {
-                console.log('❌ PNG kép is hibás:', ingredient);
-                (e.target as HTMLImageElement).style.display = 'none';
-              };
-            }}
-            onLoad={() => {
-              console.log('✅ Kép sikeresen betöltve:', ingredient);
+              console.log('❌ Kép betöltési hiba:', ingredient);
+              (e.target as HTMLImageElement).src = defaultImageUrl;
             }}
           />
         </div>
