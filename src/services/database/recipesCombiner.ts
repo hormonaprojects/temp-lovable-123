@@ -2,19 +2,59 @@
 import { fetchReceptekV2, fetchReceptAlapanyagV2, fetchAlapanyagok } from './fetchers';
 import { processIngredientsForRecipes } from './ingredientProcessor';
 import { CombinedRecipe } from './types';
+import { supabase } from '@/integrations/supabase/client';
+
+// Extract Élelmiszer IDs from recept_alapanyag table for each recipe
+const extractElelmiszerIds = async (): Promise<Record<number, string[]>> => {
+  console.log('🔄 Élelmiszer ID-k kinyerése recept_alapanyag táblából...');
+  
+  const { data, error } = await supabase
+    .from('recept_alapanyag')
+    .select('"Recept_ID", "Élelmiszer ID"');
+    
+  if (error) {
+    console.error('❌ Hiba az Élelmiszer ID-k betöltésekor:', error);
+    return {};
+  }
+  
+  const idMap: Record<number, string[]> = {};
+  
+  data?.forEach(item => {
+    const receptId = item.Recept_ID;
+    const elelmiszerID = item['Élelmiszer ID'];
+    
+    if (receptId && elelmiszerID) {
+      if (!idMap[receptId]) {
+        idMap[receptId] = [];
+      }
+      idMap[receptId].push(elelmiszerID.toString());
+    }
+  });
+  
+  console.log('📊 Élelmiszer ID-k feldolgozva:', Object.keys(idMap).length, 'recept');
+  
+  // Debug: mutassuk meg néhány recept ID-it
+  Object.entries(idMap).slice(0, 5).forEach(([receptId, ids]) => {
+    console.log(`🔗 Recept ${receptId} Élelmiszer ID-k:`, ids);
+  });
+  
+  return idMap;
+};
 
 export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
   try {
     console.log('🔄 ÚJ adatbázis struktúra betöltése (csak receptek + recept_alapanyag + alapanyag + Étkezések)...');
     
-    const [receptek, alapanyagokRaw, alapanyagokMaster, mealTypesData] = await Promise.all([
+    const [receptek, alapanyagokRaw, alapanyagokMaster, mealTypesData, elelmiszerIds] = await Promise.all([
       fetchReceptekV2(),
       fetchReceptAlapanyagV2(),
       fetchAlapanyagok(),
       // Étkezések tábla egyszer lekérése
       import('@/integrations/supabase/client').then(({ supabase }) => 
         supabase.from('Étkezések').select('*').then(({ data }) => data || [])
-      )
+      ),
+      // Élelmiszer ID-k betöltése
+      extractElelmiszerIds()
     ]);
 
     console.log('📊 Betöltött adatok:', {
@@ -76,6 +116,12 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       // Meal types meghatározása az előre betöltött Étkezések tábla alapján
       const mealTypes = determineMealTypesForRecipeFromData(receptName, mealTypesData);
       
+      // Hozzarendelt_ID előállítása az Élelmiszer ID-kból
+      const receptElelmiszerIds = elelmiszerIds[receptId] || [];
+      const hozzarendeltId = receptElelmiszerIds.join(',');
+      
+      console.log(`🔗 Recept ${receptId} (${receptName}) - Hozzarendelt_ID: "${hozzarendeltId}"`);
+      
       combinedRecipes.push({
         id: receptId,
         név: receptName,
@@ -85,7 +131,8 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
         fehérje: recept['Feherje_g'] || 0,
         zsír: recept['Zsir_g'] || 0,
         hozzávalók: hozzavalok,
-        mealTypes: mealTypes
+        mealTypes: mealTypes,
+        Hozzarendelt_ID: hozzarendeltId
       });
     }
 

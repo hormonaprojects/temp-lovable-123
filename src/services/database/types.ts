@@ -37,4 +37,5 @@ export interface CombinedRecipe {
   zsír: number;
   hozzávalók: string[];
   mealTypes: string[];
+  Hozzarendelt_ID?: string;
 }

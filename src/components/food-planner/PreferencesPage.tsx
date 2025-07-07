@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +16,12 @@ import {
   UserFavorite 
 } from "@/services/userFavorites";
 import { IngredientsGrid } from "./IngredientsGrid";
-import { supabase } from '@/integrations/supabase/client';
+import { 
+  fetchIngredientCategories, 
+  fetchIngredientsByCategory, 
+  NewIngredient, 
+  IngredientCategory 
+} from "@/services/newIngredientQueries";
 
 interface User {
   id: string;
@@ -31,23 +35,14 @@ interface PreferencesPageProps {
 }
 
 export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<IngredientCategory | null>(null);
   const [userPreferences, setUserPreferences] = useState<FoodPreference[]>([]);
   const [userFavorites, setUserFavorites] = useState<UserFavorite[]>([]);
-  const [categoryIngredients, setCategoryIngredients] = useState<Record<string, string[]>>({});
+  const [categories, setCategories] = useState<IngredientCategory[]>([]);
+  const [categoryIngredients, setCategoryIngredients] = useState<Record<number, NewIngredient[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-
-  const categories = [
-    'Húsfélék',
-    'Halak',
-    'Zöldségek / Vegetáriánus',
-    'Tejtermékek',
-    'Gyümölcsök',
-    'Gabonák és Tészták',
-    'Olajok és Magvak'
-  ];
 
   useEffect(() => {
     loadData();
@@ -56,50 +51,36 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   const loadData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Preferenciák, kedvencek és kategória adatok betöltése...');
+      console.log('🔄 ÚJ PreferencesPage - adatok betöltése...');
       
       // Minden adat egyidejű betöltése
       const [preferences, favorites, categoriesData] = await Promise.all([
         fetchUserPreferences(user.id),
         getUserFavorites(user.id),
-        supabase.from('Ételkategóriák_Új').select('*')
+        fetchIngredientCategories()
       ]);
-
-      if (categoriesData.error) {
-        throw categoriesData.error;
-      }
-
-      // Kategória alapanyagok feldolgozása
-      const categoryIngredientsMap: Record<string, string[]> = {};
-      
-      categories.forEach(category => {
-        const ingredients: string[] = [];
-        
-        categoriesData.data?.forEach(row => {
-          const categoryValue = row[category];
-          if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
-            const ingredient = categoryValue.trim();
-            if (!ingredients.includes(ingredient)) {
-              ingredients.push(ingredient);
-            }
-          }
-        });
-        
-        categoryIngredientsMap[category] = ingredients.sort();
-      });
 
       setUserPreferences(preferences);
       setUserFavorites(favorites);
+      setCategories(categoriesData);
+      
+      // Kategóriánként betöltjük az alapanyagokat
+      const categoryIngredientsMap: Record<number, NewIngredient[]> = {};
+      for (const category of categoriesData) {
+        const ingredients = await fetchIngredientsByCategory(category.Kategoria_ID);
+        categoryIngredientsMap[category.Kategoria_ID] = ingredients;
+      }
       setCategoryIngredients(categoryIngredientsMap);
       
-      console.log('✅ Adatok betöltve:', {
+      console.log('✅ ÚJ PreferencesPage adatok betöltve:', {
         preferences: preferences.length,
         favorites: favorites.length,
-        categories: Object.keys(categoryIngredientsMap).length
+        categories: categoriesData.length,
+        totalIngredients: Object.values(categoryIngredientsMap).reduce((sum, ings) => sum + ings.length, 0)
       });
       
     } catch (error) {
-      console.error('❌ Adatok betöltési hiba:', error);
+      console.error('❌ ÚJ PreferencesPage betöltési hiba:', error);
       toast({
         title: "Hiba történt",
         description: "Nem sikerült betölteni a preferenciákat.",
@@ -110,7 +91,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     }
   };
 
-  const handleCategorySelect = (category: string) => {
+  const handleCategorySelect = (category: IngredientCategory) => {
     setSelectedCategory(category);
     
     // Görgessünk le az alapanyagokhoz
@@ -130,27 +111,27 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     if (!selectedCategory) return;
     
     try {
-      console.log('🔄 Preferencia frissítése:', { ingredient, category: selectedCategory, preference });
+      console.log('🔄 ÚJ preferencia frissítése:', { ingredient, category: selectedCategory.Kategoriak, preference });
       
       // Update in database
-      await updateUserPreference(user.id, ingredient, selectedCategory, preference);
+      await updateUserPreference(user.id, ingredient, selectedCategory.Kategoriak, preference);
       
       // Update local state
       setUserPreferences(prev => {
         const existingIndex = prev.findIndex(p => 
-          p.ingredient === ingredient && p.category === selectedCategory
+          p.ingredient === ingredient && p.category === selectedCategory.Kategoriak
         );
         
         if (preference === 'neutral') {
           // Remove the preference if it exists
-          return prev.filter(p => !(p.ingredient === ingredient && p.category === selectedCategory));
+          return prev.filter(p => !(p.ingredient === ingredient && p.category === selectedCategory.Kategoriak));
         } else {
           // Add or update the preference
           const newPreference: FoodPreference = {
             id: existingIndex >= 0 ? prev[existingIndex].id : crypto.randomUUID(),
             user_id: user.id,
             ingredient,
-            category: selectedCategory,
+            category: selectedCategory.Kategoriak,
             preference,
             created_at: existingIndex >= 0 ? prev[existingIndex].created_at : new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -168,9 +149,9 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         }
       });
       
-      console.log('✅ Preferencia sikeresen frissítve');
+      console.log('✅ ÚJ preferencia sikeresen frissítve');
     } catch (error) {
-      console.error('❌ Preferencia frissítési hiba:', error);
+      console.error('❌ ÚJ preferencia frissítési hiba:', error);
       toast({
         title: "Hiba történt",
         description: "Nem sikerült frissíteni a preferenciát.",
@@ -183,17 +164,17 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     if (!selectedCategory) return;
     
     try {
-      console.log('🔄 Kedvenc frissítése:', { ingredient, category: selectedCategory, isFavorite });
+      console.log('🔄 ÚJ kedvenc frissítése:', { ingredient, category: selectedCategory.Kategoriak, isFavorite });
       
       if (isFavorite) {
         // Add to favorites
-        const success = await addUserFavorite(user.id, selectedCategory, ingredient);
+        const success = await addUserFavorite(user.id, selectedCategory.Kategoriak, ingredient);
         if (success) {
           // Update local state
           const newFavorite: UserFavorite = {
             id: crypto.randomUUID(),
             user_id: user.id,
-            category: selectedCategory,
+            category: selectedCategory.Kategoriak,
             ingredient,
             created_at: new Date().toISOString()
           };
@@ -204,21 +185,21 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
             await handlePreferenceUpdate(ingredient, 'like');
           }
           
-          console.log('✅ Kedvenc hozzáadva');
+          console.log('✅ ÚJ kedvenc hozzáadva');
         }
       } else {
         // Remove from favorites
-        const success = await removeUserFavorite(user.id, selectedCategory, ingredient);
+        const success = await removeUserFavorite(user.id, selectedCategory.Kategoriak, ingredient);
         if (success) {
           // Update local state
           setUserFavorites(prev => 
-            prev.filter(fav => !(fav.ingredient === ingredient && fav.category === selectedCategory))
+            prev.filter(fav => !(fav.ingredient === ingredient && fav.category === selectedCategory.Kategoriak))
           );
-          console.log('✅ Kedvenc eltávolítva');
+          console.log('✅ ÚJ kedvenc eltávolítva');
         }
       }
     } catch (error) {
-      console.error('❌ Kedvenc kezelési hiba:', error);
+      console.error('❌ ÚJ kedvenc kezelési hiba:', error);
       toast({
         title: "Hiba történt",
         description: "Nem sikerült frissíteni a kedvencet.",
@@ -227,13 +208,15 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     }
   };
 
-  const getStatsForCategory = (category: string) => {
-    const availableIngredients = categoryIngredients[category] || [];
+  const getStatsForCategory = (category: IngredientCategory) => {
+    const availableIngredients = categoryIngredients[category.Kategoria_ID] || [];
+    const ingredientNames = availableIngredients.map(ing => ing.Elelmiszer_nev);
+    
     const categoryPrefs = userPreferences.filter(p => 
-      p.category === category && availableIngredients.includes(p.ingredient)
+      p.category === category.Kategoriak && ingredientNames.includes(p.ingredient)
     );
     const categoryFavs = userFavorites.filter(f => 
-      f.category === category && availableIngredients.includes(f.ingredient)
+      f.category === category.Kategoriak && ingredientNames.includes(f.ingredient)
     );
     
     return {
@@ -267,7 +250,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     if (!selectedCategory) return 'neutral';
     
     const preference = userPreferences.find(p => 
-      p.ingredient === ingredient && p.category === selectedCategory
+      p.ingredient === ingredient && p.category === selectedCategory.Kategoriak
     );
     return preference?.preference || 'neutral';
   };
@@ -276,7 +259,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
     if (!selectedCategory) return false;
     
     return userFavorites.some(f => 
-      f.ingredient === ingredient && f.category === selectedCategory
+      f.ingredient === ingredient && f.category === selectedCategory.Kategoriak
     );
   };
 
@@ -285,13 +268,16 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
       <div className="flex items-center justify-center py-16">
         <div className="text-center text-white">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-lg">Preferenciák betöltése...</p>
+          <p className="text-lg">ÚJ preferenciák betöltése...</p>
         </div>
       </div>
     );
   }
 
   const totalStats = getTotalStats();
+  const selectedCategoryIngredients = selectedCategory 
+    ? categoryIngredients[selectedCategory.Kategoria_ID]?.map(ing => ing.Elelmiszer_nev) || []
+    : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -300,7 +286,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4 flex items-center justify-center gap-3">
             <Settings className="w-8 h-8 text-green-400" />
-            Ételpreferenciáim
+            Ételpreferenciáim (ÚJ rendszer)
           </h1>
         </div>
 
@@ -337,18 +323,18 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center gap-2">
               <Utensils className="w-6 h-6 text-green-400" />
-              Ételkategóriák
+              Ételkategóriák (ÚJ rendszer)
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {categories.map((category) => {
                 const stats = getStatsForCategory(category);
-                const isSelected = selectedCategory === category;
+                const isSelected = selectedCategory?.Kategoria_ID === category.Kategoria_ID;
                 
                 return (
                   <Button
-                    key={category}
+                    key={category.Kategoria_ID}
                     onClick={() => handleCategorySelect(category)}
                     variant="outline"
                     className={`h-auto p-3 sm:p-4 flex-col gap-2 transition-all duration-200 text-sm sm:text-base ${
@@ -358,7 +344,7 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
                     }`}
                   >
                     <div className="font-medium text-center leading-tight whitespace-normal break-words w-full">
-                      {category}
+                      {category.Kategoriak}
                     </div>
                     <div className="flex gap-2 text-xs">
                       <Badge className="bg-green-600/30 text-green-400 border-green-400/50 text-xs px-2 py-1">
@@ -384,13 +370,13 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
             <Card className="bg-white/10 border-white/20">
               <CardHeader className="pb-4">
                 <CardTitle className="text-white text-xl text-center">
-                  {selectedCategory} alapanyagai
+                  {selectedCategory.Kategoriak} alapanyagai (ÚJ rendszer)
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <IngredientsGrid
-                  ingredients={categoryIngredients[selectedCategory] || []}
-                  categoryName={selectedCategory}
+                  ingredients={selectedCategoryIngredients}
+                  categoryName={selectedCategory.Kategoriak}
                   getPreferenceForIngredient={getPreferenceForIngredient}
                   getFavoriteForIngredient={getFavoriteForIngredient}
                   onPreferenceChange={handlePreferenceUpdate}

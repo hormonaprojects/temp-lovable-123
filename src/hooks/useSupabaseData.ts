@@ -10,6 +10,8 @@ import { convertNewRecipeToStandard } from '@/utils/newRecipeConverter';
 import { getRecipesByMealType, getRecipesByCategory } from '@/services/recipeFilters';
 import { getUserPreferences, filterIngredientsByPreferences, UserPreference } from '@/services/preferenceFilters';
 import { getUserFavorites, isFavoriteIngredient, UserFavorite, addUserFavorite, removeUserFavorite } from '@/services/userFavorites';
+import { filterRecipesByPreferencesAdapter } from '@/services/preferenceAdapter';
+import { fetchIngredientCategories, fetchNewIngredients } from '@/services/newIngredientQueries';
 
 export function useSupabaseData(userId?: string) {
   const [categories, setCategories] = useState<Record<string, string[]>>({});
