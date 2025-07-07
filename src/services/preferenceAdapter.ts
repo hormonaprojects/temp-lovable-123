@@ -97,7 +97,14 @@ export const filterRecipesByPreferencesAdapter = async (
       return [];
     }
 
-    // Receptek szűrése a matching Recept_ID-k alapján (típuskonverzió javítás!)
+    // Receptek szűrése a matching Recept_ID-k alapján (debug info hozzáadva)
+    console.log('🔍 Debug - recipes tömb első 5 elem ID-ja és típusa:');
+    recipes.slice(0, 5).forEach(recipe => {
+      console.log(`Recipe: ${recipe.név}, ID: ${recipe.id}, típus: ${typeof recipe.id}`);
+    });
+    
+    console.log('🔍 Debug - keresett filteredRecipeIds:', filteredRecipeIds);
+    
     const filtered = recipes.filter(recipe => {
       // A recipe.id lehet string vagy number, a filteredRecipeIds number array
       const recipeIdAsNumber = typeof recipe.id === 'string' ? parseInt(recipe.id) : recipe.id;
@@ -111,7 +118,10 @@ export const filterRecipesByPreferencesAdapter = async (
       if (isMatch) {
         console.log(`✅ Recept találat: ${recipe.név} (ID: ${recipe.id}, típus: ${typeof recipe.id})`);
       } else {
-        console.log(`❌ Nincs találat: ${recipe.név} (ID: ${recipe.id}, típus: ${typeof recipe.id}, keresett IDs: ${filteredRecipeIds})`);
+        // Csak az első 3 nem-találatnál írjuk ki a debug infót, nehogy ellepje a console-t
+        if (filtered.length < 3) {
+          console.log(`❌ Nincs találat: ${recipe.név} (ID: ${recipe.id}, típus: ${typeof recipe.id}, keresett IDs: ${filteredRecipeIds})`);
+        }
       }
       
       return isMatch;
