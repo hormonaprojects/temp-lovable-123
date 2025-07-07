@@ -7,7 +7,8 @@ export const fetchReceptekV2 = async (): Promise<ReceptekV2[]> => {
   
   const { data, error } = await supabase
     .from('receptek')
-    .select('*');
+    .select('*')
+    .order('"Recept ID"', { ascending: true }); // Rendezés hozzáadása
 
   if (error) {
     console.error('❌ receptek tábla lekérési hiba:', error);
@@ -21,6 +22,18 @@ export const fetchReceptekV2 = async (): Promise<ReceptekV2[]> => {
 
   console.log('✅ Receptek betöltve:', data.length, 'db');
   console.log('📋 Első recept példa:', data[0]);
+  console.log('🔍 KRITIKUS DEBUG - Első 5 recept ID-ja:');
+  data.slice(0, 5).forEach(recept => {
+    console.log(`  ID: ${recept['Recept ID']}, Név: ${recept['Receptnév']}`);
+  });
+  
+  // EXTRA ELLENŐRZÉS - 1-es ID-jú recept keresése
+  const recept1 = data.find(r => r['Recept ID'] === 1);
+  if (recept1) {
+    console.log('✅ 1-es ID-jú recept MEGTALÁLVA:', recept1['Receptnév']);
+  } else {
+    console.error('❌ 1-es ID-jú recept HIÁNYZIK a betöltött adatok közül!');
+  }
   
   return data;
 };
