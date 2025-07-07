@@ -250,8 +250,6 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
           {selectedMealType && showIngredientSelection && (
             <SharedIngredientSelector
               selectedMeals={[selectedMealType]}
-              categories={categories}
-              getFilteredIngredients={getFilteredIngredients}
               getFavoriteForIngredient={(ingredient: string, category?: string) => {
                 return getFavoriteForIngredient(ingredient, category || '');
               }}
@@ -260,7 +258,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
               }}
               onMealIngredientsChange={setMealIngredients}
               initialMealIngredients={mealIngredients}
-              title="Alapanyag szűrés (opcionális)"
+              title="Alapanyag szűrés (opcionális) - ÚJ rendszer"
             />
           )}
 

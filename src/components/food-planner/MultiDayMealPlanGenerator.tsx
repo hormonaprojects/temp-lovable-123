@@ -250,14 +250,12 @@ export function MultiDayMealPlanGenerator({ user }: MultiDayMealPlanGeneratorPro
       {/* Shared Ingredient Selector - Keep ingredients persistent */}
       <SharedIngredientSelector
         selectedMeals={selectedMeals}
-        categories={categories}
-        getFilteredIngredients={getFilteredIngredients}
         getFavoriteForIngredient={getFavoriteForIngredient}
         getPreferenceForIngredient={getPreferenceForIngredient}
         onMealIngredientsChange={handleMealIngredientsChange}
         initialMealIngredients={currentMealIngredients}
         showIngredientSelection={showIngredientSelection}
-        title="Alapanyag szűrés (opcionális)"
+        title="Alapanyag szűrés (opcionális) - ÚJ rendszer"
       />
 
       {/* Shared Generation Button */}

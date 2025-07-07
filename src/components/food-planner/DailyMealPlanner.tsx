@@ -225,14 +225,12 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
       <div className="ingredient-selection-section">
         <SharedIngredientSelector
           selectedMeals={selectedMeals}
-          categories={categories}
-          getFilteredIngredients={getFilteredIngredients}
           getFavoriteForIngredient={getFavoriteForIngredient}
           getPreferenceForIngredient={getPreferenceForIngredient}
           onMealIngredientsChange={handleMealIngredientsChange}
           initialMealIngredients={preservedMealIngredients}
           showIngredientSelection={showIngredientSelection}
-          title="Alapanyag szűrés (opcionális)"
+          title="Alapanyag szűrés (opcionális) - ÚJ rendszer"
         />
       </div>
 
