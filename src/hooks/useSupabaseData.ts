@@ -159,14 +159,48 @@ export function useSupabaseData(userId?: string) {
       return [];
     }
     
+    console.log('🔄 Meal type szűrés:', mealType);
+    console.log('📊 Elérhető meal type adatok:', Object.keys(mealTypeRecipes));
+    
     // Ha nincsenek betöltött receptek, betöltjük őket
     let currentRecipes = recipes;
     if (currentRecipes.length === 0) {
       currentRecipes = await loadRecipes();
     }
     
-    return await filterRecipesByPreferencesAdapter(currentRecipes, [mealType], userId || '');
-  }, [recipes, mealTypeRecipes, userPreferences, loadRecipes]);
+    // Meal type mapping
+    const mealTypeMapping: Record<string, string> = {
+      'reggeli': 'Reggeli',
+      'tízórai': 'Tízórai', 
+      'ebéd': 'Ebéd',
+      'leves': 'Leves',
+      'uzsonna': 'Uzsonna',
+      'vacsora': 'Vacsora'
+    };
+    
+    const mealTypeKey = mealTypeMapping[mealType.toLowerCase()] || mealType;
+    const allowedRecipeNames = mealTypeRecipes[mealTypeKey] || [];
+    
+    console.log('🔍 Keresett meal type kulcs:', mealTypeKey);
+    console.log('📝 Engedélyezett recept nevek:', allowedRecipeNames.length, 'db');
+    
+    // Szűrjük a recepteket meal type alapján
+    const filteredRecipes = currentRecipes.filter(recipe => {
+      if (!recipe.név || !allowedRecipeNames.length) return false;
+      
+      return allowedRecipeNames.some(allowedName => {
+        const recipeName = recipe.név.toLowerCase().trim();
+        const allowedNameLower = allowedName.toLowerCase().trim();
+        
+        return recipeName === allowedNameLower ||
+               recipeName.includes(allowedNameLower) ||
+               allowedNameLower.includes(recipeName);
+      });
+    });
+    
+    console.log('✅ Szűrt receptek:', filteredRecipes.length, 'db');
+    return filteredRecipes;
+  }, [recipes, mealTypeRecipes, loadRecipes]);
 
   const getRecipesByCategoryHandler = useCallback(async (category: string, ingredient?: string, mealType?: string): Promise<CombinedRecipe[]> => {
     if (!Object.keys(categories).length) {
