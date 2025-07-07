@@ -1,6 +1,41 @@
 
 import { Alapanyag, ReceptAlapanyagV2 } from './types';
 
+// ÚJ FUNKCIÓ: Élelmiszer ID-k kinyerése
+export const extractElelmiszerIds = (alapanyagokRaw: ReceptAlapanyagV2[]): Record<number, string[]> => {
+  console.log('🔄 Élelmiszer ID-k kinyerése kezdődik...');
+  console.log('📊 Nyers alapanyagok száma:', alapanyagokRaw.length);
+
+  const idsByReceptId = alapanyagokRaw.reduce((acc, alapanyag) => {
+    const receptId = alapanyag['Recept_ID'];
+    const elelmiszerID = alapanyag['Élelmiszer ID'];
+    
+    if (!receptId || !elelmiszerID) {
+      return acc;
+    }
+    
+    if (!acc[receptId]) {
+      acc[receptId] = [];
+    }
+    
+    // Csak egyedi ID-kat gyűjtünk
+    if (!acc[receptId].includes(elelmiszerID)) {
+      acc[receptId].push(elelmiszerID);
+    }
+    
+    return acc;
+  }, {} as Record<number, string[]>);
+
+  console.log('✅ Élelmiszer ID-k kinyerve:', Object.keys(idsByReceptId).length, 'recept ID-hoz');
+  
+  // Debug: mutassuk meg néhány példát
+  Object.entries(idsByReceptId).slice(0, 3).forEach(([receptId, ids]) => {
+    console.log(`🔍 Recept ${receptId} élelmiszer ID-k:`, ids);
+  });
+
+  return idsByReceptId;
+};
+
 export const processIngredientsForRecipes = (
   alapanyagokRaw: ReceptAlapanyagV2[],
   alapanyagokMaster: Alapanyag[]

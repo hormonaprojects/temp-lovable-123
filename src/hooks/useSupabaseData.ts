@@ -10,6 +10,7 @@ import { convertNewRecipeToStandard } from '@/utils/newRecipeConverter';
 import { getRecipesByMealType, getRecipesByCategory } from '@/services/recipeFilters';
 import { getUserPreferences, filterIngredientsByPreferences, UserPreference } from '@/services/preferenceFilters';
 import { getUserFavorites, isFavoriteIngredient, UserFavorite, addUserFavorite, removeUserFavorite } from '@/services/userFavorites';
+import { filterRecipesByPreferencesAdapter, filterRecipesByNewIngredientNames } from '@/services/preferenceAdapter';
 
 export function useSupabaseData(userId?: string) {
   const [categories, setCategories] = useState<Record<string, string[]>>({});
@@ -253,6 +254,32 @@ export function useSupabaseData(userId?: string) {
     }
   };
 
+  // ÚJ: Receptek szűrése ingredients alapján (ID-alapú logika)
+  const filterRecipesByIngredientsNew = useCallback(async (
+    selectedIngredientNames: string[]
+  ): Promise<CombinedRecipe[]> => {
+    console.log('🎯 ÚJ ingredient szűrés hook-ban:', selectedIngredientNames);
+    
+    let currentRecipes = recipes;
+    if (currentRecipes.length === 0) {
+      currentRecipes = await loadRecipes();
+    }
+    
+    return await filterRecipesByNewIngredientNames(currentRecipes, selectedIngredientNames);
+  }, [recipes, loadRecipes]);
+
+  // ÚJ: Preferencia alapú szűrés wrapper
+  const filterRecipesByPreferencesNew = useCallback(async (): Promise<CombinedRecipe[]> => {
+    console.log('🎯 ÚJ preferencia szűrés hook-ban');
+    
+    let currentRecipes = recipes;
+    if (currentRecipes.length === 0) {
+      currentRecipes = await loadRecipes();
+    }
+    
+    return await filterRecipesByPreferencesAdapter(currentRecipes, userPreferences);
+  }, [recipes, userPreferences, loadRecipes]);
+
   return {
     categories,
     mealTypes,
@@ -272,6 +299,9 @@ export function useSupabaseData(userId?: string) {
     getFavoriteForIngredient,
     getPreferenceForIngredient,
     handleFavoriteToggle,
-    refreshFavorites: loadUserFavorites
+    refreshFavorites: loadUserFavorites,
+    // ÚJ szűrési funkciók
+    filterRecipesByIngredientsNew,
+    filterRecipesByPreferencesNew
   };
 }
