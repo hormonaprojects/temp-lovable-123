@@ -26,4 +26,4 @@ export {
   filterRecipesByMultipleIngredients as oldFilterRecipesByMultipleIngredients
 } from './ingredientFilters';
 
-console.log('🔄 Recipe filters betöltve - MINDEN az új adatbázis struktúrát használja (fallback-kel)');
+console.log('🔄 Recipe filters betöltve - ID alapú szűrés aktív minden alapanyag szűrésnél');

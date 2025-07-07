@@ -71,10 +71,9 @@ export function useMultiDayPlanGeneration({
           const mealSpecificIngredients = mealIngredients[mealType] || [];
           let foundRecipes = await getRecipesByMealType(mealType);
           
-          // Apply ingredient filtering if ingredients are selected
           if (mealSpecificIngredients.length > 0) {
             const ingredientNames = mealSpecificIngredients.map(ing => ing.ingredient);
-            foundRecipes = filterRecipesByMultipleIngredients(foundRecipes, ingredientNames);
+            foundRecipes = await filterRecipesByMultipleIngredients(foundRecipes, ingredientNames);
           }
           
           if (foundRecipes.length > 0) {
@@ -122,7 +121,7 @@ export function useMultiDayPlanGeneration({
       // Apply ingredient filtering if ingredients are selected
       if (ingredients.length > 0) {
         const ingredientNames = ingredients.map(ing => ing.ingredient);
-        foundRecipes = filterRecipesByMultipleIngredients(foundRecipes, ingredientNames);
+        foundRecipes = await filterRecipesByMultipleIngredients(foundRecipes, ingredientNames);
       }
       
       if (foundRecipes.length === 0) {

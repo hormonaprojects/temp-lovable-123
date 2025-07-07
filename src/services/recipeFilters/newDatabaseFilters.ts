@@ -118,41 +118,20 @@ const applyUserPreferences = (recipes: CombinedRecipe[], userPreferences: UserPr
   return sortedRecipes;
 };
 
-export const filterRecipesByMultipleIngredientsNew = (
+export const filterRecipesByMultipleIngredientsNew = async (
   recipes: CombinedRecipe[],
   requiredIngredients: string[]
-): CombinedRecipe[] => {
-  console.log('🔍 Több alapanyag alapján szűrés:', requiredIngredients);
+): Promise<CombinedRecipe[]> => {
+  console.log('🔍 ID alapú alapanyag szűrés:', requiredIngredients);
   
   if (requiredIngredients.length === 0) {
     console.log('⚠️ Nincs megadva alapanyag, minden recept visszaküldése');
     return recipes;
   }
   
-  return recipes.filter(recipe => {
-    const recipeIngredients = recipe.hozzávalók.map(ing => ing.toLowerCase());
-    
-    // Minden szükséges alapanyagnak szerepelnie kell a receptben
-    const hasAllIngredients = requiredIngredients.every(requiredIngredient => {
-      const requiredLower = requiredIngredient.toLowerCase();
-      const hasIngredient = recipeIngredients.some(recipeIngredient => 
-        recipeIngredient.includes(requiredLower) ||
-        requiredLower.includes(recipeIngredient.split(' ').pop() || '') // Utolsó szó keresése
-      );
-      
-      if (!hasIngredient) {
-        console.log(`❌ "${recipe.név}" (${recipe.id}) nem tartalmazza: ${requiredIngredient}`);
-      }
-      
-      return hasIngredient;
-    });
-    
-    if (hasAllIngredients) {
-      console.log(`✅ "${recipe.név}" (${recipe.id}) tartalmazza az összes szükséges alapanyagot`);
-    }
-    
-    return hasAllIngredients;
-  });
+  // Használjuk az ID alapú szűrést
+  const { filterRecipesByPreferencesAdapter } = await import('../preferenceAdapter');
+  return await filterRecipesByPreferencesAdapter(recipes, requiredIngredients);
 };
 
 export const getRecipesByCategoryNew = (

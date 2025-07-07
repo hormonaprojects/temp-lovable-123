@@ -122,7 +122,7 @@ export function SingleRecipeApp({ user, onToggleDailyPlanner }: SingleRecipeAppP
       
       // 2. Lépés: Szűrjük a recepteket az alapanyagok alapján
       const ingredientNames = selectedIngredients.map(ing => ing.ingredient);
-      const validRecipes = filterRecipesByMultipleIngredients(mealTypeRecipes, ingredientNames);
+      const validRecipes = await filterRecipesByMultipleIngredients(mealTypeRecipes, ingredientNames);
 
       if (validRecipes.length > 0) {
         const randomIndex = Math.floor(Math.random() * validRecipes.length);

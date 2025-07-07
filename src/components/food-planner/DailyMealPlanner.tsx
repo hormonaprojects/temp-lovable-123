@@ -144,7 +144,7 @@ export function DailyMealPlanner({ user, onToggleSingleRecipe }: DailyMealPlanne
 
       if (mealSpecificIngredients.length > 0) {
         const ingredientNames = mealSpecificIngredients.map(ing => ing.ingredient);
-        validRecipes = filterRecipesByMultipleIngredients(mealTypeRecipes, ingredientNames);
+        validRecipes = await filterRecipesByMultipleIngredients(mealTypeRecipes, ingredientNames);
       } else {
         validRecipes = mealTypeRecipes;
       }
