@@ -85,6 +85,12 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
     
     console.log('🔄 Receptek feldolgozása meal type-okkal...');
     
+    // KRITIKUS DEBUG: Ellenőrizzük az első 10 recept ID-ját
+    console.log('🔍 KRITIKUS DEBUG - Betöltött receptek első 10 ID-ja:');
+    receptek.slice(0, 10).forEach((recept, index) => {
+      console.log(`  ${index + 1}. Recept ID: ${recept['Recept ID']}, Név: ${recept['Receptnév']}`);
+    });
+    
     for (const recept of receptek) {
       const receptId = recept['Recept ID'];
       const receptName = recept['Receptnév'] || 'Névtelen recept';
