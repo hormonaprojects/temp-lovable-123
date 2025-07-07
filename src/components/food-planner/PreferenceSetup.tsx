@@ -51,48 +51,21 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   useEffect(() => {
     const loadPreferencesData = async () => {
       try {
-        console.log('🔄 ÚJ preferencia adatok betöltése elelmiszer_kategoriak és elelmiszer_kep táblákból...');
+        console.log('🔄 Preferencia adatok betöltése az új táblából...');
         
-        // ÚJ: Kategóriák és élelmiszerek betöltése az új táblákból
-        const [categoriesData, ingredientsData] = await Promise.all([
-          supabase.from('elelmiszer_kategoriak').select('*').order('Kategoriak'),
-          supabase.from('elelmiszer_kep').select('*').order('Elelmiszer_nev')
-        ]);
+        const { data, error } = await supabase
+          .from('Ételkategóriák_Új')
+          .select('*');
         
-        console.log('📊 Kategóriák lekérdezés eredménye:', { data: categoriesData.data, error: categoriesData.error });
-        console.log('📊 Élelmiszerek lekérdezés eredménye:', { data: ingredientsData.data, error: ingredientsData.error });
+        console.log('📊 Ételkategóriák_Új lekérdezés eredménye:', { data, error });
 
-        if (categoriesData.error) {
-          console.error('❌ Kategóriák lekérdezési hiba:', categoriesData.error);
-          throw categoriesData.error;
+        if (error) {
+          console.error('❌ Ételkategóriák_Új lekérdezési hiba:', error);
+          throw error;
         }
         
-        if (ingredientsData.error) {
-          console.error('❌ Élelmiszerek lekérdezési hiba:', ingredientsData.error);
-          throw ingredientsData.error;
-        }
-        
-        // ÚJ: Adatok feldolgozása kategória szerint
-        const processedData: any[] = [];
-        const categories = categoriesData.data || [];
-        const ingredients = ingredientsData.data || [];
-        
-        categories.forEach(category => {
-          const categoryIngredients = ingredients.filter(ing => 
-            ing.Kategoria_ID === category.Kategoria_ID
-          );
-          
-          if (categoryIngredients.length > 0) {
-            processedData.push({
-              category_id: category.Kategoria_ID,
-              category_name: category.Kategoriak,
-              ingredients: categoryIngredients
-            });
-          }
-        });
-        
-        console.log('✅ ÚJ adatok sikeresen feldolgozva:', processedData.length, 'kategória');
-        setPreferencesData(processedData);
+        console.log('✅ Ételkategóriák_Új adatok sikeresen betöltve:', data?.length || 0);
+        setPreferencesData(data || []);
         
       } catch (error) {
         console.error('💥 Adatok betöltési hiba:', error);
@@ -110,7 +83,7 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
   }, [toast]);
 
   const getCurrentCategoryIngredients = () => {
-    console.log('🔍 ÚJ getCurrentCategoryIngredients meghívva');
+    console.log('🔍 getCurrentCategoryIngredients meghívva');
     console.log('🔍 preferencesData.length:', preferencesData.length);
     console.log('🔍 currentCategoryIndex:', currentCategoryIndex);
     
@@ -122,20 +95,27 @@ export function PreferenceSetup({ user, onComplete }: PreferenceSetupProps) {
     const categoryName = categoryNames[currentCategoryIndex];
     console.log('🔍 Kategória keresése:', categoryName);
     
-    // ÚJ: Megkeressük a kategóriát a feldolgozott adatokban
-    const categoryData = preferencesData.find(data => 
-      data.category_name === categoryName
-    );
+    const ingredients: string[] = [];
     
-    if (!categoryData) {
-      console.log('❌ Kategória nem található:', categoryName);
-      return [];
-    }
+    // Végigmegyünk az összes soron
+    preferencesData.forEach((row, rowIndex) => {
+      console.log(`🔍 Sor ${rowIndex + 1} feldolgozása:`, row);
+      
+      // Megkeressük a kategória oszlopot
+      const categoryValue = row[categoryName];
+      console.log(`📝 ${categoryName} értéke a ${rowIndex + 1}. sorban:`, categoryValue);
+      
+      if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
+        // Az alapanyag közvetlenül a cella értéke
+        const ingredient = categoryValue.trim();
+        if (ingredient && !ingredients.includes(ingredient)) {
+          ingredients.push(ingredient);
+          console.log(`✅ Hozzáadva: ${ingredient} (${categoryName})`);
+        }
+      }
+    });
     
-    // ÚJ: Élelmiszer nevek kinyerése
-    const ingredients = categoryData.ingredients?.map((ing: any) => ing.Elelmiszer_nev) || [];
-    
-    console.log(`🎯 ÚJ módszer - Összegyűjtött alapanyagok (${categoryName}):`, ingredients);
+    console.log(`🎯 Összegyűjtött alapanyagok (${categoryName}):`, ingredients);
     return ingredients;
   };
 

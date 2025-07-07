@@ -1,6 +1,6 @@
 
 import { fetchReceptekV2, fetchReceptAlapanyagV2, fetchAlapanyagok } from './fetchers';
-import { processIngredientsForRecipes, extractElelmiszerIds } from './ingredientProcessor';
+import { processIngredientsForRecipes } from './ingredientProcessor';
 import { CombinedRecipe } from './types';
 
 export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
@@ -29,10 +29,6 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       return [];
     }
 
-    // ÚJ: Élelmiszer ID-k kinyerése
-    const elelmiszerIdsByReceptId = extractElelmiszerIds(alapanyagokRaw);
-    console.log('📊 extractElelmiszerIds eredménye:', Object.keys(elelmiszerIdsByReceptId).length, 'recept feldolgozva');
-    
     const alapanyagokByReceptId = processIngredientsForRecipes(alapanyagokRaw, alapanyagokMaster);
     console.log('📊 processIngredientsForRecipes eredménye:', Object.keys(alapanyagokByReceptId).length, 'recept feldolgozva');
     
@@ -80,12 +76,6 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       // Meal types meghatározása az előre betöltött Étkezések tábla alapján
       const mealTypes = determineMealTypesForRecipeFromData(receptName, mealTypesData);
       
-      // ÚJ: Hozzarendelt_ID mező feltöltése vesszővel elválasztva
-      const elelmiszerIds = elelmiszerIdsByReceptId[receptId] || [];
-      const hozzarendeltId = elelmiszerIds.join(',');
-      
-      console.log(`🆔 Recept ${receptId} Hozzarendelt_ID:`, hozzarendeltId);
-      
       combinedRecipes.push({
         id: receptId,
         név: receptName,
@@ -95,8 +85,7 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
         fehérje: recept['Feherje_g'] || 0,
         zsír: recept['Zsir_g'] || 0,
         hozzávalók: hozzavalok,
-        mealTypes: mealTypes,
-        hozzarendeltId: hozzarendeltId // ÚJ mező
+        mealTypes: mealTypes
       });
     }
 

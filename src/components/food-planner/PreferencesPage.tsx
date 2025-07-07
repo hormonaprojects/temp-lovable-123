@@ -56,60 +56,46 @@ export function PreferencesPage({ user, onClose }: PreferencesPageProps) {
   const loadData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 ÚJ: Preferenciák, kedvencek és kategória adatok betöltése...');
+      console.log('🔄 Preferenciák, kedvencek és kategória adatok betöltése...');
       
-      // ÚJ: Minden adat egyidejű betöltése az új táblákból
-      const [preferences, favorites, categoriesData, ingredientsData] = await Promise.all([
+      // Minden adat egyidejű betöltése
+      const [preferences, favorites, categoriesData] = await Promise.all([
         fetchUserPreferences(user.id),
         getUserFavorites(user.id),
-        supabase.from('elelmiszer_kategoriak').select('*').order('Kategoriak'),
-        supabase.from('elelmiszer_kep').select('*').order('Elelmiszer_nev')
+        supabase.from('Ételkategóriák_Új').select('*')
       ]);
 
       if (categoriesData.error) {
         throw categoriesData.error;
       }
-      
-      if (ingredientsData.error) {
-        throw ingredientsData.error;
-      }
 
-      // ÚJ: Kategória alapanyagok feldolgozása az új táblákból
+      // Kategória alapanyagok feldolgozása
       const categoryIngredientsMap: Record<string, string[]> = {};
       
-      categories.forEach(categoryName => {
-        // Megkeressük a kategóriát a kategoriak táblában
-        const categoryData = categoriesData.data?.find(cat => cat.Kategoriak === categoryName);
+      categories.forEach(category => {
+        const ingredients: string[] = [];
         
-        if (categoryData) {
-          // Megkeressük az ehhez a kategóriához tartozó élelmiszereket
-          const categoryIngredients = ingredientsData.data?.filter(ing => 
-            ing.Kategoria_ID === categoryData.Kategoria_ID
-          ) || [];
-          
-          // Élelmiszer nevek kinyerése
-          const ingredients = categoryIngredients
-            .map(ing => ing.Elelmiszer_nev)
-            .filter(name => name && name.trim() !== '')
-            .sort();
-          
-          categoryIngredientsMap[categoryName] = ingredients;
-          console.log(`✅ ÚJ: ${categoryName} - ${ingredients.length} alapanyag`);
-        } else {
-          console.warn(`⚠️ Kategória nem található: ${categoryName}`);
-          categoryIngredientsMap[categoryName] = [];
-        }
+        categoriesData.data?.forEach(row => {
+          const categoryValue = row[category];
+          if (categoryValue && typeof categoryValue === 'string' && categoryValue.trim() !== '' && categoryValue !== 'EMPTY') {
+            const ingredient = categoryValue.trim();
+            if (!ingredients.includes(ingredient)) {
+              ingredients.push(ingredient);
+            }
+          }
+        });
+        
+        categoryIngredientsMap[category] = ingredients.sort();
       });
 
       setUserPreferences(preferences);
       setUserFavorites(favorites);
       setCategoryIngredients(categoryIngredientsMap);
       
-      console.log('✅ ÚJ adatok betöltve:', {
+      console.log('✅ Adatok betöltve:', {
         preferences: preferences.length,
         favorites: favorites.length,
-        categories: Object.keys(categoryIngredientsMap).length,
-        totalIngredients: Object.values(categoryIngredientsMap).reduce((sum, arr) => sum + arr.length, 0)
+        categories: Object.keys(categoryIngredientsMap).length
       });
       
     } catch (error) {
