@@ -11,6 +11,12 @@ import {
 } from "@/components/ui/select";
 import { CompactIngredientDisplay } from './CompactIngredientDisplay';
 import { CompactIngredientGrid } from './CompactIngredientGrid';
+import { 
+  fetchIngredientCategories, 
+  fetchIngredientsByCategory, 
+  NewIngredient, 
+  IngredientCategory 
+} from '@/services/newIngredientQueries';
 
 interface SelectedIngredient {
   category: string;
@@ -18,27 +24,48 @@ interface SelectedIngredient {
 }
 
 interface CompactIngredientSelectorProps {
-  categories: { [key: string]: string[] };
-  getFilteredIngredients: (category: string) => string[];
   onIngredientsChange: (ingredients: SelectedIngredient[]) => void;
   getFavoriteForIngredient?: (ingredient: string, category: string) => boolean;
   getPreferenceForIngredient?: (ingredient: string, category: string) => 'like' | 'dislike' | 'neutral';
-  // FIXED: Add prop to receive initial ingredients
   initialIngredients?: SelectedIngredient[];
 }
 
 export function CompactIngredientSelector({
-  categories,
-  getFilteredIngredients,
   onIngredientsChange,
   getFavoriteForIngredient,
   getPreferenceForIngredient,
   initialIngredients = []
 }: CompactIngredientSelectorProps) {
+  const [categories, setCategories] = useState<IngredientCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  // FIXED: Initialize with preserved ingredients
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>(initialIngredients);
+  const [categoryIngredients, setCategoryIngredients] = useState<Record<string, NewIngredient[]>>({});
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Load categories and ingredients from new system
+  useEffect(() => {
+    const loadData = async () => {
+      console.log('🔄 ÚJ CompactIngredientSelector - adatok betöltése...');
+      
+      const categoriesData = await fetchIngredientCategories();
+      setCategories(categoriesData);
+      
+      // Load ingredients for each category
+      const ingredientsMap: Record<string, NewIngredient[]> = {};
+      for (const category of categoriesData) {
+        const ingredients = await fetchIngredientsByCategory(category.Kategoria_ID);
+        ingredientsMap[category.Kategoriak] = ingredients;
+      }
+      setCategoryIngredients(ingredientsMap);
+      
+      console.log('✅ ÚJ CompactIngredientSelector adatok betöltve:', {
+        categories: categoriesData.length,
+        totalIngredients: Object.values(ingredientsMap).reduce((sum, ings) => sum + ings.length, 0)
+      });
+    };
+    
+    loadData();
+  }, []);
 
   // FIXED: Update state when initialIngredients changes
   useEffect(() => {

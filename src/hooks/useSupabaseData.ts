@@ -165,7 +165,7 @@ export function useSupabaseData(userId?: string) {
       currentRecipes = await loadRecipes();
     }
     
-    return getRecipesByMealType(currentRecipes, mealTypeRecipes, mealType, userPreferences);
+    return await filterRecipesByPreferencesAdapter(currentRecipes, [mealType], userId || '');
   }, [recipes, mealTypeRecipes, userPreferences, loadRecipes]);
 
   const getRecipesByCategoryHandler = useCallback(async (category: string, ingredient?: string, mealType?: string): Promise<CombinedRecipe[]> => {
