@@ -34,9 +34,8 @@ export function IngredientsGrid({
         
         // Minden alapanyag nevét normalizáljuk és megpróbáljuk betölteni a storage-ből
         for (const ingredient of ingredients) {
-          // Normalizálás: kisbetű, ékezetek eltávolítása, speciális karakterek kezelése
+          // Normalizálás: ékezetek eltávolítása, speciális karakterek kezelése
           const normalizedName = ingredient
-            .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/ű/g, 'u')
@@ -47,28 +46,38 @@ export function IngredientsGrid({
             .replace(/^_|_$/g, '') // kezdő/záró aláhúzás eltávolítása
             .trim();
           
-          // Megpróbáljuk png és jpg formátumban is
+          // Különböző név variációk: kisbetű, nagybetű, első betű nagy
+          const nameVariations = [
+            normalizedName.toLowerCase(),
+            normalizedName.toUpperCase(),
+            normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1).toLowerCase()
+          ];
+          
+          // Megpróbáljuk png és jpg formátumban is, minden név variációval
           const formats = ['png', 'jpg'];
           let imageUrl = null;
           
-          for (const format of formats) {
-            try {
-              const { data } = supabase.storage
-                .from('alapanyag')
-                .getPublicUrl(`${normalizedName}.${format}`);
-              
-              if (data?.publicUrl) {
-                // Ellenőrizzük, hogy a kép létezik-e (HEAD request)
-                const response = await fetch(data.publicUrl, { method: 'HEAD' });
-                if (response.ok) {
-                  imageUrl = data.publicUrl;
-                  console.log(`✅ Kép talált: ${ingredient} -> ${normalizedName}.${format}`);
-                  break;
+          for (const nameVar of nameVariations) {
+            for (const format of formats) {
+              try {
+                const { data } = supabase.storage
+                  .from('alapanyag')
+                  .getPublicUrl(`${nameVar}.${format}`);
+                
+                if (data?.publicUrl) {
+                  // Ellenőrizzük, hogy a kép létezik-e (HEAD request)
+                  const response = await fetch(data.publicUrl, { method: 'HEAD' });
+                  if (response.ok) {
+                    imageUrl = data.publicUrl;
+                    console.log(`✅ Kép talált: ${ingredient} -> ${nameVar}.${format}`);
+                    break;
+                  }
                 }
+              } catch (error) {
+                // Próbáljuk a következő variációt/formátumot
               }
-            } catch (error) {
-              // Próbáljuk a következő formátumot
             }
+            if (imageUrl) break; // Ha találtunk képet, kilépünk a külső ciklusból is
           }
           
           if (imageUrl) {
