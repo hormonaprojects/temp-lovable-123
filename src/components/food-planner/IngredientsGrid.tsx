@@ -25,69 +25,50 @@ export function IngredientsGrid({
 }: IngredientsGridProps) {
   const [ingredientImages, setIngredientImages] = useState<Record<string, string>>({});
 
-  // Lekérjük az alapanyag képeket a storage-ből
+  // Lekérjük az alapanyag képeket az elelmiszer_kep táblából
   useEffect(() => {
     const fetchIngredientImages = async () => {
       try {
-        console.log('🔄 Alapanyag képek betöltése storage-ből...');
-        const imageMap: Record<string, string> = {};
+        console.log('🔄 Alapanyag képek betöltése elelmiszer_kep táblából...');
         
-        // Minden alapanyag nevét normalizáljuk és megpróbáljuk betölteni a storage-ből
-        for (const ingredient of ingredients) {
-          // Teljes normalizálás minden ékezetes karakterre
-          const normalizedName = ingredient
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') // ékezetek eltávolítása
-            .replace(/ű/g, 'u')
-            .replace(/ő/g, 'o')
-            .replace(/á/g, 'a')
-            .replace(/é/g, 'e')
-            .replace(/í/g, 'i')
-            .replace(/ó/g, 'o')
-            .replace(/ú/g, 'u')
-            .replace(/ü/g, 'u')
-            .replace(/[()\/\-]/g, '') // ( ) / - karakterek eltávolítása
-            .replace(/\s+/g, '_') // szóközök -> aláhúzás
-            .replace(/_+/g, '_') // több egymás utáni aláhúzás -> egy aláhúzás
-            .replace(/^_|_$/g, '') // kezdő/záró aláhúzás eltávolítása
-            .trim();
-          
-          // Megpróbáljuk png és jpg formátumban is (csak kisbetűvel, mivel minden fájl kisbetűvel van)
-          const formats = ['png', 'jpg'];
-          let imageUrl = null;
-          
-          for (const format of formats) {
-            try {
-              const { data } = supabase.storage
-                .from('alapanyag')
-                .getPublicUrl(`${normalizedName}.${format}`);
-              
-              if (data?.publicUrl) {
-                // Ellenőrizzük, hogy a kép létezik-e (HEAD request)
-                const response = await fetch(data.publicUrl, { method: 'HEAD' });
-                if (response.ok) {
-                  imageUrl = data.publicUrl;
-                  console.log(`✅ Kép talált: ${ingredient} -> ${normalizedName}.${format}`);
-                  break;
-                }
-              }
-            } catch (error) {
-              // Próbáljuk a következő formátumot
-            }
-          }
-          
-          if (imageUrl) {
-            imageMap[ingredient] = imageUrl;
-          } else {
-            console.log(`❌ Nincs kép: ${ingredient} (${normalizedName})`);
-          }
+        // Lekérjük az összes képet az elelmiszer_kep táblából
+        const { data: imageData, error } = await supabase
+          .from('elelmiszer_kep')
+          .select('Elelmiszer_nev, Kep')
+          .not('Kep', 'is', null);
+
+        if (error) {
+          console.error('❌ Kép adatok betöltési hiba:', error);
+          return;
         }
+
+        const imageMap: Record<string, string> = {};
+        const baseStorageUrl = 'https://hhjucbkqyamutshosfspy.supabase.co/storage/v1/object/public/alapanyag/';
+
+        // Feltöltjük a képek mappáját
+        imageData?.forEach(item => {
+          if (item.Elelmiszer_nev && item.Kep) {
+            // Ha már teljes URL van, használjuk azt, különben építsük fel a storage URL-t
+            const imageUrl = item.Kep.startsWith('http') 
+              ? item.Kep 
+              : `${baseStorageUrl}${item.Kep}`;
+            imageMap[item.Elelmiszer_nev] = imageUrl;
+          }
+        });
+
+        // Ellenőrizzük, hogy mely alapanyagokhoz találtunk képet
+        ingredients.forEach(ingredient => {
+          if (imageMap[ingredient]) {
+            console.log(`✅ Kép talált: ${ingredient} -> ${imageMap[ingredient]}`);
+          } else {
+            console.log(`❌ Nincs kép: ${ingredient}`);
+          }
+        });
         
         setIngredientImages(imageMap);
-        console.log('✅ Storage képek betöltve:', Object.keys(imageMap).length, 'db az alapanyagokból:', ingredients.length, 'db');
+        console.log('✅ Adatbázis képek betöltve:', Object.keys(imageMap).length, 'db az alapanyagokból:', ingredients.length, 'db');
       } catch (error) {
-        console.error('❌ Storage képek betöltési hiba:', error);
+        console.error('❌ Adatbázis képek betöltési hiba:', error);
       }
     };
 
