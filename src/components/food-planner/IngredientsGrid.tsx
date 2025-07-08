@@ -34,15 +34,17 @@ export function IngredientsGrid({
         
         // Minden alapanyag nevét normalizáljuk és megpróbáljuk betölteni a storage-ből
         for (const ingredient of ingredients) {
-          // Normalizálás: kisbetű, ékezetek eltávolítása, szóközök -> aláhúzás
+          // Normalizálás: kisbetű, ékezetek eltávolítása, speciális karakterek kezelése
           const normalizedName = ingredient
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/ű/g, 'u')
             .replace(/ő/g, 'o')
-            .replace(/\s+/g, '_')
-            .replace(/[()]/g, '')
+            .replace(/[()\/]/g, '') // ( ) / karakterek eltávolítása
+            .replace(/\s+/g, '_') // szóközök -> aláhúzás
+            .replace(/_+/g, '_') // több egymás utáni aláhúzás -> egy aláhúzás
+            .replace(/^_|_$/g, '') // kezdő/záró aláhúzás eltávolítása
             .trim();
           
           // Megpróbáljuk png és jpg formátumban is
