@@ -44,12 +44,17 @@ export function IngredientsGrid({
 
         const imageMap: Record<string, string> = {};
 
-        // Feltöltjük a képek mappáját
+        // Feltöltjük a képek mappáját a Supabase storage client használatával
         imageData?.forEach(item => {
           if (item.Elelmiszer_nev && item.Kep) {
-            // A Kep oszlop már csak a fájlnevet tartalmazza, felépítjük a teljes storage URL-t
-            const imageUrl = `https://hhjucbkqyamutshosfspy.supabase.co/storage/v1/object/public/alapanyag/${item.Kep}`;
-            imageMap[item.Elelmiszer_nev] = imageUrl;
+            // Használjuk a Supabase client getPublicUrl metódusát
+            const { data } = supabase.storage
+              .from('alapanyag')
+              .getPublicUrl(item.Kep);
+            
+            if (data?.publicUrl) {
+              imageMap[item.Elelmiszer_nev] = data.publicUrl;
+            }
           }
         });
 
