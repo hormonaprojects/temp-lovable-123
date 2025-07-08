@@ -34,50 +34,47 @@ export function IngredientsGrid({
         
         // Minden alapanyag nevét normalizáljuk és megpróbáljuk betölteni a storage-ből
         for (const ingredient of ingredients) {
-          // Normalizálás: ékezetek eltávolítása, speciális karakterek kezelése
+          // Teljes normalizálás minden ékezetes karakterre
           const normalizedName = ingredient
+            .toLowerCase()
             .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[\u0300-\u036f]/g, '') // ékezetek eltávolítása
             .replace(/ű/g, 'u')
             .replace(/ő/g, 'o')
-            .replace(/[()\/]/g, '') // ( ) / karakterek eltávolítása
+            .replace(/á/g, 'a')
+            .replace(/é/g, 'e')
+            .replace(/í/g, 'i')
+            .replace(/ó/g, 'o')
+            .replace(/ú/g, 'u')
+            .replace(/ü/g, 'u')
+            .replace(/[()\/\-]/g, '') // ( ) / - karakterek eltávolítása
             .replace(/\s+/g, '_') // szóközök -> aláhúzás
             .replace(/_+/g, '_') // több egymás utáni aláhúzás -> egy aláhúzás
             .replace(/^_|_$/g, '') // kezdő/záró aláhúzás eltávolítása
             .trim();
           
-          // Különböző név variációk: kisbetű, nagybetű, első betű nagy
-          const nameVariations = [
-            normalizedName.toLowerCase(),
-            normalizedName.toUpperCase(),
-            normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1).toLowerCase()
-          ];
-          
-          // Megpróbáljuk png és jpg formátumban is, minden név variációval
+          // Megpróbáljuk png és jpg formátumban is (csak kisbetűvel, mivel minden fájl kisbetűvel van)
           const formats = ['png', 'jpg'];
           let imageUrl = null;
           
-          for (const nameVar of nameVariations) {
-            for (const format of formats) {
-              try {
-                const { data } = supabase.storage
-                  .from('alapanyag')
-                  .getPublicUrl(`${nameVar}.${format}`);
-                
-                if (data?.publicUrl) {
-                  // Ellenőrizzük, hogy a kép létezik-e (HEAD request)
-                  const response = await fetch(data.publicUrl, { method: 'HEAD' });
-                  if (response.ok) {
-                    imageUrl = data.publicUrl;
-                    console.log(`✅ Kép talált: ${ingredient} -> ${nameVar}.${format}`);
-                    break;
-                  }
+          for (const format of formats) {
+            try {
+              const { data } = supabase.storage
+                .from('alapanyag')
+                .getPublicUrl(`${normalizedName}.${format}`);
+              
+              if (data?.publicUrl) {
+                // Ellenőrizzük, hogy a kép létezik-e (HEAD request)
+                const response = await fetch(data.publicUrl, { method: 'HEAD' });
+                if (response.ok) {
+                  imageUrl = data.publicUrl;
+                  console.log(`✅ Kép talált: ${ingredient} -> ${normalizedName}.${format}`);
+                  break;
                 }
-              } catch (error) {
-                // Próbáljuk a következő variációt/formátumot
               }
+            } catch (error) {
+              // Próbáljuk a következő formátumot
             }
-            if (imageUrl) break; // Ha találtunk képet, kilépünk a külső ciklusból is
           }
           
           if (imageUrl) {
