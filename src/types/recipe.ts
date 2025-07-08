@@ -9,6 +9,7 @@ export interface Recipe {
   fehérje?: string;
   szénhidrát?: string;
   zsír?: string;
+  kalória?: string;
   képUrl?: string;
   kategória?: string;
   típus?: string;
