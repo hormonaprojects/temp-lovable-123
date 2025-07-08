@@ -127,15 +127,22 @@ export const fetchCombinedRecipes = async (): Promise<CombinedRecipe[]> => {
       const hozzarendeltId = receptElelmiszerIds.join(',');
       
       console.log(`🔗 Recept ${receptId} (${receptName}) - Hozzarendelt_ID: "${hozzarendeltId}"`);
+      const fehérjeValue = recept['Feherje_g'] || 0;
+      const szénhidrátValue = recept['Szenhidrat_g'] || 0;
+      const zsírValue = recept['Zsir_g'] || 0;
+      
+      // Kalória számítása: 1g fehérje = 4 kcal, 1g szénhidrát = 4 kcal, 1g zsír = 9 kcal
+      const kalóriaValue = Math.round((fehérjeValue * 4) + (szénhidrátValue * 4) + (zsírValue * 9));
       
       combinedRecipes.push({
         id: receptId,
         név: receptName,
         elkészítés: recept['Elkészítése'] || 'Nincs leírás',
         kép: recept['Kép'] || '',
-        szénhidrát: recept['Szenhidrat_g'] || 0,
-        fehérje: recept['Feherje_g'] || 0,
-        zsír: recept['Zsir_g'] || 0,
+        szénhidrát: szénhidrátValue,
+        fehérje: fehérjeValue,
+        zsír: zsírValue,
+        kalória: kalóriaValue,
         hozzávalók: hozzavalok,
         mealTypes: mealTypes,
         Hozzarendelt_ID: hozzarendeltId

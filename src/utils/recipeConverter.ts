@@ -11,14 +11,22 @@ export const convertToStandardRecipe = (supabaseRecipe: SupabaseRecipe) => {
     supabaseRecipe['Hozzavalo_16'], supabaseRecipe['Hozzavalo_17'], supabaseRecipe['Hozzavalo_18']
   ].filter(Boolean);
 
+  const fehérjeValue = supabaseRecipe['Feherje_g'] || 0;
+  const szénhidrátValue = supabaseRecipe['Szenhidrat_g'] || 0;
+  const zsírValue = supabaseRecipe['Zsir_g'] || 0;
+  
+  // Kalória számítása: 1g fehérje = 4 kcal, 1g szénhidrát = 4 kcal, 1g zsír = 9 kcal
+  const kalóriaValue = Math.round((fehérjeValue * 4) + (szénhidrátValue * 4) + (zsírValue * 9));
+
   return {
     név: supabaseRecipe['Recept_Neve'] || 'Névtelen recept',
     hozzávalók: ingredients,
     elkészítés: supabaseRecipe['Elkészítés'] || 'Nincs leírás',
     elkészítésiIdő: supabaseRecipe['Elkeszitesi_Ido'] || 'Ismeretlen',
-    fehérje: supabaseRecipe['Feherje_g']?.toString() || '0',
-    szénhidrát: supabaseRecipe['Szenhidrat_g']?.toString() || '0',
-    zsír: supabaseRecipe['Zsir_g']?.toString() || '0',
+    fehérje: fehérjeValue.toString(),
+    szénhidrát: szénhidrátValue.toString(),
+    zsír: zsírValue.toString(),
+    kalória: kalóriaValue.toString(),
     képUrl: supabaseRecipe['Kép URL'] || ''
   };
 };

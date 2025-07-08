@@ -10,6 +10,7 @@ export const convertNewRecipeToStandard = (newRecipe: CombinedRecipe): Recipe =>
     szénhidrát: newRecipe.szénhidrát.toString(),
     fehérje: newRecipe.fehérje.toString(),
     zsír: newRecipe.zsír.toString(),
+    kalória: newRecipe.kalória.toString(),
     hozzávalók: newRecipe.hozzávalók
   };
 };

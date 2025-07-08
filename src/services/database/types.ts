@@ -35,6 +35,7 @@ export interface CombinedRecipe {
   szénhidrát: number;
   fehérje: number;
   zsír: number;
+  kalória: number;
   hozzávalók: string[];
   mealTypes: string[];
   Hozzarendelt_ID?: string;
