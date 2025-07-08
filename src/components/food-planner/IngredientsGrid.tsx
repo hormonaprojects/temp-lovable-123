@@ -25,36 +25,68 @@ export function IngredientsGrid({
 }: IngredientsGridProps) {
   const [ingredientImages, setIngredientImages] = useState<Record<string, string>>({});
 
-  // Lekérjük az alapanyag képeket az adatbázisból
+  // Lekérjük az alapanyag képeket a storage-ből
   useEffect(() => {
     const fetchIngredientImages = async () => {
       try {
-        const { data, error } = await supabase
-          .from('elelmiszer_kep')
-          .select('Elelmiszer_nev, Kep');
-
-        if (error) {
-          console.error('❌ Alapanyag képek lekérési hiba:', error);
-          return;
-        }
-
-        if (data) {
-          const imageMap: Record<string, string> = {};
-          data.forEach(item => {
-            if (item.Elelmiszer_nev && item.Kep) {
-              imageMap[item.Elelmiszer_nev] = item.Kep;
+        console.log('🔄 Alapanyag képek betöltése storage-ből...');
+        const imageMap: Record<string, string> = {};
+        
+        // Minden alapanyag nevét normalizáljuk és megpróbáljuk betölteni a storage-ből
+        for (const ingredient of ingredients) {
+          // Normalizálás: kisbetű, ékezetek eltávolítása, szóközök -> aláhúzás
+          const normalizedName = ingredient
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/ű/g, 'u')
+            .replace(/ő/g, 'o')
+            .replace(/\s+/g, '_')
+            .replace(/[()]/g, '')
+            .trim();
+          
+          // Megpróbáljuk png és jpg formátumban is
+          const formats = ['png', 'jpg'];
+          let imageUrl = null;
+          
+          for (const format of formats) {
+            try {
+              const { data } = supabase.storage
+                .from('alapanyag')
+                .getPublicUrl(`${normalizedName}.${format}`);
+              
+              if (data?.publicUrl) {
+                // Ellenőrizzük, hogy a kép létezik-e (HEAD request)
+                const response = await fetch(data.publicUrl, { method: 'HEAD' });
+                if (response.ok) {
+                  imageUrl = data.publicUrl;
+                  console.log(`✅ Kép talált: ${ingredient} -> ${normalizedName}.${format}`);
+                  break;
+                }
+              }
+            } catch (error) {
+              // Próbáljuk a következő formátumot
             }
-          });
-          setIngredientImages(imageMap);
-          console.log('✅ Alapanyag képek betöltve:', Object.keys(imageMap).length, 'db');
+          }
+          
+          if (imageUrl) {
+            imageMap[ingredient] = imageUrl;
+          } else {
+            console.log(`❌ Nincs kép: ${ingredient} (${normalizedName})`);
+          }
         }
+        
+        setIngredientImages(imageMap);
+        console.log('✅ Storage képek betöltve:', Object.keys(imageMap).length, 'db az alapanyagokból:', ingredients.length, 'db');
       } catch (error) {
-        console.error('❌ Alapanyag képek betöltési hiba:', error);
+        console.error('❌ Storage képek betöltési hiba:', error);
       }
     };
 
-    fetchIngredientImages();
-  }, []);
+    if (ingredients.length > 0) {
+      fetchIngredientImages();
+    }
+  }, [ingredients]);
   const getSortedIngredients = () => {
     if (!hideDisliked) {
       return [...ingredients].sort((a, b) => {
