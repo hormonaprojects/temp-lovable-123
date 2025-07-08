@@ -20,89 +20,78 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
     const cleanInstructions = instructions.trim();
     console.log('🔍 RecipeContent - Eredeti elkészítés:', cleanInstructions);
     
-    // Először keresünk pontosan olyan formátumokat, mint amit a felhasználó mutatott
-    // Keresünk számozást (1., 2., stb.) vagy főcímeket kettősponttal
+    // Új fejlett formázás: főbekezdések (számozás) és albekezdések (o-val)
+    const sections = [];
+    const lines = cleanInstructions.split('\n').map(line => line.trim()).filter(line => line);
     
-    // Ha már strukturált (tartalmaz számokat és kettőspontokat)
-    if (cleanInstructions.includes(':') && /\d+\./.test(cleanInstructions)) {
-      console.log('🎯 Strukturált elkészítés felismerve');
-      
-      // Szétválasztjuk a lépéseket számozás vagy főcím alapján
-      const steps = cleanInstructions
-        .split(/(?=\d+\.\s|•\s*[A-ZÁÉÍÓÖŐÜŰ])/)
-        .map(step => step.trim())
-        .filter(step => step.length > 0);
-      
-      const formattedSections = steps.map(step => ({
-        type: 'bullet' as const,
-        content: step
-      }));
-      
-      console.log('📝 Strukturált lépések:', formattedSections);
-      return formattedSections;
-    }
+    let currentMainStep = null;
+    let currentSubSteps = [];
     
-    // Ha nincs strukturálva, akkor mondat alapú felosztás
-    const sentences = cleanInstructions
-      .split(/(?:\.|!)(?:\s|$)/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && s.length > 10); // Túl rövid mondatok kiszűrése
-    
-    if (sentences.length === 0) {
-      return [{
-        type: 'bullet' as const,
-        content: cleanInstructions
-      }];
-    }
-    
-    const formattedSections = [];
-    let currentStep = '';
-    let stepNumber = 1;
-    
-    for (const sentence of sentences) {
-      // Ha a mondat tartalmaz főcímet kettősponttal
-      if (sentence.includes(':') && sentence.length > 15) {
-        // Ha van már gyűjtött szöveg, azt lezárjuk
-        if (currentStep) {
-          formattedSections.push({
-            type: 'bullet',
-            content: currentStep.trim()
+    for (const line of lines) {
+      // Főbekezdés felismerése (1., 2., 3., stb.)
+      const mainStepMatch = line.match(/^(\d+)\.\s*(.*)/);
+      if (mainStepMatch) {
+        // Ha van előző főlépés, zárjuk le
+        if (currentMainStep) {
+          sections.push({
+            type: 'main',
+            number: currentMainStep.number,
+            content: currentMainStep.content,
+            subSteps: [...currentSubSteps]
           });
-          currentStep = '';
         }
         
-        // Új lépés kezdése
-        currentStep = sentence + '.';
-      } else if (sentence) {
-        // Ha van már kezdett lépés, hozzáadjuk
-        if (currentStep) {
-          currentStep += ' ' + sentence + '.';
-        } else {
-          // Új lépés számozással
-          currentStep = `${stepNumber}. ${sentence}.`;
-          stepNumber++;
-        }
+        // Új főlépés kezdése
+        currentMainStep = {
+          number: mainStepMatch[1],
+          content: mainStepMatch[2]
+        };
+        currentSubSteps = [];
+        continue;
+      }
+      
+      // Albekezdés felismerése (o-val kezdődik)
+      const subStepMatch = line.match(/^o\s*(.*)/);
+      if (subStepMatch) {
+        currentSubSteps.push(subStepMatch[1]);
+        continue;
+      }
+      
+      // Ha nincs strukturálva, de van aktív főlépés, hozzáadjuk a tartalmához
+      if (currentMainStep && line) {
+        currentMainStep.content += ' ' + line;
+        continue;
+      }
+      
+      // Ha nincs strukturálva és nincs aktív főlépés, akkor egy egyszerű bekezdés
+      if (line) {
+        sections.push({
+          type: 'simple',
+          content: line
+        });
       }
     }
     
-    // Az utolsó lépés hozzáadása
-    if (currentStep) {
-      formattedSections.push({
-        type: 'bullet',
-        content: currentStep.trim()
+    // Az utolsó főlépés hozzáadása, ha van
+    if (currentMainStep) {
+      sections.push({
+        type: 'main',
+        number: currentMainStep.number,
+        content: currentMainStep.content,
+        subSteps: [...currentSubSteps]
       });
     }
     
-    // Ha nincs strukturált tartalom, akkor az egészet egy bullet pontként adjuk hozzá
-    if (formattedSections.length === 0 && cleanInstructions) {
-      formattedSections.push({
-        type: 'bullet',
+    // Ha nem találtunk semmilyen strukturálást, az egész szöveget egy egyszerű bekezdésként kezeljük
+    if (sections.length === 0 && cleanInstructions) {
+      sections.push({
+        type: 'simple',
         content: cleanInstructions
       });
     }
     
-    console.log('📝 Formázott lépések:', formattedSections);
-    return formattedSections;
+    console.log('📝 Formázott elkészítési lépések:', sections);
+    return sections;
   };
 
   // Compact mód a többnapos étrendtervezőhöz
@@ -185,19 +174,54 @@ export function RecipeContent({ recipe, compact = false, isFullScreen = false }:
         </ul>
       </div>
 
-      {/* Elkészítés - főcímek a bullet pontok elején */}
+      {/* Elkészítés - strukturált formázás */}
       <div className="bg-white/5 rounded-lg p-3 sm:p-4 mx-2 sm:mx-0">
         <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
           👨‍🍳 Elkészítés:
         </h3>
-        <ul className="space-y-2">
-          {formatInstructions(recipe.elkészítés).map((item, index) => (
-            <li key={index} className="text-white/90 flex items-start gap-2 text-xs sm:text-sm">
-              <span className="text-yellow-400 mt-0.5">•</span>
-              <span className="leading-relaxed">{item.content}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-3">
+          {formatInstructions(recipe.elkészítés).map((item, index) => {
+            if (item.type === 'main') {
+              return (
+                <div key={index} className="space-y-2">
+                  {/* Főbekezdés - számozással */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      {item.number}
+                    </div>
+                    <div className="text-white/90 text-xs sm:text-sm leading-relaxed font-medium">
+                      {item.content}
+                    </div>
+                  </div>
+                  
+                  {/* Albekezdések - o-val jelölt lépések */}
+                  {item.subSteps && item.subSteps.length > 0 && (
+                    <div className="ml-9 space-y-1">
+                      {item.subSteps.map((subStep, subIndex) => (
+                        <div key={subIndex} className="flex items-start gap-2">
+                          <span className="text-yellow-400 mt-1">◦</span>
+                          <span className="text-white/80 text-xs sm:text-sm leading-relaxed">
+                            {subStep}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            } else {
+              // Egyszerű bekezdés
+              return (
+                <div key={index} className="flex items-start gap-2">
+                  <span className="text-yellow-400 mt-0.5">•</span>
+                  <span className="text-white/90 text-xs sm:text-sm leading-relaxed">
+                    {item.content}
+                  </span>
+                </div>
+              );
+            }
+          })}
+        </div>
       </div>
     </div>
   );
