@@ -43,15 +43,12 @@ export function IngredientsGrid({
         }
 
         const imageMap: Record<string, string> = {};
-        const baseStorageUrl = 'https://hhjucbkqyamutshosfspy.supabase.co/storage/v1/object/public/alapanyag/';
 
         // Feltöltjük a képek mappáját
         imageData?.forEach(item => {
           if (item.Elelmiszer_nev && item.Kep) {
-            // Ha már teljes URL van, használjuk azt, különben építsük fel a storage URL-t
-            const imageUrl = item.Kep.startsWith('http') 
-              ? item.Kep 
-              : `${baseStorageUrl}${item.Kep}`;
+            // A Kep oszlop már csak a fájlnevet tartalmazza, felépítjük a teljes storage URL-t
+            const imageUrl = `https://hhjucbkqyamutshosfspy.supabase.co/storage/v1/object/public/alapanyag/${item.Kep}`;
             imageMap[item.Elelmiszer_nev] = imageUrl;
           }
         });
